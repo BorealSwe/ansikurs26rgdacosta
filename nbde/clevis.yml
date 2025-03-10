@@ -8,7 +8,7 @@
     nbde_client_bindings:
       - device: /dev/vdb
         # This would be stored using Ansible Vault
-        encryption_password: secureMODE 
+        encryption_password: secretMODE
         servers:
           - http://serverb.lab.example.com
           - http://serverc.lab.example.com
@@ -32,11 +32,13 @@
         ansible.builtin.lineinfile:
           line: "{{ securevolume }} {{ securedevice }} none _netdev"
           path: /etc/crypttab
+          create: true
 
       - name: Ensure /etc/fstab is configured
         ansible.builtin.lineinfile:
           line: "/dev/mapper/{{ securevolume }} {{ securemount }} ext4 _netdev 0 0"
           path: /etc/fstab
+          create: true
 
   handlers:
 
