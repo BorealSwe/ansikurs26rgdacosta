@@ -1,0 +1,97 @@
+- name: Create users in the appropriate groups (without loops)
+  hosts: "{{ myhosts | default('servera') }}"
+  become: true
+  no_log: true
+
+  vars:
+
+    mygroups:
+      - flintstones
+      - rubbles
+
+    myusers:
+
+      fred:
+        groups:
+          - flintstones
+          - wheel
+        password: yabadabadoo
+      wilma:
+        groups:
+          - flintstones
+        password: yabadabadoo
+      barney:
+        groups:
+          - rubbles
+        password: flimflom
+      betty:
+        groups:
+          - rubbles
+        password: flimflom
+      ricardo:
+        groups:
+          - wheel
+        password: flimflom
+
+  tasks:
+
+    - name: Ensure group flintstones is created
+      ansible.builtin.group:
+        name: flintstones
+        state: "{{ mystate | default('present') }}"
+
+    - name: Ensure group rubbles is created
+      ansible.builtin.group:
+        name: rubbles
+        state: "{{ mystate | default('present') }}"
+        
+    - name: Ensure user fred is created
+      ansible.builtin.user:
+        name: fred
+        state: "{{ mystate | default('present') }}"
+        groups:
+          - flintstones
+          - wheel
+        password: "{{ 'yabadabadoo' | password_hash('sha512') }}"
+        update_password: on_create
+        generate_ssh_key: true
+
+    - name: Ensure user wilma is created
+      ansible.builtin.user:
+        name: wilma
+        state: "{{ mystate | default('present') }}"
+        groups:
+          - flintstones
+        password: "{{ 'yabadabadoo' | password_hash('sha512') }}"
+        update_password: on_create
+        generate_ssh_key: true
+
+    - name: Ensure user barney is created
+      ansible.builtin.user:
+        name: barney
+        state: "{{ mystate | default('present') }}"
+        groups:
+          - rubbles
+        password: "{{ 'flimflom' | password_hash('sha512') }}"
+        update_password: on_create
+        generate_ssh_key: true
+
+    - name: Ensure user betty is created
+      ansible.builtin.user:
+        name: betty
+        state: "{{ mystate | default('present') }}"
+        groups:
+          - rubbles
+        password: "{{ 'flimflom' | password_hash('sha512') }}"
+        update_password: on_create
+        generate_ssh_key: true
+
+    - name: Ensure user ricardo is created
+      ansible.builtin.user:
+        name: ricardo
+        state: "{{ mystate | default('present') }}"
+        groups:
+          - wheel
+        password: "{{ 'flimflom' | password_hash('sha512') }}"
+        update_password: on_create
+        generate_ssh_key: true
