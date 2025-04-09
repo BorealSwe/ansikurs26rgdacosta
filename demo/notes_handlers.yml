@@ -1,11 +1,11 @@
 handlers:
-  definition: a dormant task, that executes when a notifying task results in a changed state
+  definition: are dormant tasks, they execute when a notifying task results in a changed state
 
-  why handlers: there may be a need to execute a task only when required
+  use_case: there may be a need to execute a task on a simple condition like a task (called the notifying task) makes a change
 
   execution order:
     - handlers execute after the tasks for a play
-    - by default, if an error exists in a play, the play will abort and any notified handlers will not execute
+    - by default, if a play exits due to an error, the play will abort and any notified handlers will not execute
     - while the same handler may be notified by several other tasks, it will only execute once
 
 order of execution for a playbook:
