@@ -1,0 +1,10 @@
+namespace: rgdacosta
+name: general
+version: 1.0.0
+readme: README.md
+authors:
+  - Ricardo da Costa <rdacosta@redhat.com> 
+description: General Purporse Plugins and Roles
+license:
+  - GPL-2.0-or-later
+license_file: ''

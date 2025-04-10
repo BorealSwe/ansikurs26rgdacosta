@@ -1,0 +1,44 @@
+---
+# tasks file for rgdacosta.foo
+
+- name: Ensure needed variables are defined
+  assert:
+    that:
+      - (my_package == "httpd") or (my_package == "nginx" )
+    success_msg: |
+
+      The needed variables are set, proceeding
+
+    fail_msg: |
+
+      OH NO! We need to set my_package to either httpd or nginx
+
+- name: Ensure software is managed
+  ansible.builtin.dnf:
+    name: "{{ my_webservice }}"
+    state: "{{ my_state }}"
+
+- name: Ensure webserver is configured with systemd
+  ansible.builtin.service:
+    name: "{{ my_webservice }}"
+    state: "{{ my_systemd_state }}"
+    enabled: "{{ my_systemd_enabled }}"
+
+- name: Ensure port open in firewall
+  ansible.posix.firewalld:
+    service: "{{ my_fw_service }}"
+    state: "{{ my_fw_state }}"
+    permanent: "{{ my_fw_permanance }}"
+    immediate: "{{ my_fw_immediate }}"
+
+- name: Ensure stub content is deployed (httpd)
+  when: my_webservice == 'httpd'
+  ansible.builtin.template:
+    src: index.j2 
+    dest: /var/www/html/index.html
+
+- name: Ensure stub content is deployed (nginx)
+  when: my_webservice == 'nginx'
+  ansible.builtin.template:
+    src: index.j2 
+    dest: /usr/share/nginx/html/index.html
