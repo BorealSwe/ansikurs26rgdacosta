@@ -1,0 +1,23 @@
+- name: Demonstrate the use of file, register, and debug to learn more about dictionaries
+  hosts: "{{ my_host | default('localhost') }}"
+  become: false
+  gather_facts: false
+
+  vars:
+    
+    my_file: /etc/
+
+  tasks:
+
+    - name: Ensure properties of {{ my_file }} are gathered
+      register: my_properties
+      ansible.builtin.file:
+        path: "{{ my_file }}"
+
+    - name: Temporary task to display the content of my_properties to evaluate against in a future task
+      ansible.builtin.debug:
+        var: my_properties
+
+    - name: Display a select key in the dictionary my_properties
+      ansible.builtin.debug:
+        msg: I can confirm that {{ my_file }} is a {{ my_properties['state'] }}

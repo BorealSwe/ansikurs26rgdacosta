@@ -1,11 +1,12 @@
-- name: Manage webserver
+---
+- name: Demonstration to test role
   hosts: "{{ my_host }}"
-  become: true
   gather_facts: false
-
+  become: true
+    
   vars:
 
-    my_package: nginx
+    my_webservice: nginx
 
   roles:
     - rgdacosta.general.webserver
