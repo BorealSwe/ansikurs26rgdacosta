@@ -8,5 +8,9 @@
 
     my_webservice: nginx
 
+  collections:
+
+    - rgdacosta.general
+
   roles:
     - rgdacosta.general.webserver

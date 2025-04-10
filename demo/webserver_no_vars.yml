@@ -1,6 +1,6 @@
 - name: Ensure webservers are installed
   hosts: servera
-  become: true 
+  become: true
 
   tasks:
 
@@ -25,10 +25,11 @@
     - name: Ensure stub content is deployed
       ansible.builtin.copy:
         content: |
-          Hello world 
-          
-          I am a web server
+          Hello world
+
+          I am a web server running httpd aka apache
         dest: /var/www/html/index.html
+        mode: 0644
 
 - name: Test web server deployment
   hosts: localhost
@@ -36,7 +37,7 @@
 
   tasks:
 
-      - name: Test webserver
-        ansible.builtin.uri:
-          url: http://servera.lab.example.com
-          return_content: true
+    - name: Test webserver
+      ansible.builtin.uri:
+        url: http://servera.lab.example.com
+        return_content: true

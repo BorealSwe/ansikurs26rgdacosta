@@ -1,0 +1,30 @@
+{
+ "collection_info": {
+  "namespace": "rgdacosta",
+  "name": "general",
+  "version": "1.0.0",
+  "authors": [
+   "Ricardo da Costa <rdacosta@redhat.com>"
+  ],
+  "readme": "README.md",
+  "tags": [],
+  "description": "General Purporse Plugins and Roles",
+  "license": [
+   "GPL-2.0-or-later"
+  ],
+  "license_file": null,
+  "dependencies": {},
+  "repository": "https://gitlab.com/rgdacosta/ansible",
+  "documentation": null,
+  "homepage": null,
+  "issues": null
+ },
+ "file_manifest_file": {
+  "name": "FILES.json",
+  "ftype": "file",
+  "chksum_type": "sha256",
+  "chksum_sha256": "c060c732622d318a6d5bc96ff6d0eb9e7e3e66fa7282c70b137f797a62482d08",
+  "format": 1
+ },
+ "format": 1
+}
