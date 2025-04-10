@@ -13,6 +13,9 @@ sshd_manage_service: true
 # If the below is false, don't reload the ssh daemon on change
 sshd_allow_reload: true
 
+# If the below is false, don't restart the ssh daemon on change that requires restart
+sshd_allow_restart: true
+
 # If the below is true, also install service files from the templates pointed
 # to by the `sshd_service_template_*` variables
 sshd_install_service: false
@@ -36,9 +39,6 @@ sshd_sysconfig_override_crypto_policy: false
 # This is not recommended to enable if you do not have hardware random number
 # generator
 sshd_sysconfig_use_strong_rng: 0
-
-# Empty dicts to avoid errors
-sshd: {}
 
 # The path to sshd_config file. This is useful when creating an included
 # configuration file snippet or configuring second sshd service

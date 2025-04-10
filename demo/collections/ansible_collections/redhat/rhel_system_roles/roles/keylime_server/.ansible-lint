@@ -22,3 +22,5 @@ exclude_paths:
   - roles/keylime_server/examples/roles/
 mock_roles:
   - rhel-system-roles.keylime_server
+supported_ansible_also:
+  - "2.14.0"

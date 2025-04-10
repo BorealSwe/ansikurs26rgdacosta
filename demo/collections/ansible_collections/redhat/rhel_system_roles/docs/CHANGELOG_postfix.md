@@ -1,6 +1,83 @@
 Changelog
 =========
 
+[1.6.0] - 2024-12-04
+--------------------
+
+### New Features
+
+- feat: support postfix_default_database_type (#165)
+
+### Other Changes
+
+- ci: Use Fedora 41, drop Fedora 39 (#164)
+- ci: Use Fedora 41, drop Fedora 39 - part two (#166)
+
+[1.5.2] - 2024-10-30
+--------------------
+
+### Other Changes
+
+- ci: Improvements to tmt workflows (#144)
+- ci: Fix quotes in citest_bad workflow (#145)
+- ci: Fix getting github author_association (#146)
+- ci: Fix url to linux-system-roles/tft-tests (#147)
+- ci: Improve citest_bad script (#149)
+- ci: Fix missing slash in ARTIFACTS_URL (#152)
+- ci: Add tags to TF workflow, allow more [citest bad] formats (#154)
+- ci: ansible-test action now requires ansible-core version (#157)
+- ci: add YAML header to github action workflow files (#158)
+- refactor: Use vars/RedHat_N.yml symlink for CentOS, Rocky, Alma wherever possible (#160)
+
+[1.5.1] - 2024-08-01
+--------------------
+
+### Other Changes
+
+- ci: Add tft plan and workflow (#136)
+- ci: Update fmf plan to add a separate job to prepare managed nodes (#139)
+- test: el10 now uses lmdb by default (#140)
+- ci: Bump sclorg/testing-farm-as-github-action from 2 to 3 (#141)
+- ci: Add workflow for ci_test bad, use remote fmf plan (#142)
+
+[1.5.0] - 2024-07-15
+--------------------
+
+### New Features
+
+- feat: Added postfix_files feature as a simple means to add extra files/maps to config (#129)
+
+### Bug Fixes
+
+- fix: add support for EL10 (#134)
+
+### Other Changes
+
+- ci: ansible-lint action now requires absolute directory (#133)
+
+[1.4.5] - 2024-06-11
+--------------------
+
+### Bug Fixes
+
+- fix: Reflect smtp-submission service rename in EL 10 and Fedora 40+ (#131)
+
+### Other Changes
+
+- refactor: Modify backup task to use the 'copy' module instead of 'shell' (#2)
+- ci: use tox-lsr 3.3.0 which uses ansible-test 2.17 (#124)
+- ci: tox-lsr 3.4.0 - fix py27 tests; move other checks to py310 (#126)
+- ci: Add supported_ansible_also to .ansible-lint (#127)
+
+[1.4.4] - 2024-04-04
+--------------------
+
+### Other Changes
+
+- ci: fix python unit test - copy pytest config to tests/unit (#120)
+- ci: Bump ansible/ansible-lint from 6 to 24 (#121)
+- ci: Bump mathieudutour/github-tag-action from 6.1 to 6.2 (#122)
+
 [1.4.3] - 2024-01-16
 --------------------
 
@@ -70,7 +147,6 @@ Changelog
   - Remove badges from README.md prior to converting to HTML
   
   Signed-off-by: Sergei Petrosian <spetrosi@redhat.com>
-
 
 [1.3.8] - 2023-07-19
 --------------------

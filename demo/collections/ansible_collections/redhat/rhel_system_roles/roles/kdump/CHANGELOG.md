@@ -1,6 +1,68 @@
 Changelog
 =========
 
+[1.4.10] - 2025-02-04
+--------------------
+
+### Other Changes
+
+- ci: ansible-plugin-scan is disabled for now (#223)
+- ci: bump ansible-lint to v25; provide collection requirements for ansible-lint (#226)
+- test: fix ssh wrapper test (#227)
+
+[1.4.9] - 2025-01-09
+--------------------
+
+### Other Changes
+
+- ci: Use Fedora 41, drop Fedora 39 (#220)
+- ci: Use Fedora 41, drop Fedora 39 - part two (#221)
+
+[1.4.8] - 2024-10-30
+--------------------
+
+### Other Changes
+
+- ci: Add tft plan and workflow (#208)
+- ci: Update fmf plan to add a separate job to prepare managed nodes (#210)
+- ci: bump sclorg/testing-farm-as-github-action from 2 to 3 (#211)
+- ci: Add workflow for ci_test bad, use remote fmf plan (#212)
+- ci: Fix missing slash in ARTIFACTS_URL (#213)
+- ci: Add tags to TF workflow, allow more [citest bad] formats (#214)
+- ci: ansible-test action now requires ansible-core version (#215)
+- ci: add YAML header to github action workflow files (#216)
+- refactor: Use vars/RedHat_N.yml symlink for CentOS, Rocky, Alma wherever possible (#218)
+
+[1.4.7] - 2024-07-02
+--------------------
+
+### Bug Fixes
+
+- fix: el10 kdump role should depend on kdump-utils (#204)
+- fix: add support for EL10 (#206)
+
+### Other Changes
+
+- ci: ansible-lint action now requires absolute directory (#205)
+
+[1.4.6] - 2024-06-11
+--------------------
+
+### Other Changes
+
+- ci: use tox-lsr 3.3.0 which uses ansible-test 2.17 (#199)
+- ci: tox-lsr 3.4.0 - fix py27 tests; move other checks to py310 (#201)
+- ci: Add supported_ansible_also to .ansible-lint (#202)
+
+[1.4.5] - 2024-04-04
+--------------------
+
+### Other Changes
+
+- ci: fix python unit test - copy pytest config to tests/unit (#195)
+- ci: bump ansible/ansible-lint from 6 to 24 (#196)
+- ci: bump mathieudutour/github-tag-action from 6.1 to 6.2 (#197)
+
 [1.4.4] - 2024-01-16
 --------------------
 
@@ -76,7 +138,6 @@ Changelog
   - Remove badges from README.md prior to converting to HTML
   
   Signed-off-by: Sergei Petrosian <spetrosi@redhat.com>
-
 
 [1.3.6] - 2023-08-17
 --------------------

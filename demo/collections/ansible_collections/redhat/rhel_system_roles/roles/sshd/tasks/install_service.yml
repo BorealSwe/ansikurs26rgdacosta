@@ -11,7 +11,7 @@
         owner: root
         group: root
         mode: "0644"
-      notify: reload_sshd
+      notify: sshd_reload
 
     - name: Install instanced service unit file
       ansible.builtin.template:
@@ -20,7 +20,7 @@
         owner: root
         group: root
         mode: "0644"
-      notify: reload_sshd
+      notify: sshd_reload
       when:
         - __sshd_socket_accept | bool
 
@@ -31,7 +31,7 @@
         owner: root
         group: root
         mode: "0644"
-      notify: reload_sshd
+      notify: sshd_reload
 
 - name: Service enabled and running
   ansible.builtin.service:
@@ -45,7 +45,7 @@
 
 # Due to ansible bug 21026, cannot use service module on RHEL 7
 - name: Enable service in chroot
-  ansible.builtin.command: systemctl enable {{ sshd_service }} # noqa command-instead-of-module
+  ansible.builtin.command: systemctl enable {{ sshd_service | quote }} # noqa command-instead-of-module
   when:
     - ansible_connection == 'chroot'
     - ansible_facts['os_family'] == 'RedHat'

@@ -1,6 +1,7 @@
 ---
 - name: "Combination test - test for (2 types of inputs) x (2 types of outputs) combination"
   hosts: all
+  gather_facts: true # test needs facts
   vars:
     __test_files_conf: /etc/rsyslog.d/30-output-files-files_test0.conf
     __test_forwards_conf_s_f: >-
@@ -16,7 +17,7 @@
       file:
         path: "{{ __test_inputfiles_dir }}"
         state: directory
-        mode: 0700
+        mode: "0700"
 
   # TEST CASE 0
     - name: "TEST CASE 0; Ensure that the role runs with complicated flows - M x N combinations"
@@ -50,7 +51,8 @@
           - name: "{{ __test_tag }}"
             type: files
             input_log_path: "{{ __test_inputfiles_dir }}/*.log"
-            endmsg_regex: xyz
+          # Not supported on EL 7
+            endmsg_regex: "{{ omit if ansible_distribution in ['CentOS', 'RedHat'] and ansible_distribution_major_version is version('7', '==') else 'xyz' }}"
           - name: basic_input
             type: basics
             ratelimit_burst: 33333
@@ -126,7 +128,7 @@
                   Template="RSYSLOG_ForwardFormat"
               )
           }
-        mode: '0600'
+        mode: "0600"
 
     - name: Check severity_and_facility
       command: diff -B /tmp/__testfile__ '{{ __test_forwards_conf_s_f }}'
@@ -315,7 +317,7 @@
                   Template="RSYSLOG_ForwardFormat"
               )
           }
-        mode: '0600'
+        mode: "0600"
 
     - name: Check severity_and_facility
       command: diff -B /tmp/__testfile__ '{{ __test_forwards_conf_s_f }}'
@@ -459,7 +461,7 @@
             then {
               call files_test0
           }
-        mode: '0644'
+        mode: "0644"
 
     - name: Check ports managed by firewall and selinux
       include_tasks: tasks/check_firewall_selinux.yml
@@ -564,3 +566,6 @@
   # thus we have to force to invoke handlers
     - name: "Force all notified handlers to run at this point, not waiting for normal sync points"
       meta: flush_handlers
+
+    - name: Assert {{ __default_system_log }}
+      include_tasks: tasks/assert_varlogmessages.yml

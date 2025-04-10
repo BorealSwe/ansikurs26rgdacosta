@@ -8,7 +8,7 @@ An Ansible role for managing ssh clients configuration.
 This role should work on any system that provides openssh client and is
 supported by ansible. The role was tested on:
 
-* RHEL/CentOS 6, 7, 8, 9
+* RHEL/CentOS 6, 7, 8, 9, 10
 * Fedora
 * Debian
 * Ubuntu
@@ -85,6 +85,15 @@ group are derived from username given in `ssh_user` variable.
 ### ssh_backup
 
 When set to *false*, the original `ssh_config` file is not backed up. Default is *true*.
+
+### ssh_transactional_update_reboot_ok
+
+This variable is used to handle reboots required by transactional updates.
+If a transactional update requires a reboot, the role will proceed with the
+reboot if ssh_transactional_update_reboot_ok is set to true. If set to
+false, the role will notify the user that a reboot is required, allowing
+for custom handling of the reboot requirement. If this variable is not set,
+the role will fail to ensure the reboot requirement is not overlooked.
 
 ## Example Playbook
 

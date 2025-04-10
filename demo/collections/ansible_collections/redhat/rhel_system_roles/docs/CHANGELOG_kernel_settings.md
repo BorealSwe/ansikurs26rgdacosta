@@ -1,6 +1,81 @@
 Changelog
 =========
 
+[1.3.3] - 2024-10-30
+--------------------
+
+### Other Changes
+
+- ci: Add tags to TF workflow, allow more [citest bad] formats (#224)
+- ci: ansible-test action now requires ansible-core version (#227)
+- ci: add YAML header to github action workflow files (#228)
+- refactor: Use vars/RedHat_N.yml symlink for CentOS, Rocky, Alma wherever possible (#230)
+
+[1.3.2] - 2024-08-26
+--------------------
+
+### Bug Fixes
+
+- fix: detect profile parent directory (#222)
+
+[1.3.1] - 2024-08-09
+--------------------
+
+### Bug Fixes
+
+- fix: Use tuned files instead of using it as a module (#220)
+
+### Other Changes
+
+- ci: Bump sclorg/testing-farm-as-github-action from 2 to 3 (#217)
+- ci: Add workflow for ci_test bad, use remote fmf plan (#218)
+- ci: Fix missing slash in ARTIFACTS_URL (#219)
+
+[1.3.0] - 2024-08-01
+--------------------
+
+### New Features
+
+- Handle reboot for transactional update systems (#215)
+
+### Other Changes
+
+- ci: Add tft plan and workflow (#209)
+- ci: Fix tft workflow (#210)
+- ci: Replace / with | in status to distinguish with BaseOS CI tests (#211)
+- ci: Improve tft plan and workflow (#213)
+- ci: Update fmf plan to add a separate job to prepare managed nodes (#214)
+
+[1.2.5] - 2024-07-02
+--------------------
+
+### Bug Fixes
+
+- fix: add support for EL10 (#207)
+
+### Other Changes
+
+- ci: ansible-lint action now requires absolute directory (#206)
+
+[1.2.4] - 2024-06-11
+--------------------
+
+### Other Changes
+
+- ci: use tox-lsr 3.3.0 which uses ansible-test 2.17 (#198)
+- ci: tox-lsr 3.4.0 - fix py27 tests; move other checks to py310 (#201)
+- ci: Add supported_ansible_also to .ansible-lint (#203)
+
+[1.2.3] - 2024-04-02
+--------------------
+
+### Other Changes
+
+- ci: Bump codecov/codecov-action from 3 to 4 (#193)
+- ci: fix python unit test - copy pytest config to tests/unit (#194)
+- ci: Bump ansible/ansible-lint from 6 to 24 (#195)
+- ci: Bump mathieudutour/github-tag-action from 6.1 to 6.2 (#196)
+
 [1.2.2] - 2024-01-16
 --------------------
 
@@ -70,7 +145,6 @@ Changelog
   - Remove badges from README.md prior to converting to HTML
   
   Signed-off-by: Sergei Petrosian <spetrosi@redhat.com>
-
 
 [1.1.17] - 2023-07-19
 --------------------

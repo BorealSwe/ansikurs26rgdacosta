@@ -21,7 +21,7 @@
             name: redhat.rhel_system_roles.sshd
           vars:
             sshd_verify_hostkeys: []
-            sshd:
+            sshd_config:
               HostKey:
                 - /tmp/missing_ssh_host_rsa_key
           register: role_result

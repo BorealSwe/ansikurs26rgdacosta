@@ -1,6 +1,79 @@
 Changelog
 =========
 
+[1.8.2] - 2025-01-09
+--------------------
+
+### Other Changes
+
+- ci: bump codecov/codecov-action from 4 to 5 (#244)
+- ci: Use Fedora 41, drop Fedora 39 (#245)
+- ci: Use Fedora 41, drop Fedora 39 - part two (#246)
+
+[1.8.1] - 2024-10-30
+--------------------
+
+### Bug Fixes
+
+- fix: Prevent interface definitions overriding 'changed' value when other elements are changed (#241)
+
+### Other Changes
+
+- ci: Add tft plan and workflow (#228)
+- ci: Update fmf plan to add a separate job to prepare managed nodes (#230)
+- ci: bump sclorg/testing-farm-as-github-action from 2 to 3 (#231)
+- ci: Add workflow for ci_test bad, use remote fmf plan (#232)
+- ci: Fix missing slash in ARTIFACTS_URL (#233)
+- ci: Add tags to TF workflow, allow more [citest bad] formats (#235)
+- ci: ansible-test action now requires ansible-core version (#236)
+- ci: add YAML header to github action workflow files (#238)
+- refactor: Use vars/RedHat_N.yml symlink for CentOS, Rocky, Alma wherever possible (#240)
+
+[1.8.0] - 2024-07-15
+--------------------
+
+### New Features
+
+- feat: Handle reboot for transactional update systems (#226)
+
+[1.7.8] - 2024-07-02
+--------------------
+
+### Bug Fixes
+
+- fix: add support for EL10 (#224)
+
+### Other Changes
+
+- test: use cs9 container instead of cs8 (#222)
+- ci: ansible-lint action now requires absolute directory (#223)
+
+[1.7.7] - 2024-06-11
+--------------------
+
+### Other Changes
+
+- ci: use tox-lsr 3.3.0 which uses ansible-test 2.17 (#217)
+- ci: tox-lsr 3.4.0 - fix py27 tests; move other checks to py310 (#219)
+- ci: Add supported_ansible_also to .ansible-lint (#220)
+
+[1.7.6] - 2024-04-25
+--------------------
+
+### Other Changes
+
+- ci: add ansible-test ignores for 2.16 (#215)
+
+[1.7.5] - 2024-04-04
+--------------------
+
+### Other Changes
+
+- ci: bump codecov/codecov-action from 3 to 4 (#208)
+- ci: fix python unit test - copy pytest config to tests/unit (#210)
+- ci: bump ansible/ansible-lint from 6 to 24 (#211)
+- ci: bump mathieudutour/github-tag-action from 6.1 to 6.2 (#213)
+
 [1.7.4] - 2024-01-23
 --------------------
 
@@ -67,7 +140,6 @@ Changelog
   - Remove badges from README.md prior to converting to HTML
   
   Signed-off-by: Sergei Petrosian <spetrosi@redhat.com>
-
 
 [1.6.3] - 2023-08-17
 --------------------
@@ -208,7 +280,6 @@ Changelog
 - ci: Rename commitlint to PR title Lint, echo PR titles from env var (#149)
 
   Signed-off-by: Sergei Petrosian <spetrosi@redhat.com>
-
 
 [1.4.4] - 2023-04-13
 --------------------

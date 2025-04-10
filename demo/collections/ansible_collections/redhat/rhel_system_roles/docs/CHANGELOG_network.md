@@ -1,6 +1,142 @@
 Changelog
 =========
 
+[1.17.1] - 2025-01-09
+--------------------
+
+### Bug Fixes
+
+- fix: Prioritize find link info by permanent MAC address, with fallback to current address (#749)
+
+### Other Changes
+
+- ci: bump codecov/codecov-action from 4 to 5 (#746)
+- ci: Use Fedora 41, drop Fedora 39 (#747)
+- ci: Use Fedora 41, drop Fedora 39 - part two (#748)
+
+[1.17.0] - 2024-10-30
+--------------------
+
+### New Features
+
+- feat: Support autoconnect_retries (#737)
+- feat: Support `wait_ip` property (#741)
+
+### Other Changes
+
+- docs: Explain where network state examples originate (#734)
+- ci: Add tags to TF workflow, allow more [citest bad] formats (#738)
+- ci: ansible-test action now requires ansible-core version (#739)
+- ci: add YAML header to github action workflow files (#740)
+- docs: Promote `network_state` variable as the future for network management (#742)
+- refactor: Use vars/RedHat_N.yml symlink for CentOS, Rocky, Alma wherever possible (#744)
+
+[1.16.5] - 2024-08-29
+--------------------
+
+### Other Changes
+
+- docs: Remove invalid network state example (#731)
+
+[1.16.4] - 2024-08-22
+--------------------
+
+### Other Changes
+
+- docs: Add examples using network_state variable (#728)
+
+[1.16.3] - 2024-08-20
+--------------------
+
+### Other Changes
+
+- test: use is-active instead of is-enabled to check for firewalld (#726)
+
+[1.16.2] - 2024-08-19
+--------------------
+
+### Other Changes
+
+- test: allow dhcp service if firewall is active (#724)
+
+[1.16.1] - 2024-08-16
+--------------------
+
+### Other Changes
+
+- tests: Use EPEL-7 from archive (#719)
+- test: skip integration pytest on fedora 39 and later (#720)
+- ci: fix and improve integration container testing (#721)
+
+[1.16.0] - 2024-08-09
+--------------------
+
+### New Features
+
+- feat: Add the support for the optional route source parameter in nm provider (#714)
+
+### Other Changes
+
+- ci: Add workflow for ci_test bad, use remote fmf plan (#712)
+- ci: Fix missing slash in ARTIFACTS_URL (#713)
+
+[1.15.6] - 2024-08-01
+--------------------
+
+### Other Changes
+
+- test: fix some Ansible warnings not caught by lint (#704)
+- ci: Add tft plan and workflow (#705)
+- test: team plugin test does not clean up properly (#706)
+- ci: Update fmf plan to add a separate job to prepare managed nodes (#708)
+- ci: bump sclorg/testing-farm-as-github-action from 2 to 3 (#710)
+
+[1.15.5] - 2024-07-15
+--------------------
+
+### Bug Fixes
+
+- fix: network_state must be defined in defaults/main.yml (#702)
+
+[1.15.4] - 2024-07-02
+--------------------
+
+### Bug Fixes
+
+- fix: add support for EL10 (#700)
+
+### Other Changes
+
+- docs: Add documentation for specifying VLAN ID (#685)
+- docs: network_connections module is only meant for internal usage (#686)
+- test: debug deprecated bond test failures (#696)
+- ci: ansible-lint action now requires absolute directory (#699)
+
+[1.15.3] - 2024-06-11
+--------------------
+
+### Other Changes
+
+- ci: use tox-lsr 3.3.0 which uses ansible-test 2.17 (#691)
+- ci: tox-lsr 3.4.0 - fix py27 tests; move other checks to py310 (#693)
+- ci: Add supported_ansible_also to .ansible-lint (#694)
+
+[1.15.2] - 2024-04-04
+--------------------
+
+### Bug Fixes
+
+- fix: Allow network to restart when wireless or team connection is specified (#675)
+
+### Other Changes
+
+- test: improve bond test failure debugging (#676)
+- ci: Bump ansible/ansible-lint from 6 to 24 (#677)
+- docs: Add MAC VTAP example (#679)
+- tests: Team interface is indeed supported on Fedora (#680)
+- test: improve name text for skipped ostree tests (#684)
+- ci: Bump mathieudutour/github-tag-action from 6.1 to 6.2 (#687)
+
 [1.15.1] - 2024-02-14
 --------------------
 

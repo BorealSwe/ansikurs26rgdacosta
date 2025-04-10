@@ -1,6 +1,7 @@
 ---
 - name: Basic test for fapolicyd
   hosts: all
+  gather_facts: true # needed for python executable discovery
   tasks:
     - name: Run tests
       vars:
@@ -39,14 +40,17 @@
         - name: Create shell executables
           copy:
             content: |
-              #/bin/bash
+              #!{{ __python }}
               # this is item {{ item }}
-              exit 0
+              import sys
+              sys.exit(0)
             dest: "{{ item }}"
             mode: "0755"
           loop:
             - "{{ __test_fpd_exe1 }}"
             - "{{ __test_fpd_exe2 }}"
+          vars:
+            __python: "{{ ansible_python_interpreter | d(discovered_interpreter_python) }}"
 
         - name: Create a new user
           user:

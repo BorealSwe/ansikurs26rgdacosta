@@ -23,10 +23,10 @@
 {%   set value = undefined %}
 {%   if override is defined %}
 {%     set value = override %}
-{%   elif sshd[key] is defined %}
-{%     set value = sshd[key] %}
+{%   elif __sshd_config[key] is defined %}
+{%     set value = __sshd_config[key] %}
 {%   elif sshd_main_config_file is not none
-       and sshd_config_file | dirname != sshd_main_config_file | dirname %}
+        and sshd_config_file | dirname == sshd_main_config_file ~ '.d' %}
 {#     Do not use the defaults from main file to avoid recursion #}
 {%   elif __sshd_defaults[key] is defined and not sshd_skip_defaults %}
 {%     if key == 'HostKey' and __sshd_fips_mode %}
@@ -82,6 +82,7 @@ Match {{ match["Condition"] }}
 {{       render_option("LogLevel",match["LogLevel"],true) -}}
 {{       render_option("MaxAuthTries",match["MaxAuthTries"],true) -}}
 {{       render_option("MaxSessions",match["MaxSessions"],true) -}}
+{{       render_option("PAMServiceName",match["PAMServiceName"],true) -}}
 {{       render_option("PasswordAuthentication",match["PasswordAuthentication"],true) -}}
 {{       render_option("PermitEmptyPasswords",match["PermitEmptyPasswords"],true) -}}
 {{       render_option("PermitListen",match["PermitListen"],true) -}}
@@ -95,6 +96,7 @@ Match {{ match["Condition"] }}
 {{       render_option("PubkeyAuthentication",match["PubkeyAuthentication"],true) -}}
 {{       render_option("PubkeyAuthOptions",match["PubkeyAuthOptions"],true) -}}
 {{       render_option("RDomain",match["RDomain"],true) -}}
+{{       render_option("RefuseConnection",match["RefuseConnection"],true) -}}
 {{       render_option("RekeyLimit",match["RekeyLimit"],true) -}}
 {{       render_option("RevokedKeys",match["RevokedKeys"],true) -}}
 {{       render_option("RequiredRSASize",match["RequiredRSASize"],true) -}}
@@ -197,6 +199,7 @@ Match {{ match["Condition"] }}
 {{ body_option("MaxStartups",sshd_MaxStartups) -}}
 {{ body_option("ModuliFile",sshd_ModuliFile) -}}
 {{ body_option("NoneEnabled",sshd_NoneEnabled) -}}
+{{ body_option("PAMServiceName",sshd_PAMServiceName) -}}
 {{ body_option("PasswordAuthentication",sshd_PasswordAuthentication) -}}
 {{ body_option("PermitEmptyPasswords",sshd_PermitEmptyPasswords) -}}
 {{ body_option("PermitListen",sshd_PermitListen) -}}
@@ -206,6 +209,8 @@ Match {{ match["Condition"] }}
 {{ body_option("PermitTunnel",sshd_PermitTunnel) -}}
 {{ body_option("PermitUserEnvironment",sshd_PermitUserEnvironment) -}}
 {{ body_option("PermitUserRC",sshd_PermitUserRC) -}}
+{{ body_option("PerSourcePenalties",sshd_PerSourcePenalties) -}}
+{{ body_option("PerSourcePenaltyExemptList",sshd_PerSourcePenaltyExemptList) -}}
 {{ body_option("PerSourceMaxStartups",sshd_PerSourceMaxStartups) -}}
 {{ body_option("PerSourceNetBlockSize",sshd_PerSourceNetBlockSize) -}}
 {{ body_option("PidFile",sshd_PidFile) -}}
@@ -217,6 +222,7 @@ Match {{ match["Condition"] }}
 {{ body_option("PubkeyAuthentication",sshd_PubkeyAuthentication) -}}
 {{ body_option("RSAAuthentication",sshd_RSAAuthentication) -}}
 {{ body_option("RSAMinSize",sshd_RSAMinSize) -}}
+{{ body_option("RefuseConnection",sshd_RefuseConnection) -}}
 {{ body_option("RekeyLimit",sshd_RekeyLimit) -}}
 {{ body_option("RequiredRSASize",sshd_RequiredRSASize) -}}
 {{ body_option("RevokedKeys",sshd_RevokedKeys) -}}
@@ -226,6 +232,7 @@ Match {{ match["Condition"] }}
 {{ body_option("SetEnv",sshd_SetEnv) -}}
 {{ body_option("ServerKeyBits",sshd_ServerKeyBits) -}}
 {{ body_option("ShowPatchLevel",sshd_ShowPatchLevel) -}}
+{{ body_option("SshdSessionPath",sshd_SshdSessionPath) -}}
 {{ body_option("StreamLocalBindMask",sshd_StreamLocalBindMask) -}}
 {{ body_option("StreamLocalBindUnlink",sshd_StreamLocalBindUnlink) -}}
 {{ body_option("StrictModes",sshd_StrictModes) -}}
@@ -245,8 +252,8 @@ Match {{ match["Condition"] }}
 {{ body_option("X11Forwarding",sshd_X11Forwarding) -}}
 {{ body_option("X11UseLocalhost",sshd_X11UseLocalhost) -}}
 {{ body_option("XAuthLocation",sshd_XAuthLocation) -}}
-{% if sshd['Match'] is defined %}
-{{   match_iterate_block(sshd['Match']) -}}
+{% if __sshd_config['Match'] is defined %}
+{{   match_iterate_block(__sshd_config['Match']) -}}
 {% endif %}
 {% if sshd_match is defined %}
 {{   match_iterate_block(sshd_match) -}}

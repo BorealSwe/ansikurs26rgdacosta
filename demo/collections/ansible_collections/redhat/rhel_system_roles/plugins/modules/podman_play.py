@@ -14,7 +14,7 @@ author:
 short_description: Play kubernetes YAML file using podman
 notes: []
 description:
-  - WARNING: Do not use this plugin directly! It is only for role internal use.
+  - "WARNING: Do not use this plugin directly! It is only for role internal use."
   - The module reads in a structured file of Kubernetes YAML.
     It will then recreate the pod and containers described in the YAML.
 requirements:
@@ -29,7 +29,10 @@ options:
     description:
       - Path to file with YAML configuration for a Pod.
     type: path
-    required: True
+  kube_file_content:
+    description:
+      - Content of the kube file.
+    type: str
   annotation:
     description:
       - Add an annotation to the container or pod.
@@ -104,7 +107,8 @@ options:
         required: false
       tag:
         description:
-          - specify a custom log tag for the container. This option is currently supported only by the journald log driver in Podman.
+          - Specify a custom log tag for the container.
+            This option is currently supported only by the journald log driver in Podman.
         type: str
         required: false
   log_level:
@@ -132,6 +136,7 @@ options:
       - created
       - started
       - absent
+      - quadlet
     required: True
   tls_verify:
     description:
@@ -159,6 +164,38 @@ options:
       An empty value ("") means user namespaces are disabled.
     required: false
     type: str
+  quadlet_dir:
+    description:
+      - Path to the directory to write quadlet file in.
+        By default, it will be set as C(/etc/containers/systemd/) for root user,
+        C(~/.config/containers/systemd/) for non-root users.
+    type: path
+    required: false
+  quadlet_filename:
+    description:
+      - Name of quadlet file to write. Must be specified if state is quadlet.
+    type: str
+  quadlet_file_mode:
+    description:
+      - The permissions of the quadlet file.
+      - The O(quadlet_file_mode) can be specied as octal numbers or as a symbolic mode (for example, V(u+rwx) or V(u=rw,g=r,o=r)).
+        For octal numbers format, you must either add a leading zero so that Ansible's YAML parser knows it is an
+        octal number (like V(0644) or V(01777)) or quote it (like V('644') or V('1777')) so Ansible receives a string
+        and can do its own conversion from string into number. Giving Ansible a number without following one of these
+        rules will end up with a decimal number which will have unexpected results.
+      - If O(quadlet_file_mode) is not specified and the quadlet file B(does not) exist, the default V('0640') mask will be used
+        when setting the mode for the newly created file.
+      - If O(quadlet_file_mode) is not specified and the quadlet file B(does) exist, the mode of the existing file will be used.
+      - Specifying O(quadlet_file_mode) is the best way to ensure files are created with the correct permissions.
+    type: raw
+    required: false
+  quadlet_options:
+    description:
+      - Options for the quadlet file. Provide missing in usual network args
+        options as a list of lines to add.
+    type: list
+    elements: str
+    required: false
 '''
 
 EXAMPLES = '''
@@ -179,6 +216,20 @@ EXAMPLES = '''
     log_opt:
       path: /tmp/my-container.log
       max_size: 10mb
+
+- name: Create a Quadlet file
+  redhat.rhel_system_roles.podman_play:
+    kube_file: ~/kube.yaml
+    state: quadlet
+    annotations:
+      greeting: hello
+      greet_to: world
+    userns: host
+    quadlet_filename: kube-pod
+    quadlet_file_mode: '0640'
+    quadlet_options:
+      - "SetWorkingDirectory=yaml"
+      - "ExitCodePropagation=any"
 '''
 import re  # noqa: F402
 try:
@@ -188,6 +239,8 @@ except ImportError:
     HAS_YAML = False
 
 from ansible.module_utils.basic import AnsibleModule  # noqa: F402
+from ansible_collections.redhat.rhel_system_roles.plugins.module_utils.podman_lsr.podman.common import LooseVersion, get_podman_version
+from ansible_collections.redhat.rhel_system_roles.plugins.module_utils.podman_lsr.podman.quadlet import create_quadlet_state  # noqa: F402
 
 
 class PodmanKubeManagement:
@@ -197,11 +250,12 @@ class PodmanKubeManagement:
         self.actions = []
         self.executable = executable
         self.command = [self.executable, 'play', 'kube']
+        self.version = get_podman_version(module)
         creds = []
         # pod_name = extract_pod_name(module.params['kube_file'])
         if self.module.params['annotation']:
             for k, v in self.module.params['annotation'].items():
-                self.command.extend(['--annotation', '"{k}={v}"'.format(k=k, v=v)])
+                self.command.extend(['--annotation', '{k}={v}'.format(k=k, v=v)])
         if self.module.params['username']:
             creds += [self.module.params['username']]
             if self.module.params['password']:
@@ -233,10 +287,16 @@ class PodmanKubeManagement:
         }.items():
             if self.module.params[param] is not None:
                 self.command += ["%s=%s" % (arg, self.module.params[param])]
-        self.command += [self.module.params['kube_file']]
+        if self.module.params['kube_file']:
+            self.command += [self.module.params['kube_file']]
+        elif self.module.params['kube_file_content']:
+            self.command += ['-']
 
     def _command_run(self, cmd):
-        rc, out, err = self.module.run_command(cmd)
+        if self.module.params['kube_file_content']:
+            rc, out, err = self.module.run_command(cmd, data=self.module.params['kube_file_content'])
+        else:
+            rc, out, err = self.module.run_command(cmd)
         self.actions.append(" ".join(cmd))
         if self.module.params['debug']:
             self.module.log('PODMAN-PLAY-KUBE command: %s' % " ".join(cmd))
@@ -245,17 +305,41 @@ class PodmanKubeManagement:
             self.module.log('PODMAN-PLAY-KUBE rc: %s' % rc)
         return rc, out, err
 
+    def tear_down_pods(self):
+        '''
+        Tear down the pod and contaiers by using --down option in kube play
+        which is supported since Podman 3.4.0
+        '''
+        changed = False
+        kube_file = self.module.params['kube_file']
+        kube_file_content = self.module.params['kube_file_content']
+        if kube_file:
+            rc, out, err = self._command_run([self.executable, "kube", "play", "--down", kube_file])
+        elif kube_file_content:
+            rc, out, err = self._command_run([self.executable, "kube", "play", "--down", "-"])
+        if rc != 0 and "no such pod" in err:
+            changed = False
+            return changed, out, err
+        if rc != 0:
+            self.module.fail_json(msg="Failed to delete Pod with %s: %s %s" % (
+                kube_file if kube_file else "YAML content", out, err))
+
+        # hack to check if no resources are deleted
+        for line in out.splitlines():
+            if line and not line.endswith(':'):
+                changed = True
+                break
+        return changed, out, err
+
     def discover_pods(self):
         pod_name = ''
         if self.module.params['kube_file']:
             if HAS_YAML:
                 with open(self.module.params['kube_file']) as f:
-                    pod = yaml.safe_load(f)
-                if 'metadata' in pod:
-                    pod_name = pod['metadata'].get('name')
-                else:
-                    self.module.fail_json(
-                        "No metadata in Kube file!\n%s" % pod)
+                    pods = list(yaml.safe_load_all(f))
+                for pod in pods:
+                    if 'metadata' in pod and pod['kind'] in ['Deployment', 'Pod']:
+                        pod_name = pod['metadata'].get('name')
             else:
                 with open(self.module.params['kube_file']) as text:
                     # the following formats are matched for a kube name:
@@ -267,7 +351,7 @@ class PodmanKubeManagement:
                     if re_pod:
                         pod_name = re_pod.group(1)
         if not pod_name:
-            self.module.fail_json("Deployment doesn't have a name!")
+            self.module.fail_json("This Kube file doesn't have Pod or Deployment!")
         # Find all pods
         all_pods = ''
         # In case of one pod or replicasets
@@ -295,8 +379,12 @@ class PodmanKubeManagement:
         return changed, out_all, err_all
 
     def pod_recreate(self):
-        pods = self.discover_pods()
-        self.remove_associated_pods(pods)
+        if self.version is not None and LooseVersion(self.version) >= LooseVersion('3.4.0'):
+            self.tear_down_pods()
+        else:
+            pods = self.discover_pods()
+            self.remove_associated_pods(pods)
+
         # Create a pod
         rc, out, err = self._command_run(self.command)
         if rc != 0:
@@ -319,13 +407,20 @@ class PodmanKubeManagement:
             changed = True
         return changed, out, err
 
+    def make_quadlet(self):
+        results = {"changed": False}
+        results_update = create_quadlet_state(self.module, "kube")
+        results.update(results_update)
+        self.module.exit_json(**results)
+
 
 def main():
     module = AnsibleModule(
         argument_spec=dict(
             annotation=dict(type='dict', aliases=['annotations']),
             executable=dict(type='str', default='podman'),
-            kube_file=dict(type='path', required=True),
+            kube_file=dict(type='path'),
+            kube_file_content=dict(type='str'),
             authfile=dict(type='path'),
             build=dict(type='bool'),
             cert_dir=dict(type='path'),
@@ -342,7 +437,7 @@ def main():
             network=dict(type='list', elements='str'),
             state=dict(
                 type='str',
-                choices=['started', 'created', 'absent'],
+                choices=['started', 'created', 'absent', 'quadlet'],
                 required=True),
             tls_verify=dict(type='bool'),
             debug=dict(type='bool'),
@@ -352,16 +447,34 @@ def main():
             log_level=dict(
                 type='str',
                 choices=["debug", "info", "warn", "error", "fatal", "panic"]),
+            quadlet_dir=dict(type='path', required=False),
+            quadlet_filename=dict(type='str', required=False),
+            quadlet_file_mode=dict(type='raw', required=False),
+            quadlet_options=dict(type='list', elements='str', required=False),
         ),
         supports_check_mode=True,
+        required_if=[
+            ('state', 'quadlet', ['quadlet_filename']),
+        ],
+        required_one_of=[
+            ('kube_file', 'kube_file_content'),
+        ],
     )
 
     executable = module.get_bin_path(
         module.params['executable'], required=True)
     manage = PodmanKubeManagement(module, executable)
+    changed = False
+    out = err = ''
     if module.params['state'] == 'absent':
-        pods = manage.discover_pods()
-        changed, out, err = manage.remove_associated_pods(pods)
+        if manage.version is not None and LooseVersion(manage.version) > LooseVersion('3.4.0'):
+            manage.module.log(msg="version: %s, kube file %s" % (manage.version, manage.module.params['kube_file']))
+            changed, out, err = manage.tear_down_pods()
+        else:
+            pods = manage.discover_pods()
+            changed, out, err = manage.remove_associated_pods(pods)
+    elif module.params['state'] == 'quadlet':
+        manage.make_quadlet()
     else:
         changed, out, err = manage.play()
     results = {

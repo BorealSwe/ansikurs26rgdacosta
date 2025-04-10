@@ -1,6 +1,87 @@
 Changelog
 =========
 
+[1.10.9] - 2025-01-09
+--------------------
+
+### Other Changes
+
+- ci: Use Fedora 41, drop Fedora 39 (#221)
+- ci: Use Fedora 41, drop Fedora 39 - part two (#222)
+
+[1.10.8] - 2024-11-19
+--------------------
+
+### Bug Fixes
+
+- fix: use __grafana_keyserver_datasource_type variable instead of its string value
+- fix: Use correct syntax for keyserver port and test check
+
+[1.10.7] - 2024-10-30
+--------------------
+
+### Bug Fixes
+
+- fix: add support for Valkey (#212)
+- fix: add leading triple-hyphen to all github workflow files (#214)
+
+### Other Changes
+
+- docs: fix missing h2 markdown element (#211)
+- ci: Add tags to TF workflow, allow more [citest bad] formats (#213)
+- ci: ansible-test action now requires ansible-core version (#215)
+- refactor: Use vars/RedHat_N.yml symlink for CentOS, Rocky, Alma wherever possible (#217)
+
+[1.10.6] - 2024-08-19
+--------------------
+
+### Other Changes
+
+- ci: Add tft plan and workflow (#203)
+- ci: Update fmf plan to add a separate job to prepare managed nodes (#205)
+- ci: bump sclorg/testing-farm-as-github-action from 2 to 3 (#206)
+- ci: Add workflow for ci_test bad, use remote fmf plan (#207)
+- ci: Fix missing slash in ARTIFACTS_URL (#208)
+- test: stop firewall if used by test (#209)
+
+[1.10.5] - 2024-07-23
+--------------------
+
+### Bug Fixes
+
+- fix: Handle undefined item in pmie configuration
+
+[1.10.4] - 2024-07-15
+--------------------
+
+### Bug Fixes
+
+- fix: add configuration files for c10s and el10 (#199)
+- fix: add support for EL10 (#200)
+
+### Other Changes
+
+- ci: ansible-lint action now requires absolute directory (#198)
+
+[1.10.3] - 2024-06-11
+--------------------
+
+### Other Changes
+
+- ci: use tox-lsr 3.3.0 which uses ansible-test 2.17 (#193)
+- ci: tox-lsr 3.4.0 - fix py27 tests; move other checks to py310 (#195)
+- ci: Add supported_ansible_also to .ansible-lint (#196)
+
+[1.10.2] - 2024-04-04
+--------------------
+
+### Other Changes
+
+- ci: fix python unit test - copy pytest config to tests/unit (#188)
+- ci: bump ansible/ansible-lint from 6 to 24 (#189)
+- ci: make markdownlint ignore tests/roles (#190)
+- ci: bump mathieudutour/github-tag-action from 6.1 to 6.2 (#191)
+
 [1.10.1] - 2024-01-16
 --------------------
 
@@ -73,7 +154,6 @@ Changelog
   
   Signed-off-by: Sergei Petrosian <spetrosi@redhat.com>
 
-
 [1.8.6] - 2023-07-19
 --------------------
 
@@ -143,13 +223,13 @@ Changelog
 - Use the firewall role and the selinux role from the metrics role
 
 - Introduce metrics_manage_firewall to use the firewall role to
-  manage the pmcd port, the pmproxy ports, the grafana port and
-  the redis port depending upon the configuration parameters.
+  manage the pmcd, pmproxy, grafana and valkey or redis ports,
+  depending on the configuration parameters.
   metrics_manage_firewall is set to false, by default.
 
 - Introduce metrics_manage_selinux to use the selinux role to
-  manage the pmcd port, the pmproxy ports, the grafana port and
-  the redis port depending upon the configuration parameters.
+  manage the pmcd, pmproxy, grafana and valkey or redis ports,
+  depending on the configuration parameters.
   metrics_manage_selinux is set to false, by default.
 
 - Add the test check task check_firewall_selinux.yml for verify

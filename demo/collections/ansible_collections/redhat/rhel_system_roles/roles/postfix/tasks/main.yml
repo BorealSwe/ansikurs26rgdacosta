@@ -63,6 +63,15 @@
     state: present
     use: "{{ (__postfix_is_ostree | d(false)) | ternary('redhat.rhel_system_roles.rhel_rpm_ostree', omit) }}"
 
+- name: Get default database type from postconf
+  command: postconf -h default_database_type
+  changed_when: false
+  register: __postfix_register_dbtype
+
+- name: Set postfix_default_database_type
+  set_fact:
+    postfix_default_database_type: "{{ __postfix_register_dbtype.stdout | trim }}"
+
 - name: Enable Postfix
   service:
     name: postfix
@@ -93,17 +102,49 @@
       {%   endif %}
       {% endfor %}
 
+- name: Configure additional files
+  copy:
+    content: "{{ file['content'] }}"
+    dest: /etc/postfix/{{ file['name'] }}
+    owner: root
+    group: root
+    mode: '0640'
+  loop: "{{ postfix_files }}"
+  register: __postfix_postmap_files
+  no_log: true
+  loop_control:
+    loop_var: file
+  notify:
+    - Check postfix
+    - Restart postfix
+
+- name: Postmap files
+  command: postmap {{ result["dest"] | quote }}
+  when:
+    - result["changed"]
+    - result["file"]["postmap"] | d(false)
+  no_log: true
+  changed_when: true
+  loop: "{{ __postfix_postmap_files['results'] }}"
+  loop_control:
+    loop_var: result
+
 - name: Apply changes
   when: __postfix_has_config_changed | d("") is search("True")
   block:
+    - name: Gather facts for ansible_date_time
+      setup:
+        filter:
+          - ansible_date_time
+      when: postfix_backup_multiple | bool
+
     - name: Backup configuration
-      shell: >-
-        set -euo pipefail;
-        cp /etc/postfix/main.cf
-        /etc/postfix/main.cf.{{ postfix_backup_multiple |
-        ternary("$(date -Iseconds)", "backup") }}
+      copy:
+        remote_src: true
+        src: /etc/postfix/main.cf
+        dest: /etc/postfix/main.cf.{{ postfix_backup_multiple | ternary(ansible_date_time.iso8601, "backup") }}
+        mode: "0644"
       when: postfix_backup or postfix_backup_multiple
-      changed_when: true
 
     - name: Ensure Last modified header is absent
       lineinfile:

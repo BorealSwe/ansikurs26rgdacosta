@@ -29,7 +29,6 @@
         state: present
         use: "{{ (__network_is_ostree | d(false)) | ternary('redhat.rhel_system_roles.rhel_rpm_ostree', omit) }}"
 
-
     - name: Test ethtool features settings
       block:
         - name: >-
@@ -59,7 +58,6 @@
           assert:
             that:
               - original_ethtool_features.stdout == ethtool_features.stdout
-
 
         - name: >-
             TEST: I can disable gro and tx-tcp-segmentation and enable gso.
@@ -101,7 +99,6 @@
                 'tx-tcp-segmentation: off' in
                 ethtool_features.stdout_lines | map('trim')
 
-
         - name: >-
             TEST: I can enable tx_tcp_segmentation (using underscores).
           debug:
@@ -134,7 +131,6 @@
                 'tx-tcp-segmentation: on' in
                 ethtool_features.stdout_lines | map('trim')
 
-
         - name: I cannot change tx_tcp_segmentation and tx-tcp-segmentation at the same time.
           block:
             - name: >-
@@ -163,8 +159,12 @@
                 var: __network_connections_result
             - name: Assert the duplicate key "tx_tcp_segmentation" configuration error happened
               assert:
-                that:
-                  - '{{  "fatal error: configuration error: connections[0].ethtool.features: duplicate key ''tx_tcp_segmentation''" in __network_connections_result.msg }}'
+                that: __test_str in __network_connections_result.msg
+              vars:
+                __test_str: >-
+                  fatal error: configuration error:
+                  connections[0].ethtool.features: duplicate key
+                  'tx_tcp_segmentation'
 
           always:
             - name: Check failure
@@ -173,7 +173,6 @@
             - name: Assert that the result is failure
               assert:
                 that: __network_connections_result.failed
-
 
         - name: "TEST: I can reset features to their original value."
           debug:

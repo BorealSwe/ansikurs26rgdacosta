@@ -73,6 +73,7 @@ MaxSessions
 MaxStartups
 ModuliFile
 NoneEnabled
+PAMServiceName
 PasswordAuthentication
 PermitEmptyPasswords
 PermitListen
@@ -82,6 +83,8 @@ PermitTTY
 PermitTunnel
 PermitUserEnvironment
 PermitUserRC
+PerSourcePenalties
+PerSourcePenaltyExemptList
 PerSourceMaxStartups
 PerSourceNetBlockSize
 PidFile
@@ -93,6 +96,7 @@ PubkeyAuthOptions
 PubkeyAuthentication
 RSAAuthentication
 RSAMinSize
+RefuseConnection
 RekeyLimit
 RequiredRSASize
 RevokedKeys
@@ -102,6 +106,7 @@ SecurityKeyProvider
 SetEnv
 ServerKeyBits
 ShowPatchLevel
+SshdSessionPath
 StreamLocalBindMask
 StreamLocalBindUnlink
 StrictModes

@@ -226,14 +226,26 @@ class SysUtil:
         if mac is not None:
             mac = Util.mac_norm(mac)
         for linkinfo in cls.link_infos(refresh).values():
-            if mac is not None and mac not in [
-                linkinfo.get("perm-address", None),
-                linkinfo.get("address", None),
-            ]:
-                continue
-            if ifname is not None and ifname != linkinfo.get("ifname", None):
-                continue
-            return linkinfo
+            perm_address = linkinfo.get("perm-address", None)
+            current_address = linkinfo.get("address", None)
+
+            # Match by perm-address (prioritized)
+            if mac is not None and perm_address not in [None, "00:00:00:00:00:00"]:
+                if mac == perm_address:
+                    return linkinfo
+
+            # Fallback to match by address
+            if mac is not None and (perm_address in [None, "00:00:00:00:00:00"]):
+                if mac == current_address:
+                    matched_by_address = linkinfo  # Save for potential fallback
+
+            if ifname is not None and ifname == linkinfo.get("ifname", None):
+                return linkinfo
+
+        # Return fallback match by address if no perm-address match found
+        if "matched_by_address" in locals():
+            return matched_by_address
+
         return None
 
 
@@ -907,6 +919,9 @@ class NMUtil:
         s_con.set_property(NM.SETTING_CONNECTION_UUID, connection["nm.uuid"])
         s_con.set_property(NM.SETTING_CONNECTION_AUTOCONNECT, connection["autoconnect"])
         s_con.set_property(
+            NM.SETTING_CONNECTION_AUTOCONNECT_RETRIES, connection["autoconnect_retries"]
+        )
+        s_con.set_property(
             NM.SETTING_CONNECTION_INTERFACE_NAME, connection["interface_name"]
         )
 
@@ -1202,6 +1217,22 @@ class NMUtil:
                 )
             if ip["gateway6"] is not None:
                 s_ip6.set_property(NM.SETTING_IP_CONFIG_GATEWAY, ip["gateway6"])
+
+            # Mapping of wait_ip values to the may-fail settings for IPv4 and IPv6
+            may_fail_mapping = {
+                "any": (True, True),
+                "ipv4": (False, True),
+                "ipv6": (True, False),
+                "ipv4+ipv6": (False, False),
+            }
+
+            may_fail_ipv4, may_fail_ipv6 = may_fail_mapping.get(
+                ip["wait_ip"], (True, True)
+            )
+
+            s_ip4.set_property(NM.SETTING_IP_CONFIG_MAY_FAIL, may_fail_ipv4)
+            s_ip6.set_property(NM.SETTING_IP_CONFIG_MAY_FAIL, may_fail_ipv6)
+
             if ip["route_metric6"] is not None and ip["route_metric6"] >= 0:
                 s_ip6.set_property(
                     NM.SETTING_IP_CONFIG_ROUTE_METRIC, ip["route_metric6"]
@@ -1262,6 +1293,10 @@ class NMUtil:
                 if r["table"]:
                     NM.IPRoute.set_attribute(
                         new_route, "table", Util.GLib().Variant.new_uint32(r["table"])
+                    )
+                if r["src"]:
+                    NM.IPRoute.set_attribute(
+                        new_route, "src", Util.GLib().Variant.new_string(r["src"])
                     )
 
                 if r["family"] == socket.AF_INET:
@@ -2524,11 +2559,11 @@ class Cmd_nm(Cmd):
             % (
                 con.get_id(),
                 con.get_uuid(),
-                "not-active"
-                if not is_active
-                else "is-modified"
-                if is_modified
-                else "force-state-change",
+                (
+                    "not-active"
+                    if not is_active
+                    else "is-modified" if is_modified else "force-state-change"
+                ),
             ),
         )
         self.connections_data_set_changed(idx)
@@ -2784,11 +2819,11 @@ class Cmd_initscripts(Cmd):
                 "up connection %s (%s)"
                 % (
                     name,
-                    "not-active"
-                    if is_active is not True
-                    else "is-modified"
-                    if is_modified
-                    else "force-state-change",
+                    (
+                        "not-active"
+                        if is_active is not True
+                        else "is-modified" if is_modified else "force-state-change"
+                    ),
                 ),
             )
             cmd = "ifup"

@@ -4,14 +4,14 @@
 - name: Ensure needed variables are defined
   assert:
     that:
-      - (my_package == "httpd") or (my_package == "nginx" )
+      - (my_webservice == "httpd") or (my_webservice == "nginx" )
     success_msg: |
 
       The needed variables are set, proceeding
 
     fail_msg: |
 
-      OH NO! We need to set my_package to either httpd or nginx
+      OH NO! We need to set my_webservice to either httpd or nginx
 
 - name: Ensure software is managed
   ansible.builtin.dnf:

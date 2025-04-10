@@ -1,6 +1,200 @@
 Changelog
 =========
 
+[1.18.13] - 2025-03-06
+--------------------
+
+### Bug Fixes
+
+- fix: there is no kmod-kvdo on EL10 and later (#514)
+
+### Other Changes
+
+- ci: Check spelling with codespell (#511)
+- ci: Bump Ubuntu version for Python unit tests (#512)
+- ci: Add test plan that runs CI tests and customize it for each role (#513)
+
+[1.18.12] - 2025-02-02
+--------------------
+
+### Bug Fixes
+
+- fix: ensure ostree has libblockdev and libblockdev-loop (#509)
+
+### Other Changes
+
+- ci: ansible-plugin-scan is disabled for now (#505)
+- ci: bump ansible-lint to v25; provide collection requirements for ansible-lint (#508)
+
+[1.18.11] - 2025-01-27
+--------------------
+
+### Bug Fixes
+
+- fix: Fix PV grow_to_fill feature  (#502)
+
+[1.18.10] - 2024-12-13
+--------------------
+
+### Other Changes
+
+- tests: Do not 'fips-mode-setup' to enable FIPS on RHEL 10 (#489)
+- test: skip fingerprint if fstab is not written (#496)
+- test: add test for LUKS version 2 (#497)
+
+[1.18.9] - 2024-12-04
+--------------------
+
+### Bug Fixes
+
+- fix: VDO tests and packages fixes for Fedora and RHEL 10 (#490)
+
+### Other Changes
+
+- ci: bump codecov/codecov-action from 4 to 5 (#491)
+- ci: Use Fedora 41, drop Fedora 39 (#492)
+- ci: Use Fedora 41, drop Fedora 39 - part two (#493)
+
+[1.18.8] - 2024-10-30
+--------------------
+
+### Other Changes
+
+- ci: ansible-test action now requires ansible-core version (#484)
+- ci: add YAML header to github action workflow files (#485)
+- refactor: Use vars/RedHat_N.yml symlink for CentOS, Rocky, Alma wherever possible (#487)
+
+[1.18.7] - 2024-08-29
+--------------------
+
+### Bug Fixes
+
+- fix: Use blkid instead of lsblk in tests to get partition table (#480)
+- fix: Skip Stratis tests on RHEL 8 and document Stratis support (#482)
+
+### Other Changes
+
+- ci: Add tags to TF workflow, allow more [citest bad] formats (#481)
+
+[1.18.6] - 2024-08-21
+--------------------
+
+### Bug Fixes
+
+- fix: add stratis to list of packages for ostree (#478)
+
+[1.18.5] - 2024-08-19
+--------------------
+
+### Other Changes
+
+- test: use pvcreate with a timeout and verbose logging (#476)
+
+[1.18.4] - 2024-08-16
+--------------------
+
+### Bug Fixes
+
+- fix: architecture is now a required fact (#473)
+
+[1.18.3] - 2024-08-16
+--------------------
+
+### Other Changes
+
+- chore: Add support for Oracle Linux 9.x (#469)
+
+[1.18.2] - 2024-08-09
+--------------------
+
+### Bug Fixes
+
+- fix: Add libblockdev s390 and FS plugins to blivet dependencies list (#467)
+
+### Other Changes
+
+- ci: Add workflow for ci_test bad, use remote fmf plan (#468)
+- ci: Fix missing slash in ARTIFACTS_URL (#470)
+
+[1.18.1] - 2024-08-01
+--------------------
+
+### Bug Fixes
+
+- fix: Remove partition table from disk removed from a VG (#464)
+
+### Other Changes
+
+- ci: Add tft plan and workflow (#460)
+- ci: Update fmf plan to add a separate job to prepare managed nodes (#463)
+- ci: bump sclorg/testing-farm-as-github-action from 2 to 3 (#465)
+
+[1.18.0] - 2024-07-23
+--------------------
+
+### New Features
+
+- feat: write storage role fingerprint to /etc/fstab (#458)
+
+### Other Changes
+
+- docs: Fix multiple small issues in README.md (#456)
+
+[1.17.1] - 2024-07-02
+--------------------
+
+### Bug Fixes
+
+- fix: add support for EL10 (#452)
+
+### Other Changes
+
+- ci: ansible-lint action now requires absolute directory (#451)
+
+[1.17.0] - 2024-06-11
+--------------------
+
+### New Features
+
+- feat: PV resize support (#438)
+- feat: Stratis support (#439)
+
+### Bug Fixes
+
+- fix: Fix 'possibly-used-before-assignment' pylint issues (#440)
+- fix: Get same sector size disks for multi device LVM tests (#441)
+- fix: Fix expected error message in tests_misc.yml (#446)
+
+### Other Changes
+
+- ci: use tox-lsr 3.3.0 which uses ansible-test 2.17 (#442)
+- ci: tox-lsr 3.4.0 - fix py27 tests; move other checks to py310 (#445)
+- test: lsblk can return LOG_SEC or LOG-SEC (#447)
+- ci: Add supported_ansible_also to .ansible-lint (#448)
+- test: lvm pool members test fix (#449)
+
+[1.16.5] - 2024-04-22
+--------------------
+
+### Bug Fixes
+
+- fix: Fix recreate check for formats without labelling support (#435)
+
+[1.16.4] - 2024-04-04
+--------------------
+
+### Other Changes
+
+- test: fix sector-based disk size calculation from ansible_devices (#433)
+
+[1.16.3] - 2024-04-04
+--------------------
+
+### Other Changes
+
+- ci: Bump ansible/ansible-lint from 6 to 24 (#429)
+- ci: Bump mathieudutour/github-tag-action from 6.1 to 6.2 (#431)
+
 [1.16.2] - 2024-02-13
 --------------------
 
@@ -104,7 +298,6 @@ Changelog
   - Remove badges from README.md prior to converting to HTML
   
   Signed-off-by: Sergei Petrosian <spetrosi@redhat.com>
-
 
 [1.12.3] - 2023-08-17
 --------------------

@@ -114,6 +114,11 @@
                 options: |-
                   $RepeatedMsgReduction {{ "on"
                   if rsyslog_message_reduction | bool else "off" }}
+          - name: 'templates'
+            type: 'templates'
+            sections:
+              - comment: 'User provided output templates'
+                options: "{{ lookup('template', 'custom_templates.j2') }}"
       set_fact:
         __rsyslog_common_rules: "{{ __rsyslog_global_common_rule }}"
 
@@ -320,7 +325,6 @@
       service:
         name: rsyslog
         enabled: true
-        state: started
       when:
         - __rsyslog_enabled | bool
         - not rsyslog_in_image | default(false) | bool

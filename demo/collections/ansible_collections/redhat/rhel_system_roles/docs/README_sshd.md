@@ -21,15 +21,21 @@ Ubuntu. This is not the default assigned by this module - it will set
 via simple password. If you need this functionality, be sure to set
 `sshd_PermitRootLogin yes` for those hosts.
 
+**NOTE** The sshd service is reloaded/restarted automatically, only if the role is
+invoked using `roles` keyword. Using `include_role` won't trigger handlers
+as described in the Ansible ['taskify includes' proposal](https://github.com/ansible/proposals/issues/136). To work around this, call `meta: flush_handlers` as detailed in the
+[official Ansible documentation](https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_handlers.html#controlling-when-handlers-run).
+If you need to invoke the handlers in this case, use `meta: flush_handlers`.
+
 ## Requirements
 
 Tested on:
 
-* Ubuntu precise, trusty, xenial, bionic, focal, jammy
+* Ubuntu precise, trusty, xenial, bionic, focal, jammy, noble
   * [![Run tests on Ubuntu latest](https://github.com/willshersystems/ansible-sshd/actions/workflows/ansible-ubuntu.yml/badge.svg)](https://github.com/willshersystems/ansible-sshd/actions/workflows/ansible-ubuntu.yml)
 * Debian wheezy, jessie, stretch, buster, bullseye, bookworm
   * [![Run tests on Debian](https://github.com/willshersystems/ansible-sshd/actions/workflows/ansible-debian-check.yml/badge.svg)](https://github.com/willshersystems/ansible-sshd/actions/workflows/ansible-debian-check.yml)
-* EL 6, 7, 8, 9 derived distributions
+* EL 6, 7, 8, 9, 10 derived distributions
   * [![Run tests on CentOS](https://github.com/willshersystems/ansible-sshd/actions/workflows/ansible-centos-check.yml/badge.svg)](https://github.com/willshersystems/ansible-sshd/actions/workflows/ansible-centos-check.yml)
 * All Fedora
   * [![Run tests on Fedora latest](https://github.com/willshersystems/ansible-sshd/actions/workflows/ansible-fedora.yml/badge.svg)](https://github.com/willshersystems/ansible-sshd/actions/workflows/ansible-fedora.yml)
@@ -73,9 +79,16 @@ for AIX)
 
 If set to *false*, a reload of sshd won't happen on change. This can help with
 troubleshooting. You'll need to manually reload sshd if you want to apply the
-changed configuration. Defaults to the same value as `sshd_manage_service`.
-(Except on AIX, where `sshd_manage_service` is default *false*, but
-`sshd_allow_reload` is default *true*)
+changed configuration. Defaults to *true*.
+
+#### sshd_allow_restart
+
+Some changes, for example of the sysconfig and environment files require the full
+restart of the service. If set to *false*, a restart of sshd won't happen on these
+changes. This can help with troubleshooting. You'll need to manually restart sshd
+if you want to apply the changed configuration. Defaults to *true* (except on AIX
+where the reload is handled by specific restart command and this option does not
+have any effect).
 
 #### sshd_install_service
 
@@ -111,16 +124,19 @@ NOTE: `sshd_manage_selinux` is limited to *adding* policy. It cannot be used
 for *removing* policy. If you want to remove ports, you will need to use the
 selinux system role directly.
 
-#### sshd
+#### sshd_config
 
 A dict containing configuration.  e.g.
 
 ```yaml
-sshd:
+sshd_config:
   Compression: delayed
   ListenAddress:
     - 0.0.0.0
 ```
+
+*Note*: This variable was previous called `sshd`. `sshd` is can still be used
+but is deprecated and will be removed in a future release.
 
 #### sshd_`<OptionName>`
 
@@ -189,6 +205,19 @@ When this path points to a drop-in directory (like
 `/etc/ssh/sshd_config.d/00-custom.conf`), the main configuration file (defined
 with the variable `sshd_main_config_file`) is checked to contain a proper
 `Include` directive.
+
+#### sshd_main_config_file
+
+When the system is using drop-in directory, this option can be used to set
+a path to the main configuration file and let you configure only the drop-in
+configuration file using `sshd_config_file`. This is useful in cases when
+you need to configure second independent sshd service with different
+configuration file. This is also the file used in the service file.
+
+On systems without drop-in directory, it defaults to `None`. Otherwise it
+defaults to `/etc/ssh/sshd_config`. When the `sshd_config_file` is set
+outside of the drop in directory (its parent directory is not
+`sshd_main_config_file` ~ '.d'), this variable is ignored.
 
 #### sshd_config_namespace
 
@@ -312,7 +341,7 @@ Use these variables to set the ownership and permissions for the Authorized Prin
 The SSH server needs this information stored in files so in addition to the above variables, respective configuration options `TrustedUserCAKeys` (mandatory) and `AuthorizedPrincipalsFile` (optional) need to be present the `sshd` dictionary when invoking the role. For example:
 
 ```yaml
-sshd:
+sshd_config:
   TrustedUserCAKeys: /etc/ssh/path-to-trusted-user-ca-keys/trusted-user-ca-keys.pub
   AuthorizedPrincipalsFile: "/etc/ssh/path-to-auth-principals/auth_principals/%u"
 ```
@@ -338,7 +367,7 @@ provides. Running it will likely break your SSH access to the server!
 - hosts: all
   vars:
     sshd_skip_defaults: true
-    sshd:
+    sshd_config:
       Compression: true
       ListenAddress:
         - "0.0.0.0"
@@ -381,7 +410,7 @@ for example:
       name: redhat.rhel_system_roles.sshd
     vars:
       sshd_skip_defaults: true
-      sshd:
+      sshd_config:
         Compression: true
         ListenAddress:
           - "0.0.0.0"
@@ -408,7 +437,7 @@ option:
       name: redhat.rhel_system_roles.sshd
     vars:
       sshd_config_namespace: accept-env
-      sshd:
+      sshd_config:
         # there are some handy environment variables to accept
         AcceptEnv:
           LANG
@@ -454,4 +483,4 @@ Matt Willsher <matt@willsher.systems>
 
 Jakub Jelen <jjelen@redhat.com>
 
-&copy; 2020 - 2022 Red Hat, Inc.
+&copy; 2020 - 2024 Red Hat, Inc.

@@ -1,6 +1,68 @@
 Changelog
 =========
 
+[1.4.9] - 2025-01-09
+--------------------
+
+### Other Changes
+
+- ci: Bump codecov/codecov-action from 4 to 5 (#166)
+- ci: Use Fedora 41, drop Fedora 39 (#167)
+- ci: Use Fedora 41, drop Fedora 39 - part two (#168)
+
+[1.4.8] - 2024-10-30
+--------------------
+
+### Other Changes
+
+- ci: Add workflow for ci_test bad, use remote fmf plan (#158)
+- ci: Fix missing slash in ARTIFACTS_URL (#159)
+- ci: Add tags to TF workflow, allow more [citest bad] formats (#160)
+- ci: ansible-test action now requires ansible-core version (#161)
+- ci: add YAML header to github action workflow files (#162)
+- refactor: Use vars/RedHat_N.yml symlink for CentOS, Rocky, Alma wherever possible (#164)
+
+[1.4.7] - 2024-08-01
+--------------------
+
+### Bug Fixes
+
+- fix: Remove hard dependency on selinux and firewall roles (#154)
+
+### Other Changes
+
+- ci: Add tft plan and workflow (#152)
+- ci: Update fmf plan to add a separate job to prepare managed nodes (#155)
+- ci: Bump sclorg/testing-farm-as-github-action from 2 to 3 (#156)
+
+[1.4.6] - 2024-07-02
+--------------------
+
+### Bug Fixes
+
+- fix: add support for EL10 (#150)
+
+### Other Changes
+
+- ci: ansible-lint action now requires absolute directory (#149)
+
+[1.4.5] - 2024-06-11
+--------------------
+
+### Other Changes
+
+- ci: use tox-lsr 3.3.0 which uses ansible-test 2.17 (#144)
+- ci: tox-lsr 3.4.0 - fix py27 tests; move other checks to py310 (#146)
+- ci: Add supported_ansible_also to .ansible-lint (#147)
+
+[1.4.4] - 2024-04-04
+--------------------
+
+### Other Changes
+
+- ci: Bump ansible/ansible-lint from 6 to 24 (#141)
+- ci: Bump mathieudutour/github-tag-action from 6.1 to 6.2 (#142)
+
 [1.4.3] - 2024-02-14
 --------------------
 
@@ -77,7 +139,6 @@ Changelog
   - Remove badges from README.md prior to converting to HTML
   
   Signed-off-by: Sergei Petrosian <spetrosi@redhat.com>
-
 
 [1.3.8] - 2023-07-19
 --------------------

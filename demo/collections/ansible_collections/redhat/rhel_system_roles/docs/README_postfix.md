@@ -46,6 +46,21 @@ postfix_conf:
   relayhost: example.com
 ```
 
+### postfix_files
+
+```yaml
+postfix_files:
+  - name: sasl_passwd
+    content: example.com user:password
+    postmap: true
+  - name: sender_canonical_maps
+    content: /.+/  info@example.com
+```
+
+This is a list of files that will be placed in /etc/postfix and that can be converted into Postfix Lookup Tables if needed.
+
+It's meant as a simple mechanism to configure things such as SASL credentials and other small snippets.
+
 ### postfix_check
 
 ```yaml
@@ -107,6 +122,25 @@ NOTE: `postfix_manage_selinux` is limited to *adding* policy.
 It cannot be used for *removing* policy.
 If you want to remove policy, you will need to use the selinux system
 role directly.
+
+## Variables Exported by the Role
+
+### postfix_default_database_type
+
+This is a string which specifies the default database type used by postfix,
+which is obtained by using `postconf -h default_database_type`.  This can be
+used to set configuration which depends on the type. **NOTE** this is *not*
+supported with Ansible 2.9.
+
+```yaml
+- name: Manage postfix
+  hosts: all
+  vars:
+    postfix_conf:
+      relay_domains: "{{ postfix_default_database_type }}:/etc/postfix/relay_domains"
+  roles:
+    - redhat.rhel_system_roles.postfix
+```
 
 ## Limitations
 

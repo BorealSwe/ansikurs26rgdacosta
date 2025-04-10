@@ -143,6 +143,14 @@ is `RedHat`.
 
 See also the [Cockpit guide](https://cockpit-project.org/guide/latest/listen.html#listen-systemd) for details.
 
+### cockpit_transactional_update_reboot_ok
+
+```yaml
+cockpit_transactional_update_reboot_ok: true
+```
+
+This variable is used to handle reboots required by transactional updates. If a transactional update requires a reboot, the role will proceed with the reboot if cockpit_transactional_update_reboot_ok is set to true. If set to false, the role will notify the user that a reboot is required, allowing for custom handling of the reboot requirement. If this variable is not set, the role will fail to ensure the reboot requirement is not overlooked.
+
 ## Certificate setup
 
 By default, Cockpit creates a self-signed certificate for itself on first startup. This should [be customized](https://cockpit-project.org/guide/latest/https.html) for environments which use real certificates.
@@ -184,7 +192,8 @@ assuming your machines are joined to a FreeIPA domain.
           - name: monger-cockpit
             dns: ['localhost', 'www.example.com']
             ca: ipa
-            group: cockpit-ws
+            # with Cockpit < 257 (RHEL 7) you need:
+            # group: cockpit-ws
 ```
 
 Note: Generating a new certificate using the `certificate` system role in the playbook remains supported.
@@ -207,7 +216,8 @@ This example also installs Cockpit with an IdM-issued web server certificate.
           - name: /etc/cockpit/ws-certs.d/monger-cockpit
             dns: ['localhost', 'www.example.com']
             ca: ipa
-            group: cockpit-ws
+            # with Cockpit < 257 (RHEL 7) you need:
+            # group: cockpit-ws
 ```
 
 NOTE: The `certificate` role, unless using IPA and joining the systems to an IPA domain,

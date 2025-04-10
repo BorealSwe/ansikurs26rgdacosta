@@ -1,6 +1,70 @@
 Changelog
 =========
 
+[1.4.8] - 2025-01-09
+--------------------
+
+### Other Changes
+
+- ci: Use Fedora 41, drop Fedora 39 (#118)
+- ci: Use Fedora 41, drop Fedora 39 - part two (#119)
+
+[1.4.7] - 2024-10-30
+--------------------
+
+### Other Changes
+
+- ci: Add tft plan and workflow (#104)
+- ci: Update fmf plan to add a separate job to prepare managed nodes (#106)
+- ci: bump sclorg/testing-farm-as-github-action from 2 to 3 (#107)
+- ci: Add workflow for ci_test bad, use remote fmf plan (#108)
+- ci: Fix missing slash in ARTIFACTS_URL (#109)
+- ci: Add tags to TF workflow, allow more [citest bad] formats (#112)
+- ci: ansible-test action now requires ansible-core version (#113)
+- ci: add YAML header to github action workflow files (#114)
+- refactor: Use vars/RedHat_N.yml symlink for CentOS, Rocky, Alma wherever possible (#116)
+
+[1.4.6] - 2024-07-02
+--------------------
+
+### Bug Fixes
+
+- fix: add support for EL10 (#102)
+
+### Other Changes
+
+- tests: Fix invocation of the `microsoft.ad.user` module (#100)
+- ci: ansible-lint action now requires absolute directory (#101)
+
+[1.4.5] - 2024-06-11
+--------------------
+
+### Other Changes
+
+- ci: use tox-lsr 3.3.0 which uses ansible-test 2.17 (#95)
+- ci: tox-lsr 3.4.0 - fix py27 tests; move other checks to py310 (#97)
+- ci: Add supported_ansible_also to .ansible-lint (#98)
+
+[1.4.4] - 2024-04-04
+--------------------
+
+### Other Changes
+
+- test: Replace deprecated community.windows.win_domain_user and group modules (#91)
+- ci: bump mathieudutour/github-tag-action from 6.1 to 6.2 (#92)
+
+[1.4.3] - 2024-03-08
+--------------------
+
+### Bug Fixes
+
+- fix: Sets domain name lower case in realmd.conf section header (#88)
+
+### Other Changes
+
+- ci: bump ansible/ansible-lint from 6 to 24 (#86)
+- test: test for lower case realm in realmd.conf (#89)
+
 [1.4.2] - 2024-02-14
 --------------------
 
@@ -83,7 +147,6 @@ Changelog
   
   Signed-off-by: Sergei Petrosian <spetrosi@redhat.com>
 
-
 [1.2.2] - 2023-09-08
 --------------------
 
@@ -103,7 +166,6 @@ Changelog
   - Remove badges from README.md prior to converting to HTML
   
   Signed-off-by: Sergei Petrosian <spetrosi@redhat.com>
-
 
 [1.2.1] - 2023-08-21
 --------------------

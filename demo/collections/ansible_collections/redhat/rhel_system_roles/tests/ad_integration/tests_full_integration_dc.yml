@@ -33,8 +33,8 @@
 - name: Prepare user and groups on the AD
   hosts: ad
   tasks:
-    - name: Create groups
-      win_domain_group:
+    - name: Create groups # noqa syntax-check[unknown-module]
+      microsoft.ad.group:
         name: "{{ item.name }}"
         state: present
         scope: "{{ item.scope }}"
@@ -47,16 +47,15 @@
         var: group_creation
 
     - name: Add a test user
-      win_domain_user:
-        name: "{{ item.name }}"
-        firstname: "{{ item.first_name }}"
-        surname: "{{ item.surname }}"
+      microsoft.ad.user: # noqa syntax-check[unknown-module]
+        identity: test_usr1
+        firstname: Josef
+        surname: Novak
         password: Secret123
         state: present
         groups:
-          - test_grp1
-      loop:
-        - {name: 'test_usr1', first_name: 'Josef', surname: 'Novak'}
+          set:
+            - test_grp1
       register: user_creation
     - name: Debug user_creation
       debug:

@@ -1,6 +1,129 @@
 Changelog
 =========
 
+[1.14.1] - 2025-01-09
+--------------------
+
+### Other Changes
+
+- ci: Use Fedora 41, drop Fedora 39 (#427)
+- ci: Use Fedora 41, drop Fedora 39 - part two (#428)
+
+[1.14.0] - 2024-11-12
+--------------------
+
+### New Features
+
+- feat: support custom templates (#425)
+
+[1.13.5] - 2024-10-30
+--------------------
+
+### Other Changes
+
+- ci: ansible-test action now requires ansible-core version (#420)
+- ci: add YAML header to github action workflow files (#421)
+- refactor: Use vars/RedHat_N.yml symlink for CentOS, Rocky, Alma wherever possible (#423)
+
+[1.13.4] - 2024-09-13
+--------------------
+
+### Other Changes
+
+- test: restart logind and test (#418)
+
+[1.13.3] - 2024-09-11
+--------------------
+
+### Other Changes
+
+- test: restart dbus broker after restarting journald (#416)
+
+[1.13.2] - 2024-08-29
+--------------------
+
+### Other Changes
+
+- ci: Add workflow for ci_test bad, use remote fmf plan (#410)
+- ci: Fix missing slash in ARTIFACTS_URL (#411)
+- test: tests_combination.yml requires fact gathering (#413)
+- ci: Add tags to TF workflow, allow more [citest bad] formats (#414)
+
+[1.13.1] - 2024-08-01
+--------------------
+
+### Other Changes
+
+- ci: Add tft plan and workflow (#403)
+- ci: Update fmf plan to add a separate job to prepare managed nodes (#405)
+- test: workaround a systemd issue in el10 restarting journald (#406)
+- test: sort files to compare (#407)
+- ci: Bump sclorg/testing-farm-as-github-action from 2 to 3 (#408)
+
+[1.13.0] - 2024-07-23
+--------------------
+
+### New Features
+
+- feat: add support for reopen_on_truncate for files input (#398)
+- feat: support custom config files with logging_custom_config_files (#399)
+- feat: add support for file and directory mode/owner/group for output files (#400)
+
+### Other Changes
+
+- test: use selinux for relp to fix test AVC (#401)
+
+[1.12.9] - 2024-07-02
+--------------------
+
+### Bug Fixes
+
+- fix: add support for EL10 (#395)
+
+### Other Changes
+
+- ci: ansible-lint action now requires absolute directory (#394)
+
+[1.12.8] - 2024-06-11
+--------------------
+
+### Bug Fixes
+
+- fix: Add check for "rsyslogd: error" in /var/log/messages in all tests (#388)
+
+### Other Changes
+
+- ci: use tox-lsr 3.3.0 which uses ansible-test 2.17 (#389)
+- ci: tox-lsr 3.4.0 - fix py27 tests; move other checks to py310 (#391)
+- ci: Add supported_ansible_also to .ansible-lint (#392)
+
+[1.12.7] - 2024-05-21
+--------------------
+
+### Bug Fixes
+
+- fix: Remove name="basics_imuxsock" parameter from imuxsock type input (#385)
+
+### Other Changes
+
+- tests: Fail when rsyslog errors in __default_system_log (#386)
+
+[1.12.6] - 2024-04-04
+--------------------
+
+### Other Changes
+
+- ci: Bump ansible/ansible-lint from 6 to 24 (#382)
+- ci: Bump mathieudutour/github-tag-action from 6.1 to 6.2 (#383)
+
+[1.12.5] - 2024-02-26
+--------------------
+
+### Other Changes
+
+- ci: fix python unit test - copy pytest config to tests/unit (#379)
+- test: restore journald /dev/log after imuxsock test (#380)
+
 [1.12.4] - 2024-01-16
 --------------------
 
@@ -97,7 +220,6 @@ Changelog
   - Remove badges from README.md prior to converting to HTML
   
   Signed-off-by: Sergei Petrosian <spetrosi@redhat.com>
-
 
 [1.11.9] - 2023-07-19
 --------------------

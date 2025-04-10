@@ -18,8 +18,33 @@
     use: "{{ (__podman_is_ostree | d(false)) | ternary('redhat.rhel_system_roles.rhel_rpm_ostree', omit) }}"
   become: true
   when: (__podman_packages | difference(ansible_facts.packages))
+  register: podman_package_result
+
+- name: Handle reboot for transactional update systems
+  when:
+    - __podman_is_transactional | d(false)
+    - podman_package_result is changed
+  block:
+    - name: Notify user that reboot is needed to apply changes
+      debug:
+        msg: >
+          Reboot required to apply changes due to transactional updates.
+
+    - name: Reboot transactional update systems
+      reboot:
+        msg: Rebooting the system to apply transactional update changes.
+      when: podman_transactional_update_reboot_ok | bool
+
+    - name: Fail if reboot is needed and not set
+      fail:
+        msg: >
+          Reboot is required but not allowed. Please set
+          'podman_transactional_update_reboot_ok' to proceed.
+      when:
+        - podman_transactional_update_reboot_ok is none
 
 - name: Get podman version
+  check_mode: false
   command: podman --version
   changed_when: false
   register: __podman_version_output
@@ -51,6 +76,35 @@
     - (podman_quadlet_specs | length > 0) or (podman_secrets | length > 0)
     - podman_version is version("4.4", "<")
     - not podman_fail_if_too_old | d(true)
+
+- name: Podman package version must be 5.0 or later for Pod quadlets
+  fail:
+    msg: >
+      podman package version {{ podman_version }} is too old -
+      must be 5.0 or later to use Pod quadlets
+  when:
+    - __has_type_pod or __has_pod_file_ext or __has_pod_file_src_ext or __has_pod_template_src_ext or __has_pod_template_src_ext_j2
+    - podman_version is version("5.0", "<")
+    - podman_fail_if_too_old | d(true)
+  vars:
+    __has_type_pod: "{{ podman_quadlet_specs | selectattr('type', 'defined') | selectattr('type', 'match', '^pod$') | list | length > 0 }}"
+    __has_pod_file_ext: "{{ podman_quadlet_specs | selectattr('file', 'defined') | selectattr('file', 'search', '.pod$') | list | length > 0 }}"
+    __has_pod_file_src_ext: "{{ podman_quadlet_specs | selectattr('file_src', 'defined') | selectattr('file_src', 'search', '.pod$') | list | length > 0 }}"
+    __has_pod_template_src_ext: "{{ podman_quadlet_specs | selectattr('template_src', 'defined') | selectattr('template_src', 'search', '.pod$') | list | length > 0 }}"
+    __has_pod_template_src_ext_j2: "{{ podman_quadlet_specs | selectattr('template_src', 'defined') | selectattr('template_src', 'search', '.pod.j2$') | list | length > 0 }}"
+
+- name: Podman package version must be 5.0 or later for Pod quadlets
+  meta: end_host
+  when:
+    - __has_type_pod or __has_pod_file_ext or __has_pod_file_src_ext or __has_pod_template_src_ext or __has_pod_template_src_ext_j2
+    - podman_version is version("5.0", "<")
+    - not podman_fail_if_too_old | d(true)
+  vars:
+    __has_type_pod: "{{ podman_quadlet_specs | selectattr('type', 'defined') | selectattr('type', 'match', '^pod$') | list | length > 0 }}"
+    __has_pod_file_ext: "{{ podman_quadlet_specs | selectattr('file', 'defined') | selectattr('file', 'search', '.pod$') | list | length > 0 }}"
+    __has_pod_file_src_ext: "{{ podman_quadlet_specs | selectattr('file_src', 'defined') | selectattr('file_src', 'search', '.pod$') | list | length > 0 }}"
+    __has_pod_template_src_ext: "{{ podman_quadlet_specs | selectattr('template_src', 'defined') | selectattr('template_src', 'search', '.pod$') | list | length > 0 }}"
+    __has_pod_template_src_ext_j2: "{{ podman_quadlet_specs | selectattr('template_src', 'defined') | selectattr('template_src', 'search', '.pod.j2$') | list | length > 0 }}"
 
 - name: Check user and group information
   include_tasks: handle_user_group.yml
@@ -100,6 +154,24 @@
   set_fact:
     __podman_cancel_user_linger: []
 
+- name: Handle certs.d files - present
+  include_tasks: handle_certs_d.yml
+  vars:
+    __podman_handle_state: present
+  loop: "{{ podman_registry_certificates }}"
+  loop_control:
+    loop_var: __podman_cert_spec_item
+  no_log: true
+
+- name: Handle credential files - present
+  include_tasks: handle_credential_files.yml
+  vars:
+    __podman_handle_state: present
+  loop: "{{ podman_credential_files }}"
+  loop_control:
+    loop_var: __podman_credential_item
+  no_log: true
+
 - name: Handle secrets
   include_tasks: handle_secret.yml
   loop: "{{ podman_secrets }}"
@@ -112,15 +184,35 @@
   loop: "{{ podman_kube_specs }}"
   loop_control:
     loop_var: __podman_kube_spec_item
+  no_log: true
 
 - name: Handle Quadlet specifications
   include_tasks: handle_quadlet_spec.yml
   loop: "{{ podman_quadlet_specs }}"
   loop_control:
     loop_var: __podman_quadlet_spec_item
+  no_log: true
 
 - name: Cancel linger
   include_tasks: cancel_linger.yml
   loop: "{{ __podman_cancel_user_linger }}"
   loop_control:
     loop_var: __podman_linger_user
+
+- name: Handle credential files - absent
+  include_tasks: handle_credential_files.yml
+  vars:
+    __podman_handle_state: absent
+  loop: "{{ podman_credential_files }}"
+  loop_control:
+    loop_var: __podman_credential_item
+  no_log: true
+
+- name: Handle certs.d files - absent
+  include_tasks: handle_certs_d.yml
+  vars:
+    __podman_handle_state: absent
+  loop: "{{ podman_registry_certificates }}"
+  loop_control:
+    loop_var: __podman_cert_spec_item
+  no_log: true

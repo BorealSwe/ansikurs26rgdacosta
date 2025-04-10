@@ -13,7 +13,7 @@ DOCUMENTATION = r'''
 module: selinux
 short_description: Change policy and state of SELinux
 description:
-  - WARNING: Do not use this plugin directly! It is only for role internal use.
+  - "WARNING: Do not use this plugin directly! It is only for role internal use."
   - Configures the SELinux mode and policy.
   - A reboot may be required after usage.
   - Ansible will not issue this reboot but will let you know when it is required.
@@ -21,7 +21,7 @@ version_added: "1.0.0"
 options:
   policy:
     description:
-      - The name of the SELinux policy to use (e.g. C(targeted)) will be required if I(state) is not C(disabled).
+      - The name of the SELinux policy to use (e.g. C(targeted)) will be required unless O(state=disabled).
     type: str
   state:
     description:
@@ -31,7 +31,7 @@ options:
     type: str
   update_kernel_param:
     description:
-      - If set to I(true), will update also the kernel boot parameters when disabling/enabling SELinux.
+      - If set to V(true), will update also the kernel boot parameters when disabling/enabling SELinux.
       - The C(grubby) tool must be present on the target system for this to work.
     default: false
     type: bool
@@ -107,6 +107,12 @@ except ImportError:
 from ansible.module_utils.basic import AnsibleModule, missing_required_lib
 from ansible.module_utils.common.process import get_bin_path
 from ansible.module_utils.facts.utils import get_file_lines
+
+HAS_RESPAWN_UTIL = False
+
+
+def respawn_module(module_name):
+    pass
 
 
 # getter subroutines
@@ -237,6 +243,8 @@ def main():
     )
 
     if not HAS_SELINUX:
+        if HAS_RESPAWN_UTIL:
+            respawn_module("selinux")
         module.fail_json(msg=missing_required_lib('libselinux-python'), exception=SELINUX_IMP_ERR)
 
     # global vars

@@ -8,10 +8,47 @@
     journald_per_user: true
     journald_sync_interval: 1
     journald_forward_to_syslog: true
+    journald_rate_limit_burst: 2000
+    journald_rate_limit_interval_sec: 2
+    __service_files:
+      - systemd-journald.service
+      - systemd-journal-flush.service
 
   tasks:
     - name: Run test
       block:
+        - name: Make a copy of the service files
+          copy:
+            src: /usr/lib/systemd/system/{{ item }}
+            dest: /etc/systemd/system/{{ item }}
+            remote_src: true
+            mode: preserve
+          loop: "{{ __service_files }}"
+
+        - name: Change the startlimit to avoid errors with excessive journald restarts
+          lineinfile:
+            path: /etc/systemd/system/{{ item }}
+            insertafter: ^\[Unit\]
+            line: StartLimitIntervalSec=0
+          loop: "{{ __service_files }}"
+
+        - name: Make a copy of the systemd-journald.service
+          copy:
+            src: /usr/lib/systemd/system/systemd-journald.service
+            dest: /etc/systemd/system/systemd-journald.service
+            remote_src: true
+            mode: preserve
+
+        - name: Change the startlimit to avoid errors with excessive journald restarts
+          lineinfile:
+            path: /etc/systemd/system/systemd-journald.service
+            insertafter: ^\[Unit\]
+            line: StartLimitIntervalSec=0
+
+        - name: Reload systemd to ensure startlimit changes take effect upon restart
+          systemd:
+            daemon_reload: true
+
         - name: Run the role
           include_role:
             name: redhat.rhel_system_roles.journald
@@ -36,6 +73,18 @@
         - name: Verify that syslog is set properly
           command: >-
             grep ForwardToSyslog=yes
+            "{{ __journald_dropin_dir }}/{{ __journald_dropin_conf }}"
+          changed_when: false
+
+        - name: Verify that rate limit interval is set properly
+          command: >-
+            grep RateLimitIntervalSec=2s
+            "{{ __journald_dropin_dir }}/{{ __journald_dropin_conf }}"
+          changed_when: false
+
+        - name: Verify that rate limit burst is set properly
+          command: >-
+            grep RateLimitBurst=2000
             "{{ __journald_dropin_dir }}/{{ __journald_dropin_conf }}"
           changed_when: false
 
@@ -67,8 +116,9 @@
           shell:
             cmd: >
               set -euo pipefail;
-              journalctl -b -u systemd-journald -p info | grep max | tail -n 1 |
-              grep -q -E 'max( allowed)? 2.0G'
+              journalctl -b -u systemd-journald -p info |
+              grep -E "((System [Jj]ournal)|(Permanent journal)) .*max" | tail -n 1 |
+              grep -q -E 'max( allowed)? 2([.]0)?G'
           changed_when: false
 
         - name: Check generated files for ansible_managed, fingerprint
@@ -76,11 +126,33 @@
           vars:
             __file: "{{ __journald_dropin_dir }}/{{ __journald_dropin_conf }}"
             __fingerprint: "system_role:journald"
+
+      rescue:
+        - name: Debug
+          shell: |
+            set -x
+            exec 1>&2
+            journalctl -ex
+            journalctl -b -u systemd-journald
+            cat "{{ __journald_dropin_dir }}/{{ __journald_dropin_conf }}"
+          changed_when: false
+          failed_when: true
+
       always:
         - name: Cleanup
           file:
             path: "{{ __journald_dropin_dir }}/{{ __journald_dropin_conf }}"
             state: absent
+
+        - name: Remove copy of the service files
+          file:
+            path: /etc/systemd/system/{{ item }}
+            state: absent
+          loop: "{{ __service_files }}"
+
+        - name: Reload systemd to cleanup
+          systemd:
+            daemon_reload: true
 
         - name: Restart journald services
           service:

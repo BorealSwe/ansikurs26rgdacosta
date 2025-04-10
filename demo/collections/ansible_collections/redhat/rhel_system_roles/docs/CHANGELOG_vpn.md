@@ -1,6 +1,68 @@
 Changelog
 =========
 
+[1.6.9] - 2025-01-09
+--------------------
+
+### Other Changes
+
+- ci: Bump codecov/codecov-action from 4 to 5 (#178)
+- ci: Use Fedora 41, drop Fedora 39 (#179)
+- ci: Use Fedora 41, drop Fedora 39 - part two (#180)
+
+[1.6.8] - 2024-11-05
+--------------------
+
+### Other Changes
+
+- docs: vpn_ipaddr filter requires vpn_ipaddr.yml for docs (#176)
+
+[1.6.7] - 2024-10-30
+--------------------
+
+### Other Changes
+
+- ci: Add tft plan and workflow (#162)
+- ci: Update fmf plan to add a separate job to prepare managed nodes (#164)
+- ci: Bump sclorg/testing-farm-as-github-action from 2 to 3 (#165)
+- ci: Add workflow for ci_test bad, use remote fmf plan (#166)
+- ci: Fix missing slash in ARTIFACTS_URL (#167)
+- ci: Add tags to TF workflow, allow more [citest bad] formats (#170)
+- ci: ansible-test action now requires ansible-core version (#171)
+- ci: add YAML header to github action workflow files (#172)
+- refactor: Use vars/RedHat_N.yml symlink for CentOS, Rocky, Alma wherever possible (#174)
+
+[1.6.6] - 2024-07-02
+--------------------
+
+### Bug Fixes
+
+- fix: add support for EL10 (#160)
+
+### Other Changes
+
+- test: stop firewall after tests that use firewall (#158)
+- ci: ansible-lint action now requires absolute directory (#159)
+
+[1.6.5] - 2024-06-11
+--------------------
+
+### Other Changes
+
+- ci: use tox-lsr 3.3.0 which uses ansible-test 2.17 (#153)
+- ci: tox-lsr 3.4.0 - fix py27 tests; move other checks to py310 (#155)
+- ci: Add supported_ansible_also to .ansible-lint (#156)
+
+[1.6.4] - 2024-04-04
+--------------------
+
+### Other Changes
+
+- ci: Bump codecov/codecov-action from 3 to 4 (#147)
+- ci: fix python unit test - copy pytest config to tests/unit (#148)
+- ci: Bump ansible/ansible-lint from 6 to 24 (#149)
+- ci: Bump mathieudutour/github-tag-action from 6.1 to 6.2 (#151)
+
 [1.6.3] - 2024-01-16
 --------------------
 
@@ -77,7 +139,6 @@ Changelog
   - Add Postgresql version 15 into README
   
 - ci: fix mode of vars/main.yml for ansible-test (#50)
-
 
 [1.5.8] - 2023-07-19
 --------------------

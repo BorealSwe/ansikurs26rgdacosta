@@ -1,6 +1,76 @@
 Changelog
 =========
 
+[1.9.2] - 2025-01-09
+--------------------
+
+### Other Changes
+
+- ci: Use Fedora 41, drop Fedora 39 (#264)
+- ci: Use Fedora 41, drop Fedora 39 - part two (#265)
+
+[1.9.1] - 2024-10-30
+--------------------
+
+### Other Changes
+
+- ci: Add tags to TF workflow, allow more [citest bad] formats (#258)
+- ci: ansible-test action now requires ansible-core version (#259)
+- ci: add YAML header to github action workflow files (#260)
+- refactor: Use vars/RedHat_N.yml symlink for CentOS, Rocky, Alma wherever possible (#262)
+
+[1.9.0] - 2024-08-16
+--------------------
+
+### New Features
+
+- feat: Handle reboot for transactional update systems (#256)
+
+### Other Changes
+
+- ci: Add workflow for ci_test bad, use remote fmf plan (#254)
+- ci: Fix missing slash in ARTIFACTS_URL (#255)
+
+[1.8.6] - 2024-08-01
+--------------------
+
+### Other Changes
+
+- ci: Add tft plan and workflow (#248)
+- docs: add module documentation for timesync_provider (#250)
+- ci: Update fmf plan to add a separate job to prepare managed nodes (#251)
+- ci: Bump sclorg/testing-farm-as-github-action from 2 to 3 (#252)
+
+[1.8.5] - 2024-07-02
+--------------------
+
+### Bug Fixes
+
+- fix: add support for EL10 (#245)
+- fix: Don't use chrony-dhcp sourcedir on EL8 systems (#246)
+
+### Other Changes
+
+- ci: ansible-lint action now requires absolute directory (#244)
+
+[1.8.4] - 2024-06-11
+--------------------
+
+### Other Changes
+
+- ci: use tox-lsr 3.3.0 which uses ansible-test 2.17 (#239)
+- ci: tox-lsr 3.4.0 - fix py27 tests; move other checks to py310 (#241)
+- ci: Add supported_ansible_also to .ansible-lint (#242)
+
+[1.8.3] - 2024-04-04
+--------------------
+
+### Other Changes
+
+- ci: fix python unit test - copy pytest config to tests/unit (#234)
+- ci: Bump ansible/ansible-lint from 6 to 24 (#235)
+- ci: Bump mathieudutour/github-tag-action from 6.1 to 6.2 (#237)
+
 [1.8.2] - 2024-01-16
 --------------------
 
@@ -76,7 +146,6 @@ Changelog
   
   Signed-off-by: Sergei Petrosian <spetrosi@redhat.com>
 
-
 [1.7.7] - 2023-09-11
 --------------------
 
@@ -109,7 +178,6 @@ Changelog
   - Remove badges from README.md prior to converting to HTML
   
   Signed-off-by: Sergei Petrosian <spetrosi@redhat.com>
-
 
 [1.7.6] - 2023-07-19
 --------------------
@@ -210,7 +278,6 @@ on line 43 gives '>' not supported between instances of 'str' and 'float
 - Updated: type casting in overall timesync templates for testing
 
 - Updated: type casting adjusted (timesync_max_distance <= int)
-
 
 ### Other Changes
 

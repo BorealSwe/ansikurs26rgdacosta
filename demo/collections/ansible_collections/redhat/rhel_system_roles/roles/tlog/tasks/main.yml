@@ -27,7 +27,7 @@
     create: true
     owner: root
     group: root
-    mode: 0600
+    mode: "0600"
   loop:
     - key: services
       value: "nss, pam"
@@ -48,7 +48,7 @@
     create: true
     owner: root
     group: root
-    mode: 0600
+    mode: "0600"
   loop:
     - key: id_provider
       value: proxy
@@ -67,7 +67,7 @@
     dest: "{{ __tlog_sssd_session_recording_conf }}"
     owner: root
     group: root
-    mode: 0600
+    mode: "0600"
   when: tlog_use_sssd
   notify: Handler tlog_handler restart sssd
 
@@ -106,4 +106,4 @@
     dest: "{{ __tlog_rec_session_conf }}"
     owner: root
     group: root
-    mode: 0644
+    mode: "0644"

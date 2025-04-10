@@ -15,7 +15,7 @@
     __test_relp_global: /etc/rsyslog.d/00-global.conf
     logging_max_message_size: 16384
     logging_preserve_fqdn: true
-
+    __default_system_log: /var/log/messages
   tasks:
   # TEST CASE 0
   # Note: Create a self-signed cert just for the "unit" test.
@@ -178,6 +178,7 @@
       failed_when: __result.stdout != "1"
   # yamllint enable rule:line-length
 
+  # maxDataSize is not supported on EL 7
     - name: Check maxDataSize is logging_max_message_size
       command: >-
         grep -c 'maxDataSize="{{ logging_max_message_size }}"'
@@ -185,6 +186,9 @@
       changed_when: false
       register: __result
       failed_when: __result.stdout != "1"
+      when:
+        - ansible_distribution in ['CentOS', 'RedHat']
+        - ansible_distribution_major_version is version('7', '>')
 
     - name: Check preserveFQDN is on
       command: grep -c 'preserveFQDN="on"' {{ __test_relp_global }}
@@ -224,7 +228,7 @@
     - name: Set firewall true and selinux false
       set_fact:
         logging_manage_firewall: true
-        logging_manage_selinux: false
+        logging_manage_selinux: true
 
     - name: TEST CASE 1; Test the client configuration using tls relp
       vars:
@@ -382,3 +386,6 @@
 
     - name: Check ports managed by firewall and selinux
       include_tasks: tasks/check_firewall_selinux.yml
+
+    - name: Assert {{ __default_system_log }}
+      include_tasks: tasks/assert_varlogmessages.yml

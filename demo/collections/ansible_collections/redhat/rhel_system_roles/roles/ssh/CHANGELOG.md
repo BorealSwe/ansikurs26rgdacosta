@@ -1,6 +1,76 @@
 Changelog
 =========
 
+[1.5.2] - 2025-01-09
+--------------------
+
+### Bug Fixes
+
+- fix: Workaround for CentOS 10 issues in openssh (#167)
+
+### Other Changes
+
+- ci: Use Fedora 41, drop Fedora 39 (#165)
+- ci: Use Fedora 41, drop Fedora 39 - part two (#166)
+
+[1.5.1] - 2024-10-30
+--------------------
+
+### Other Changes
+
+- ci: Add workflow for ci_test bad, use remote fmf plan (#157)
+- ci: Fix missing slash in ARTIFACTS_URL (#158)
+- ci: Add tags to TF workflow, allow more [citest bad] formats (#159)
+- ci: ansible-test action now requires ansible-core version (#160)
+- ci: add YAML header to github action workflow files (#161)
+- refactor: Use vars/RedHat_N.yml symlink for CentOS, Rocky, Alma wherever possible (#163)
+
+[1.5.0] - 2024-08-01
+--------------------
+
+### New Features
+
+- Handle reboot for transactional update systems (#151)
+
+### Other Changes
+
+- ci: Add tft plan and workflow (#152)
+- ci: Update fmf plan to add a separate job to prepare managed nodes (#154)
+- ci: Bump sclorg/testing-farm-as-github-action from 2 to 3 (#155)
+
+[1.4.1] - 2024-07-02
+--------------------
+
+### Bug Fixes
+
+- fix: add support for EL10 (#149)
+
+### Other Changes
+
+- ci: ansible-lint action now requires absolute directory (#148)
+
+[1.4.0] - 2024-06-11
+--------------------
+
+### New Features
+
+- feat: Add new configuration options and remove false positives in the test (#142)
+
+### Other Changes
+
+- ci: use tox-lsr 3.3.0 which uses ansible-test 2.17 (#141)
+- ci: tox-lsr 3.4.0 - fix py27 tests; move other checks to py310 (#144)
+- ci: Add supported_ansible_also to .ansible-lint (#145)
+
+[1.3.3] - 2024-04-04
+--------------------
+
+### Other Changes
+
+- ci: fix python unit test - copy pytest config to tests/unit (#137)
+- ci: Bump ansible/ansible-lint from 6 to 24 (#138)
+- ci: Bump mathieudutour/github-tag-action from 6.1 to 6.2 (#139)
+
 [1.3.2] - 2024-01-16
 --------------------
 
@@ -78,7 +148,6 @@ Changelog
   - Remove badges from README.md prior to converting to HTML
   
   Signed-off-by: Sergei Petrosian <spetrosi@redhat.com>
-
 
 [1.2.1] - 2023-07-19
 --------------------

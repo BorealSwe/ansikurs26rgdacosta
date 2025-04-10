@@ -7,6 +7,6 @@
         name: redhat.rhel_system_roles.sshd
       vars:
         sshd_config_namespace: accept-env
-        sshd:
+        sshd_config:
       # there are some handy environment variables to accept
           AcceptEnv: LANG LS_COLORS EDITOR

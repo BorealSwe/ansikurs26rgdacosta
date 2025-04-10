@@ -23,7 +23,7 @@
     __test_logs_index: project.ovirt-logs
     __test_engine_input: /var/log/ovirt-engine/engine.log
     __test_vdsm_input: /var/log/vdsm/vdsm.log
-
+    __default_system_log: /var/log/messages
   tasks:
     - name: TEST CASE 0; Ensure basic ovirt default configuration works
       vars:
@@ -371,3 +371,11 @@
   # thus we have to force to invoke handlers
     - name: "Force all notified handlers to run at this point, not waiting for normal sync points"
       meta: flush_handlers
+
+  # This tests results in expected error in /var/log/messages on EL 7
+  # Errors are that /etc/rsyslog.d/es-ca.crt and /etc/rsyslog.d/es-cert.pem
+  # do not exist.
+    - name: Remove {{ __default_system_log }}
+      file:
+        path: "{{ __default_system_log }}"
+        state: absent

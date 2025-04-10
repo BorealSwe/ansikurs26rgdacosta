@@ -93,11 +93,16 @@ Available options:
 
 Available options:
 
-* `input_log_path`: File name to be read by the imfile plugin. The value should be full path. Wildcard '\*' is allowed in the path.  Default to `/var/log/containers/*.log`.
-`facility`: Facility to filter the inputs from the files.
-`severity`: Severity to filter the inputs from the files.
-`startmsg_regex`: The regular expression that matches the start part of a message.
-`endmsg_regex`: The regular expression that matches the last part of a message.
+* `input_log_path`: File name to be read by the imfile plugin. The value should
+  be full path. Wildcard '\*' is allowed in the path.  No default - this parameter
+  is mandatory.
+* `facility`: Facility to filter the inputs from the files.
+* `severity`: Severity to filter the inputs from the files.
+* `startmsg_regex`: The regular expression that matches the start part of a message.
+* `endmsg_regex`: The regular expression that matches the last part of a message.
+* `reopen_on_truncate`: Tells rsyslog to reopen input file when it was truncated
+  (inode unchanged but file size on disk is less than current offset in memory).
+  Default is `false`
 
 #### logging_inputs ovirt type
 
@@ -187,6 +192,42 @@ Available options:
     tcp_ports: [1514]
 ```
 
+### logging_custom_templates
+
+`logging_custom_templates`: A list of custom template definitions, for use with
+`logging_outputs` `type` `files` and `type` `forwards`.  You can specify the
+template for a particular output to use by setting the `template` field in a
+particular `logging_outputs` specification, or by setting the default for all
+such outputs to use in `logging_files_template_format` and
+`logging_forwards_template_format`.
+
+Specify custom templates like this, in either the legacy format or the new style
+format:
+
+```yaml
+logging_custom_templates:
+  - |
+    template(name="tpl1" type="list") {
+        constant(value="Syslog MSG is: '")
+        property(name="msg")
+        constant(value="', ")
+        property(name="timereported" dateFormat="rfc3339" caseConversion="lower")
+        constant(value="\n")
+        }
+  - >-
+    $template precise,"%syslogpriority%,%syslogfacility%,%timegenerated::fulltime%,%HOSTNAME%,%syslogtag%,%msg%\n"
+```
+
+Then use like this:
+
+```yaml
+logging_outputs:
+  - name: custom_file_output
+    type: files
+    path: /var/log/custom_file_output.log
+    template: tpl1  # override logging_files_template_format if set
+```
+
 ### Logging_outputs options
 
 `logging_outputs`: A list of following dictionary to configure outputs.
@@ -258,9 +299,26 @@ Available options:
 * `property_op`: Operation in property-based filter; In case of not `!`, put the `property_op` value in quotes; default to `contains`
 * `property_value`: Value in property-based filter; default to `error`
 * `path`: Path to the output file.
+* File/Directory properties - same as corresponding variables of the Ansible `file` module:
+  * `mode` - sets the rsyslog `omfile` module `FileCreateMode` parameter
+  * `owner` - sets the rsyslog `omfile` module `fileOwner` or `fileOwnerNum` parameter.  If the value
+    is an integer, set `fileOwnerNum`, otherwise, set `fileOwner`.
+  * `group` - sets the rsyslog `omfile` module `fileGroup` or `fileGroupNum` parameter.  If the value
+    is an integer, set `fileGroupNum`, otherwise, set `fileGroup`.
+  * `dir_mode` - sets the rsyslog `omfile` module `DirCreateMode` parameter
+  * `dir_owner` - sets the rsyslog `omfile` module `dirOwner` or `dirOwnerNum` parameter.  If the value
+    is an integer, set `dirOwnerNum`, otherwise, set `dirOwner`.
+  * `dir_group` - sets the rsyslog `omfile` module `dirGroup` or `dirGroupNum` parameter.  If the value
+    is an integer, set `dirGroupNum`, otherwise, set `dirGroup`.
+* `template`: Template format for the particular files output. Allowed values
+  are `traditional`, `syslog`, and `modern`, or one of the templates defined in
+  `logging_custom_templates`.  Default to `modern`.
 
-logging_files_template_format: Set default template for the files output.
-Allowed values are `traditional`, `syslog`, and `modern`. Default to `modern`.
+Global options:
+
+`logging_files_template_format`: Set default template for the files output.
+Allowed values are `traditional`, `syslog`, and `modern`, or one of the
+  templates defined in `logging_custom_templates`.  Default to `modern`.
 
 **Note:** Selector options and property-based filter options are exclusive. If Property-based filter options are defined, selector options will be ignored.
 
@@ -295,10 +353,15 @@ Available options:
 * `tls`: Set to `true` to encrypt the connection using the default TLS implementation used by the provider. Default to `false`.
 * `pki_authmode`: Specifying the default network driver authentication mode. `x509/name`, `x509/fingerprint`, or `anon` is accepted. Default to `x509/name`.
 * `permitted_server`: Hostname, IP address, fingerprint(sha1) or wildcard DNS domain of the server which this client will be allowed to connect and send logs over TLS. Default to `*.{{ logging_domain }}`
-* `template`: Template format for the particular forwards output. Allowed values are `traditional`, `syslog`, and `modern`. Default to `modern`.
+* `template`: Template format for the particular forwards output. Allowed values
+  are `traditional`, `syslog`, and `modern`, or one of the templates defined in
+  `logging_custom_templates`.  Default to `modern`.
 
-logging_forwards_template_format: Set default template for the forwards output.
-Allowed values are `traditional`, `syslog`, and `modern`. Default to `modern`.
+Global options:
+
+`logging_forwards_template_format`: Set default template for the forwards
+output. Allowed values are `traditional`, `syslog`, and `modern`, or one of the
+  templates defined in `logging_custom_templates`.  Default to `modern`.
 
 **Note:** Selector options and property-based filter options are exclusive. If Property-based filter options are defined, selector options will be ignored.
 
@@ -448,6 +511,12 @@ These variables are set in the same level of the `logging_inputs`, `logging_outp
   NOTE: `logging_manage_selinux` is limited to _adding_ policy.
   It cannot be used for _removing_ policy.
   If you want to remove policy, you will need to use the `selinux` role directly.
+* `logging_custom_config_files`: A list of files to copy to the remote logging configuration
+  directory.  For `rsyslog`, this will be `/etc/rsyslog.d/`.  This assumes the
+  default logging configuration will load and process the configuration files in
+  that directory.  For example, the default `rsyslog` configuration has a directive
+  like `$IncludeConfig /etc/rsyslog.d/*.conf`.  WARNING: The use of
+  `rsyslog_custom_config_files` or using `type: custom` is deprecated.
 * `logging_certificates`: Information used to generate a private key and certificate.
   Default to `[]`.
   The value of `logging_certificates` is passed on to the `certificate_requests`
@@ -546,7 +615,9 @@ logging_flows:
 
 ### Standalone configuration
 
-Deploying `basics input` reading logs from systemd journal and implicit `files output` to write to the local files.
+Deploying `basics input` reading logs from systemd journal and implicit `files output`
+to write to the local files. This also deploys two custom files to the
+`/etc/rsyslog.d/` directory.
 
 ```yaml
 ---
@@ -555,6 +626,9 @@ Deploying `basics input` reading logs from systemd journal and implicit `files o
   roles:
     - redhat.rhel_system_roles.logging
   vars:
+    logging_custom_config_files:
+      - files/90-my-custom-file.conf
+      - files/my-custom-file.rulebase
     logging_inputs:
       - name: system_input
         type: basics
@@ -569,6 +643,9 @@ The following playbook generates the same logging configuration files.
   roles:
     - redhat.rhel_system_roles.logging
   vars:
+    logging_custom_config_files:
+      - files/90-my-custom-file.conf
+      - files/my-custom-file.rulebase
     logging_inputs:
       - name: system_input
         type: basics
@@ -604,6 +681,7 @@ Deploying `basics input` reading logs from systemd unix socket and `files output
 ```
 
 Deploying `basics input` reading logs from systemd journal and `files output` to write to the individually configured local files.
+This also shows how to specify ownership/permission for log files/directories created by the logger.
 
 ```yaml
 ---
@@ -629,6 +707,16 @@ Deploying `basics input` reading logs from systemd journal and `files output` to
         type: files
         facility: authpriv,auth
         path: /var/log/secure
+      - name: files_output2
+        type: files
+        severity: info
+        path: /var/log/myapp/my_app.log
+        mode: "0600"
+        owner: logowner
+        group: loggroup
+        dir_mode: "0700"
+        dir_owner: logowner
+        dir_group: loggroup
     logging_flows:
       - name: flow0
         inputs: [system_input]

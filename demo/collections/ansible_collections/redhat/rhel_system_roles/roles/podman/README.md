@@ -11,6 +11,8 @@ The role requires podman version 4.4 or later for quadlet support and secret
 support.
 The role requires podman version 4.5 or later for support for using healthchecks
 (only supported when using quadlet Container types).
+The role requires podman version 5.0 or later for support for using
+[Pod quadlet types](https://github.com/containers/podman/releases/tag/v5.0.0).
 
 ### Users, groups, subuid, subgid
 
@@ -21,12 +23,11 @@ restrictions:
 * They must be already present on the system - the role will not create the
   users or groups - the role will exit with an error if a non-existent user or
   group is specified
-* They must already exist in `/etc/subuid` and `/etc/subgid`, or are otherwise
-  provided by your identity management system - the role will exit with an error
-  if a specified user is not present in `/etc/subuid`, or if a specified group
-  is not in `/etc/subgid`.  The role uses `getsubids` to check the user and
-  group if available, or checks the files directly if `getsubids` is not
-  available.
+* The user must already exist in `/etc/subuid` and `/etc/subgid`, or otherwise
+  be provided by your identity management system - the role will exit with an
+  error if a specified user is not present in `/etc/subuid` and `/etc/subgid`.
+  The role uses `getsubids` to check the user and group if available, or checks
+  the files directly if `getsubids` is not available.
 
 ## Role Variables
 
@@ -42,14 +43,15 @@ except for the following:
   * `started` - Create the pods and systemd services, and start them running
   * `created` - Create the pods and systemd services, but do not start them
   * `absent` - Remove the pods and systemd services
-* `run_as_user` - Use this to specify a per-pod user.  If you do not
-  specify this, then the global default `podman_run_as_user` value will be used.
+* `run_as_user` - Use this to specify a per-pod user.  If you do not specify
+  this, then the global default `podman_run_as_user` value will be used.
   Otherwise, `root` will be used.  NOTE: The user must already exist - the role
-  will not create one.  The user must be present in `/etc/subuid`.
-* `run_as_group` - Use this to specify a per-pod group.  If you do not
-  specify this, then the global default `podman_run_as_group` value will be
-  used.  Otherwise, `root` will be used.  NOTE: The group must already exist -
-  the role will not create one.  The group must be present in `/etc/subgid`.
+  will not create one.  The user must be present in `/etc/subuid` and
+  `/etc/subgid`.
+* `run_as_group` - Use this to specify a per-pod group.  If you do not specify
+  this, then the global default `podman_run_as_group` value will be used.
+  Otherwise, `root` will be used.  NOTE: The group must already exist - the role
+  will not create one.
 * `systemd_unit_scope` - The scope to use for the systemd unit.  If you do not
   specify this, then the global default `podman_systemd_unit_scope` will be
   used.  Otherwise, the scope will be `system` for root containers, and `user`
@@ -182,6 +184,13 @@ quadlet container unit spec on the managed node.
 *NOTE*: When removing quadlets, you must remove networks *last*.  You cannot
 remove a network that is in use by a container.
 
+*NOTE*: When specifying a `Pod` for a `Container` to use, you must add a `.pod`
+to the podname e.g. `Pod=my-name.pod`.  The pod must already exist and be
+running, so specify any pods first in `podman_quadlet_specs` before the
+containers that use them.
+See [podman quadlet doc](https://docs.podman.io/en/latest/markdown/podman-systemd.unit.5.html#pod)
+for more information.
+
 ### podman_secrets
 
 This is a list of secret specs in almost the same format as used by
@@ -264,14 +273,13 @@ podman_selinux_ports:
 This is the name of the user to use for all rootless containers.  You can also
 specify per-container username with `run_as_user` in `podman_kube_specs`.  NOTE:
 The user must already exist - the role will not create one.  The user must be
-present in `/etc/subuid`.
+present in `/etc/subuid` and `/etc/subgid`.
 
 ### podman_run_as_group
 
 This is the name of the group to use for all rootless containers.  You can also
 specify per-container group name with `run_as_group` in `podman_kube_specs`.
-NOTE: The group must already exist - the role will not create one.  The group must
-be present in `/etc/subgid`.
+NOTE: The group must already exist - the role will not create one.
 
 ### podman_systemd_unit_scope
 
@@ -374,6 +382,164 @@ a newer version.  For example, if you attempt to manage quadlet or secrets with
 podman 4.3 or earlier, the role will fail with an error. If you want the role to
 be skipped instead, use `podman_fail_if_too_old: false`.
 
+### podman_registry_username
+
+String - default is unset - username to use to authenticate to the registry. You
+must also set `podman_registry_password`.  You can override this on a per-spec
+basis with `registry_username`.  The use of `container_image_user` was
+unsupported and is deprecated.
+
+### podman_registry_password
+
+String - default is unset - password to use to authenticate to the registry. You
+must also set `podman_registry_username`.  You can override this on a per-spec
+basis with `registry_password`.  The use of `container_image_password` was
+unsupported and is deprecated.
+
+### podman_credential_files
+
+This is a `list`.  Each element of the list is a `dict` describing a podman
+credential file used to authenticate to registries.  See `man
+containers-auth.json` and `man containers-registries.conf`:`credential-helpers`
+for more information about the format of these files, and the default directory
+search path.
+NOTE: These files contain authentication credentials.  Please be careful with
+them.  You are strongly encouraged to use Ansible Vault to encrypt them.
+The keys of each `dict` are as follows:
+
+* `state` - default is `present`.  Use `absent` to remove files.
+* `file_src` - This is the name of a file on the controller node which will be
+  copied to `file` on the managed node.  Do not specify this if you specify
+  `file_content` or `template_src`, which will take precedence over `file_src`.
+* `template_src` - This is the name of a file on the controller node which will
+  be templated using the `template` module and copied to `file` on the managed
+  node.  Do not specify this if you specify `file_content` or `file_src`.
+* `file_content` - This is a string in `containers-auth.json` format.  It will be
+  used as the contents of `file` on the managed node.  Do not specify this if
+  you specify `file_src` or `template_src`.
+* `file` - This is the name of a file on the managed node that will contain the
+  `auth.json` contents.  The default value will be
+  `$HOME/.config/containers/auth.json`. If you specify a relative path, it will
+  be relative to `$HOME/.config/containers`.  If you specify something other
+  than the defaults mentioned in `man containers-auth.json`, you will also need
+  to configure `credential-helpers` in `containers-registries.conf` using
+  `podman_registries_conf`.  Any missing parent directories will be created.
+* `run_as_user` - Use this to specify a per-credential file owner.  If you do
+  not specify this, then the global default `podman_run_as_user` value will be
+  used. Otherwise, `root` will be used.  NOTE: The user must already exist - the
+  role will not create one.  The user must be present in `/etc/subuid` and
+  `/etc/subgid`. NOTE: This is used as the user for the `$HOME` directory if
+  `file` is not specified, and as the owner of the file.  If you want the owner
+  of the file to be different than the user used for `$HOME`, specify `file` as
+  an absolute path.
+* `run_as_group` - Use this to specify a per-credential file group.  If you do
+  not specify this, then the global default `podman_run_as_group` value will be
+  used. Otherwise, `root` will be used.  NOTE: The group must already exist -
+  the role will not create one.
+* `mode` - The mode of the file - default is `"0600"`.
+
+For example, if you have
+
+```yaml
+    podman_credential_files:
+      - file_src: auth.json
+        run_as_user: my_user
+```
+
+The local file `auth.json` will be looked up in the usual Ansible `file` search
+paths and will be copied to the file
+`/home/my_user/.config/containers/auth.json` on the managed node.  The file
+owner will be `my_user` and the mode will be `"0600"`. The directories
+`/home/my_user/.config` and `/home/my_user/.config/containers` will be created
+if they do not exist.
+
+### podman_registry_certificates
+
+This variable is a `list` of `dict` elements that allows you to manage TLS
+certificates and keys used to connect to registries.  The directories, formats,
+and files are as described in `man containers-certs.d`. The names of the keys
+used for TLS certificates and keys follow the
+[system roles TLS naming conventions](https://linux-system-roles.github.io/documentation/tls_crypto_parameter_and_key_names.html).  NOTE: the `client_` prefix has been dropped
+here for `cert` and `private_key` because there are only clients in this context.
+
+NOTE: You are strongly encouraged to use Ansible Vault to encrypt private keys and
+any other sensitive values.
+
+The keys of each `dict` are as follows:
+
+* `state` - default is `present`.  Use `absent` to remove files.
+* `run_as_user` - This is the user that will be the owner of the files, and is
+  used to find the `$HOME` directory for the files.  If you do not specify this,
+  then the global default `podman_run_as_user` value will be used. Otherwise,
+  `root` will be used.
+* `run_as_group` - This is the group that will be the owner of the files.  If
+  you do not specify this, then the global default `podman_run_as_group` value
+  will be used. Otherwise, `root` will be used.
+* `registry_host` - Required - the hostname or `hostname:port` of the registry.
+  This will be used as the name of the directory under
+  `$HOME/.config/containers/certs.d` (for rootless containers) or
+  `/etc/containers/certs.d` (for system containers) which will hold the
+  certificates and keys.  If using `state: absent` and all of the files are
+  removed, the directory will be removed.
+* `cert` - name of the file in the `certs.d` directory holding the TLS client
+  certificate.  If not specified, use the basename of `cert_src`.  If that isn't
+  specified, use `client.cert`.
+* `private_key` - name of the file in the `certs.d` directory holding the TLS
+  client private key.  If not specified, use the basename of `private_key_src`.
+  If that isn't specified, use `client.key`
+* `ca_cert` - name of the file in the `certs.d` directory holding the TLS CA
+  certificate.  If not specified, use the basename of `ca_cert_src`.  If that
+  isn't specified, use `ca.crt`
+* `cert_src` - name of the file on the control node to be copied to `cert`.
+* `private_key_src` - name of the file on the control node to be copied to
+  `private_key`.
+* `ca_cert_src` - name of the file on the control node to be copied to
+  `ca_cert`.
+* `cert_content` - contents of the certificate to be copied to `cert`.
+* `private_key_content` - contents of the private key to be copied to
+  `private_key`.
+
+```yaml
+podman_run_as_user: root
+podman_registry_certificates:
+  - registry_host: quay.io:5000
+    cert_src: client.cert
+    private_key_content: !vault |
+      $ANSIBLE_VAULT.....
+    ca_cert_src: ca.crt
+```
+
+This will create the directory `/etc/containers/certs.d/quay.io:5000/`, will copy
+the local file `client.cert` looked up from the usual Ansible file lookup path
+to `/etc/containers/certs.d/quay.io:5000/client.cert`, will copy the contents of
+the Ansible Vault encrypted `private_key_content` to
+`/etc/containers/certs.d/quay.io:5000/client.key`, and will copy the local file
+`ca.crt` looked up from the usual Ansible file lookup path to
+`/etc/containers/certs.d/quay.io:5000/ca.crt`.
+
+### podman_validate_certs
+
+Boolean - default is null - use this to control if pulling images from
+registries will validate TLS certs or not.  The default `null` means to use
+whatever is the default used by the `redhat.rhel_system_roles.podman_image` module. You
+can override this on a per-spec basis using `validate_certs`.
+
+### podman_prune_images
+
+Boolean - default is `false` - by default, the role will not prune unused images
+when removing quadlets and other resources.  Set this to `true` to tell the role
+to remove unused images when cleaning up.
+
+### podman_transactional_update_reboot_ok
+
+This variable is applicable only for transactional update systems.
+If a transactional update requires a reboot, the role will proceed with the
+reboot if `podman_transactional_update_reboot_ok` is set to `true`. If set
+to `false`, the role will notify the user that a reboot is required, allowing
+for custom handling of the reboot requirement. If this variable is not set,
+the role will fail to ensure the reboot requirement is not overlooked.
+For non-transactional update systems, this variable is ignored.
+
 ## Variables Exported by the Role
 
 ### podman_version
@@ -403,6 +569,34 @@ HealthOnFailure=kill
 PodmanArgs=--secret=my-app-pwd,type=env,target=MYAPP_PASSWORD
 {% endif %}
 ```
+
+### podman_subuid_info, podman_subgid_info
+
+The role needs to ensure any users are present in the subuid and
+subgid information.  Once it extracts this data, it will be available in
+`podman_subuid_info` and `podman_subgid_info`. These are dicts.  The key is the
+user name, and the value is a `dict` with two fields:
+
+* `start` - the start of the id range for that user, as an `int`
+* `range` - the id range for that user, as an `int`
+
+```yaml
+podman_host_directories:
+  "/var/lib/db":
+    mode: "0777"
+    owner: "{{ 1001 + podman_subuid_info['dbuser']['start'] - 1 }}"
+    group: "{{ 2001 + podman_subgid_info['dbuser']['start'] - 1 }}"
+```
+
+Where `1001` is the uid for user `dbuser`, and `2001` is the gid for the
+group you want to use.
+
+**NOTE**: depending on the namespace used by your containers, you might not be
+able to use the subuid and subgid information, which comes from `getsubids` if
+available, or directly from the files `/etc/subuid` and `/etc/subgid` on the
+host.  See
+[podman user namespace modes](https://www.redhat.com/sysadmin/rootless-podman-user-namespace-modes)
+for more information.
 
 ## Example Playbooks
 

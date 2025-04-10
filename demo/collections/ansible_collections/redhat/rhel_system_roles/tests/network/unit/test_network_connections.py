@@ -177,6 +177,7 @@ class TestValidator(Python26CompatTestCase):
         # default values when "type" is specified and state is not
         self.default_connection_settings = {
             "autoconnect": True,
+            "autoconnect_retries": -1,
             "check_iface_exists": True,
             "ethernet": ETHERNET_DEFAULTS,
             "ethtool": ETHTOOL_DEFAULTS,
@@ -184,6 +185,7 @@ class TestValidator(Python26CompatTestCase):
             "ip": {
                 "gateway6": None,
                 "gateway4": None,
+                "wait_ip": "any",
                 "route_metric4": None,
                 "auto6": True,
                 "ipv6_disabled": False,
@@ -239,6 +241,7 @@ class TestValidator(Python26CompatTestCase):
                 "metric": int(r.get_metric()),
                 "type": r.get_attribute("type"),
                 "table": r.get_attribute("table"),
+                "src": r.get_attribute("src"),
             }
             for r in route_list_new
         ]
@@ -294,6 +297,12 @@ class TestValidator(Python26CompatTestCase):
                                 new_route,
                                 "table",
                                 Util.GLib().Variant.new_uint32(r["table"]),
+                            )
+                        if r["src"]:
+                            NM.IPRoute.set_attribute(
+                                new_route,
+                                "src",
+                                Util.GLib().Variant.new_uint32(r["src"]),
                             )
                         if r["family"] == socket.AF_INET:
                             s4.add_route(new_route)
@@ -584,6 +593,7 @@ class TestValidator(Python26CompatTestCase):
                 {
                     "actions": ["present"],
                     "autoconnect": True,
+                    "autoconnect_retries": -1,
                     "check_iface_exists": True,
                     "ethernet": ETHERNET_DEFAULTS,
                     "ethtool": ETHTOOL_DEFAULTS,
@@ -592,6 +602,7 @@ class TestValidator(Python26CompatTestCase):
                     "ip": {
                         "gateway6": None,
                         "gateway4": None,
+                        "wait_ip": "any",
                         "route_metric4": None,
                         "auto6": True,
                         "ipv6_disabled": False,
@@ -644,6 +655,7 @@ class TestValidator(Python26CompatTestCase):
                 {
                     "actions": ["present", "up"],
                     "autoconnect": True,
+                    "autoconnect_retries": -1,
                     "check_iface_exists": True,
                     "ethernet": ETHERNET_DEFAULTS,
                     "ethtool": ETHTOOL_DEFAULTS,
@@ -653,6 +665,7 @@ class TestValidator(Python26CompatTestCase):
                     "ip": {
                         "gateway6": None,
                         "gateway4": None,
+                        "wait_ip": "any",
                         "route_metric4": None,
                         "auto6": True,
                         "ipv6_disabled": False,
@@ -699,6 +712,7 @@ class TestValidator(Python26CompatTestCase):
                 {
                     "actions": ["present", "up"],
                     "autoconnect": False,
+                    "autoconnect_retries": -1,
                     "check_iface_exists": True,
                     "ethernet": ETHERNET_DEFAULTS,
                     "ethtool": ETHTOOL_DEFAULTS,
@@ -708,6 +722,7 @@ class TestValidator(Python26CompatTestCase):
                     "ip": {
                         "gateway6": None,
                         "gateway4": None,
+                        "wait_ip": "any",
                         "route_metric4": None,
                         "auto6": True,
                         "ipv6_disabled": False,
@@ -791,6 +806,7 @@ class TestValidator(Python26CompatTestCase):
                 {
                     "actions": ["present", "up"],
                     "autoconnect": True,
+                    "autoconnect_retries": -1,
                     "check_iface_exists": True,
                     "ethernet": ETHERNET_DEFAULTS,
                     "ethtool": ETHTOOL_DEFAULTS,
@@ -808,6 +824,7 @@ class TestValidator(Python26CompatTestCase):
                         "dhcp4_send_hostname": None,
                         "gateway6": None,
                         "gateway4": None,
+                        "wait_ip": "any",
                         "auto6": True,
                         "ipv6_disabled": False,
                         "dns": [],
@@ -863,6 +880,7 @@ class TestValidator(Python26CompatTestCase):
                 {
                     "actions": ["present", "up"],
                     "autoconnect": True,
+                    "autoconnect_retries": -1,
                     "check_iface_exists": True,
                     "ethernet": ETHERNET_DEFAULTS,
                     "ethtool": ETHTOOL_DEFAULTS,
@@ -879,6 +897,7 @@ class TestValidator(Python26CompatTestCase):
                         "dhcp4_send_hostname": None,
                         "gateway6": None,
                         "gateway4": None,
+                        "wait_ip": "any",
                         "auto6": True,
                         "ipv6_disabled": False,
                         "dns": [{"address": "192.168.174.1", "family": socket.AF_INET}],
@@ -932,6 +951,7 @@ class TestValidator(Python26CompatTestCase):
                 {
                     "actions": ["present", "up"],
                     "autoconnect": True,
+                    "autoconnect_retries": -1,
                     "check_iface_exists": True,
                     "ethernet": ETHERNET_DEFAULTS,
                     "ethtool": ETHTOOL_DEFAULTS,
@@ -942,6 +962,7 @@ class TestValidator(Python26CompatTestCase):
                     "ip": {
                         "gateway6": "2001:db8::1",
                         "gateway4": None,
+                        "wait_ip": "any",
                         "route_metric4": None,
                         "auto6": False,
                         "ipv6_disabled": False,
@@ -1040,6 +1061,7 @@ class TestValidator(Python26CompatTestCase):
                 {
                     "actions": ["present", "up"],
                     "autoconnect": True,
+                    "autoconnect_retries": -1,
                     "check_iface_exists": True,
                     "ethernet": ETHERNET_DEFAULTS,
                     "ethtool": ETHTOOL_DEFAULTS,
@@ -1078,6 +1100,7 @@ class TestValidator(Python26CompatTestCase):
                         "dhcp4_send_hostname": None,
                         "gateway6": None,
                         "gateway4": None,
+                        "wait_ip": "any",
                         "dns": [],
                     },
                     "mac": "52:54:00:44:9f:ba",
@@ -1098,6 +1121,7 @@ class TestValidator(Python26CompatTestCase):
                 {
                     "actions": ["present", "up"],
                     "autoconnect": True,
+                    "autoconnect_retries": -1,
                     "check_iface_exists": True,
                     "ethernet": ETHERNET_DEFAULTS,
                     "ethtool": ETHTOOL_DEFAULTS,
@@ -1115,6 +1139,7 @@ class TestValidator(Python26CompatTestCase):
                         "dhcp4_send_hostname": None,
                         "gateway6": None,
                         "gateway4": None,
+                        "wait_ip": "any",
                         "auto6": False,
                         "ipv6_disabled": False,
                         "dns": [],
@@ -1144,6 +1169,7 @@ class TestValidator(Python26CompatTestCase):
                                 "metric": -1,
                                 "type": None,
                                 "table": None,
+                                "src": None,
                             }
                         ],
                         "routing_rule": [],
@@ -1201,6 +1227,7 @@ class TestValidator(Python26CompatTestCase):
                 {
                     "actions": ["present", "up"],
                     "autoconnect": True,
+                    "autoconnect_retries": -1,
                     "check_iface_exists": True,
                     "ethernet": ETHERNET_DEFAULTS,
                     "ethtool": ETHTOOL_DEFAULTS,
@@ -1217,6 +1244,7 @@ class TestValidator(Python26CompatTestCase):
                         "dhcp4_send_hostname": None,
                         "gateway6": None,
                         "gateway4": None,
+                        "wait_ip": "any",
                         "auto6": True,
                         "ipv6_disabled": False,
                         "dns": [],
@@ -1282,6 +1310,7 @@ class TestValidator(Python26CompatTestCase):
                 {
                     "actions": ["present", "up"],
                     "autoconnect": True,
+                    "autoconnect_retries": -1,
                     "check_iface_exists": True,
                     "ethernet": ETHERNET_DEFAULTS,
                     "ethtool": ETHTOOL_DEFAULTS,
@@ -1298,6 +1327,7 @@ class TestValidator(Python26CompatTestCase):
                         "dhcp4_send_hostname": None,
                         "gateway6": None,
                         "gateway4": None,
+                        "wait_ip": "any",
                         "auto6": True,
                         "ipv6_disabled": False,
                         "dns": [],
@@ -1381,6 +1411,7 @@ class TestValidator(Python26CompatTestCase):
                 {
                     "actions": ["present", "up"],
                     "autoconnect": True,
+                    "autoconnect_retries": -1,
                     "check_iface_exists": True,
                     "ethernet": ETHERNET_DEFAULTS,
                     "ethtool": ETHTOOL_DEFAULTS,
@@ -1418,6 +1449,7 @@ class TestValidator(Python26CompatTestCase):
                         "dhcp4_send_hostname": None,
                         "gateway6": None,
                         "gateway4": None,
+                        "wait_ip": "any",
                         "ipv6_disabled": False,
                         "dns": [],
                     },
@@ -1439,6 +1471,7 @@ class TestValidator(Python26CompatTestCase):
                 {
                     "actions": ["present", "up"],
                     "autoconnect": True,
+                    "autoconnect_retries": -1,
                     "check_iface_exists": True,
                     "ethernet": ETHERNET_DEFAULTS,
                     "ethtool": ETHTOOL_DEFAULTS,
@@ -1456,6 +1489,7 @@ class TestValidator(Python26CompatTestCase):
                         "dhcp4_send_hostname": None,
                         "gateway6": None,
                         "gateway4": None,
+                        "wait_ip": "any",
                         "ipv6_disabled": False,
                         "auto6": False,
                         "dns": [],
@@ -1485,6 +1519,7 @@ class TestValidator(Python26CompatTestCase):
                                 "metric": -1,
                                 "type": None,
                                 "table": None,
+                                "src": None,
                             }
                         ],
                         "routing_rule": [],
@@ -1542,6 +1577,7 @@ class TestValidator(Python26CompatTestCase):
                 {
                     "actions": ["present", "up"],
                     "autoconnect": True,
+                    "autoconnect_retries": -1,
                     "check_iface_exists": True,
                     "ethernet": ETHERNET_DEFAULTS,
                     "ethtool": ETHTOOL_DEFAULTS,
@@ -1575,6 +1611,7 @@ class TestValidator(Python26CompatTestCase):
                         "dhcp4_send_hostname": None,
                         "gateway6": None,
                         "gateway4": None,
+                        "wait_ip": "any",
                         "dns": [],
                     },
                     "mac": "33:24:10:24:2f:b9",
@@ -1595,6 +1632,7 @@ class TestValidator(Python26CompatTestCase):
                 {
                     "actions": ["present", "up"],
                     "autoconnect": True,
+                    "autoconnect_retries": -1,
                     "check_iface_exists": True,
                     "ethtool": ETHTOOL_DEFAULTS,
                     "force_state_change": None,
@@ -1612,6 +1650,7 @@ class TestValidator(Python26CompatTestCase):
                         "dhcp4_send_hostname": None,
                         "gateway6": None,
                         "gateway4": None,
+                        "wait_ip": "any",
                         "auto6": False,
                         "dns": [],
                         "address": [
@@ -1635,6 +1674,7 @@ class TestValidator(Python26CompatTestCase):
                                 "metric": -1,
                                 "type": None,
                                 "table": None,
+                                "src": None,
                             }
                         ],
                         "routing_rule": [],
@@ -1658,6 +1698,7 @@ class TestValidator(Python26CompatTestCase):
                 {
                     "actions": ["present", "up"],
                     "autoconnect": True,
+                    "autoconnect_retries": -1,
                     "check_iface_exists": True,
                     "ethtool": ETHTOOL_DEFAULTS,
                     "force_state_change": None,
@@ -1674,6 +1715,7 @@ class TestValidator(Python26CompatTestCase):
                         "dhcp4_send_hostname": None,
                         "gateway6": None,
                         "gateway4": None,
+                        "wait_ip": "any",
                         "ipv6_disabled": False,
                         "auto6": False,
                         "dns": [],
@@ -1698,6 +1740,7 @@ class TestValidator(Python26CompatTestCase):
                                 "metric": -1,
                                 "type": None,
                                 "table": None,
+                                "src": None,
                             }
                         ],
                         "routing_rule": [],
@@ -1770,6 +1813,7 @@ class TestValidator(Python26CompatTestCase):
                 {
                     "actions": ["present", "up"],
                     "autoconnect": True,
+                    "autoconnect_retries": -1,
                     "check_iface_exists": True,
                     "ethernet": ETHERNET_DEFAULTS,
                     "ethtool": ETHTOOL_DEFAULTS,
@@ -1790,6 +1834,7 @@ class TestValidator(Python26CompatTestCase):
                         "dns_search": [],
                         "gateway4": None,
                         "gateway6": None,
+                        "wait_ip": "any",
                         "ipv6_disabled": False,
                         "route": [],
                         "route_append_only": False,
@@ -1817,6 +1862,7 @@ class TestValidator(Python26CompatTestCase):
                 {
                     "actions": ["present", "up"],
                     "autoconnect": True,
+                    "autoconnect_retries": -1,
                     "check_iface_exists": True,
                     "ethernet": ETHERNET_DEFAULTS,
                     "ethtool": ETHTOOL_DEFAULTS,
@@ -1837,6 +1883,7 @@ class TestValidator(Python26CompatTestCase):
                         "dns_search": [],
                         "gateway4": None,
                         "gateway6": None,
+                        "wait_ip": "any",
                         "ipv6_disabled": False,
                         "route": [],
                         "route_append_only": False,
@@ -1887,6 +1934,7 @@ class TestValidator(Python26CompatTestCase):
                 {
                     "actions": ["present", "up"],
                     "autoconnect": True,
+                    "autoconnect_retries": -1,
                     "bond": {
                         "mode": "balance-rr",
                         "ad_actor_sys_prio": None,
@@ -1931,6 +1979,7 @@ class TestValidator(Python26CompatTestCase):
                         "dhcp4_send_hostname": None,
                         "gateway6": None,
                         "gateway4": None,
+                        "wait_ip": "any",
                         "auto6": True,
                         "ipv6_disabled": False,
                         "dns": [],
@@ -1970,6 +2019,7 @@ class TestValidator(Python26CompatTestCase):
                 {
                     "actions": ["present", "up"],
                     "autoconnect": True,
+                    "autoconnect_retries": -1,
                     "bond": {
                         "mode": "active-backup",
                         "ad_actor_sys_prio": None,
@@ -2014,6 +2064,7 @@ class TestValidator(Python26CompatTestCase):
                         "dhcp4_send_hostname": None,
                         "gateway6": None,
                         "gateway4": None,
+                        "wait_ip": "any",
                         "auto6": True,
                         "ipv6_disabled": False,
                         "dns": [],
@@ -2065,6 +2116,7 @@ class TestValidator(Python26CompatTestCase):
                 {
                     "actions": ["present"],
                     "autoconnect": True,
+                    "autoconnect_retries": -1,
                     "check_iface_exists": True,
                     "ethernet": ETHERNET_DEFAULTS,
                     "ethtool": ETHTOOL_DEFAULTS,
@@ -2085,6 +2137,7 @@ class TestValidator(Python26CompatTestCase):
                         "dhcp4_send_hostname": None,
                         "gateway4": None,
                         "gateway6": None,
+                        "wait_ip": "any",
                         "route_metric4": None,
                         "route_metric6": None,
                         "dns": [],
@@ -2118,6 +2171,7 @@ class TestValidator(Python26CompatTestCase):
                 {
                     "actions": ["present", "up"],
                     "autoconnect": True,
+                    "autoconnect_retries": -1,
                     "check_iface_exists": True,
                     "ethernet": {"autoneg": False, "duplex": "half", "speed": 400},
                     "ethtool": ETHTOOL_DEFAULTS,
@@ -2127,6 +2181,7 @@ class TestValidator(Python26CompatTestCase):
                     "ip": {
                         "gateway6": None,
                         "gateway4": None,
+                        "wait_ip": "any",
                         "route_metric4": None,
                         "auto6": True,
                         "ipv6_disabled": False,
@@ -2200,6 +2255,7 @@ class TestValidator(Python26CompatTestCase):
                 {
                     "actions": ["present", "up"],
                     "autoconnect": True,
+                    "autoconnect_retries": -1,
                     "check_iface_exists": True,
                     "ethernet": ETHERNET_DEFAULTS,
                     "ethtool": ETHTOOL_DEFAULTS,
@@ -2221,6 +2277,7 @@ class TestValidator(Python26CompatTestCase):
                         "dns_search": [],
                         "gateway4": None,
                         "gateway6": None,
+                        "wait_ip": "any",
                         "route": [],
                         "route_append_only": False,
                         "route_metric4": None,
@@ -2247,6 +2304,7 @@ class TestValidator(Python26CompatTestCase):
                 {
                     "actions": ["present", "up"],
                     "autoconnect": True,
+                    "autoconnect_retries": -1,
                     "check_iface_exists": True,
                     "ethernet": ETHERNET_DEFAULTS,
                     "ethtool": ETHTOOL_DEFAULTS,
@@ -2267,6 +2325,7 @@ class TestValidator(Python26CompatTestCase):
                         "dns_search": [],
                         "gateway4": None,
                         "gateway6": None,
+                        "wait_ip": "any",
                         "ipv6_disabled": False,
                         "route": [],
                         "route_append_only": False,
@@ -2310,6 +2369,7 @@ class TestValidator(Python26CompatTestCase):
                 {
                     "actions": ["present", "up"],
                     "autoconnect": True,
+                    "autoconnect_retries": -1,
                     "check_iface_exists": True,
                     "ethtool": ETHTOOL_DEFAULTS,
                     "force_state_change": None,
@@ -2330,6 +2390,7 @@ class TestValidator(Python26CompatTestCase):
                         "dns_search": [],
                         "gateway4": None,
                         "gateway6": None,
+                        "wait_ip": "any",
                         "ipv6_disabled": False,
                         "route": [],
                         "route_append_only": False,
@@ -2390,6 +2451,7 @@ class TestValidator(Python26CompatTestCase):
                 {
                     "actions": ["present", "up"],
                     "autoconnect": True,
+                    "autoconnect_retries": -1,
                     "check_iface_exists": True,
                     "ethtool": ETHTOOL_DEFAULTS,
                     "force_state_change": None,
@@ -2410,6 +2472,7 @@ class TestValidator(Python26CompatTestCase):
                         "dns_search": [],
                         "gateway4": None,
                         "gateway6": None,
+                        "wait_ip": "any",
                         "ipv6_disabled": False,
                         "route": [],
                         "route_append_only": False,
@@ -2477,6 +2540,7 @@ class TestValidator(Python26CompatTestCase):
                 {
                     "actions": ["present"],
                     "autoconnect": True,
+                    "autoconnect_retries": -1,
                     "check_iface_exists": True,
                     "ethtool": ETHTOOL_DEFAULTS,
                     "ignore_errors": None,
@@ -2496,6 +2560,7 @@ class TestValidator(Python26CompatTestCase):
                         "dns_search": [],
                         "gateway4": None,
                         "gateway6": None,
+                        "wait_ip": "any",
                         "ipv6_disabled": False,
                         "route": [],
                         "route_append_only": False,
@@ -2522,6 +2587,7 @@ class TestValidator(Python26CompatTestCase):
                 {
                     "actions": ["present", "up"],
                     "autoconnect": True,
+                    "autoconnect_retries": -1,
                     "check_iface_exists": True,
                     "ethtool": ETHTOOL_DEFAULTS,
                     "force_state_change": None,
@@ -2542,6 +2608,7 @@ class TestValidator(Python26CompatTestCase):
                         "dns_search": [],
                         "gateway4": None,
                         "gateway6": None,
+                        "wait_ip": "any",
                         "ipv6_disabled": False,
                         "route": [],
                         "route_append_only": False,
@@ -2633,6 +2700,7 @@ class TestValidator(Python26CompatTestCase):
                 {
                     "actions": ["present", "up"],
                     "autoconnect": True,
+                    "autoconnect_retries": -1,
                     "check_iface_exists": True,
                     "ethernet": ETHERNET_DEFAULTS,
                     "ethtool": ETHTOOL_DEFAULTS,
@@ -2642,6 +2710,7 @@ class TestValidator(Python26CompatTestCase):
                     "ip": {
                         "gateway6": None,
                         "gateway4": None,
+                        "wait_ip": "any",
                         "route_metric4": None,
                         "auto6": True,
                         "ipv6_disabled": False,
@@ -2661,6 +2730,7 @@ class TestValidator(Python26CompatTestCase):
                                 "metric": 545,
                                 "type": None,
                                 "table": None,
+                                "src": None,
                             },
                             {
                                 "family": socket.AF_INET,
@@ -2670,6 +2740,7 @@ class TestValidator(Python26CompatTestCase):
                                 "metric": -1,
                                 "type": None,
                                 "table": None,
+                                "src": None,
                             },
                         ],
                         "routing_rule": [],
@@ -2739,6 +2810,7 @@ class TestValidator(Python26CompatTestCase):
                 {
                     "actions": ["present", "up"],
                     "autoconnect": True,
+                    "autoconnect_retries": -1,
                     "check_iface_exists": True,
                     "ethernet": ETHERNET_DEFAULTS,
                     "ethtool": ETHTOOL_DEFAULTS,
@@ -2748,6 +2820,7 @@ class TestValidator(Python26CompatTestCase):
                     "ip": {
                         "gateway6": None,
                         "gateway4": None,
+                        "wait_ip": "any",
                         "route_metric4": None,
                         "auto6": True,
                         "ipv6_disabled": False,
@@ -2767,6 +2840,7 @@ class TestValidator(Python26CompatTestCase):
                                 "metric": 545,
                                 "type": None,
                                 "table": None,
+                                "src": None,
                             },
                             {
                                 "family": socket.AF_INET,
@@ -2776,6 +2850,7 @@ class TestValidator(Python26CompatTestCase):
                                 "metric": -1,
                                 "type": None,
                                 "table": None,
+                                "src": None,
                             },
                             {
                                 "family": socket.AF_INET6,
@@ -2785,6 +2860,7 @@ class TestValidator(Python26CompatTestCase):
                                 "metric": -1,
                                 "type": None,
                                 "table": None,
+                                "src": None,
                             },
                         ],
                         "routing_rule": [],
@@ -2895,6 +2971,7 @@ class TestValidator(Python26CompatTestCase):
                 {
                     "actions": ["present", "up"],
                     "autoconnect": True,
+                    "autoconnect_retries": -1,
                     "check_iface_exists": True,
                     "ethernet": ETHERNET_DEFAULTS,
                     "ethtool": ETHTOOL_DEFAULTS,
@@ -2904,6 +2981,7 @@ class TestValidator(Python26CompatTestCase):
                     "ip": {
                         "gateway6": None,
                         "gateway4": None,
+                        "wait_ip": "any",
                         "route_metric4": None,
                         "auto6": True,
                         "ipv6_disabled": False,
@@ -2923,6 +3001,7 @@ class TestValidator(Python26CompatTestCase):
                                 "metric": 545,
                                 "type": None,
                                 "table": None,
+                                "src": None,
                             },
                             {
                                 "family": socket.AF_INET,
@@ -2932,6 +3011,7 @@ class TestValidator(Python26CompatTestCase):
                                 "metric": -1,
                                 "type": None,
                                 "table": None,
+                                "src": None,
                             },
                             {
                                 "family": socket.AF_INET6,
@@ -2941,6 +3021,7 @@ class TestValidator(Python26CompatTestCase):
                                 "metric": -1,
                                 "type": None,
                                 "table": None,
+                                "src": None,
                             },
                         ],
                         "routing_rule": [],
@@ -3052,6 +3133,7 @@ class TestValidator(Python26CompatTestCase):
                 {
                     "actions": ["present", "up"],
                     "autoconnect": True,
+                    "autoconnect_retries": -1,
                     "check_iface_exists": True,
                     "ethernet": ETHERNET_DEFAULTS,
                     "ethtool": ETHTOOL_DEFAULTS,
@@ -3061,6 +3143,7 @@ class TestValidator(Python26CompatTestCase):
                     "ip": {
                         "gateway6": None,
                         "gateway4": None,
+                        "wait_ip": "any",
                         "route_metric4": None,
                         "auto6": True,
                         "ipv6_disabled": False,
@@ -3136,6 +3219,7 @@ class TestValidator(Python26CompatTestCase):
                 {
                     "actions": ["present", "up"],
                     "autoconnect": True,
+                    "autoconnect_retries": -1,
                     "check_iface_exists": True,
                     "ethernet": ETHERNET_DEFAULTS,
                     "ethtool": ETHTOOL_DEFAULTS,
@@ -3145,6 +3229,7 @@ class TestValidator(Python26CompatTestCase):
                     "ip": {
                         "gateway6": None,
                         "gateway4": None,
+                        "wait_ip": "any",
                         "route_metric4": None,
                         "auto6": True,
                         "ipv6_disabled": False,
@@ -3220,6 +3305,7 @@ class TestValidator(Python26CompatTestCase):
                 {
                     "actions": ["present", "up"],
                     "autoconnect": True,
+                    "autoconnect_retries": -1,
                     "check_iface_exists": True,
                     "ethernet": ETHERNET_DEFAULTS,
                     "ethtool": ETHTOOL_DEFAULTS,
@@ -3229,6 +3315,7 @@ class TestValidator(Python26CompatTestCase):
                     "ip": {
                         "gateway6": None,
                         "gateway4": None,
+                        "wait_ip": "any",
                         "route_metric4": None,
                         "auto6": True,
                         "ipv6_disabled": False,
@@ -3303,6 +3390,7 @@ class TestValidator(Python26CompatTestCase):
                 {
                     "actions": ["present", "up"],
                     "autoconnect": True,
+                    "autoconnect_retries": -1,
                     "check_iface_exists": True,
                     "ethtool": ETHTOOL_DEFAULTS,
                     "force_state_change": None,
@@ -3311,6 +3399,7 @@ class TestValidator(Python26CompatTestCase):
                     "ip": {
                         "gateway6": None,
                         "gateway4": None,
+                        "wait_ip": "any",
                         "route_metric4": None,
                         "auto6": True,
                         "ipv6_disabled": False,
@@ -3375,6 +3464,7 @@ class TestValidator(Python26CompatTestCase):
                 {
                     "actions": ["present", "up"],
                     "autoconnect": True,
+                    "autoconnect_retries": -1,
                     "check_iface_exists": True,
                     "ethtool": ETHTOOL_DEFAULTS,
                     "force_state_change": None,
@@ -3383,6 +3473,7 @@ class TestValidator(Python26CompatTestCase):
                     "ip": {
                         "gateway6": None,
                         "gateway4": None,
+                        "wait_ip": "any",
                         "route_metric4": None,
                         "auto6": True,
                         "ipv6_disabled": False,
@@ -5001,6 +5092,25 @@ class TestValidatorRouteTable(Python26CompatTestCase):
             self.test_connections,
         )
 
+    def test_route_with_source_address(self):
+        """
+        Test setting the route with src address specified
+        """
+        self.test_connections[0]["ip"]["route"][0]["src"] = "2001:db8::2"
+        self.assertRaisesRegex(
+            ValidationError,
+            "conflicting address family between network and src "
+            "address {0}".format(
+                self.test_connections[0]["ip"]["route"][0]["src"],
+            ),
+            self.validator.validate,
+            self.test_connections,
+        )
+
+        self.test_connections[0]["ip"]["route"][0]["src"] = "198.51.100.3"
+        result = self.validator.validate(self.test_connections)
+        self.assertEqual(result[0]["ip"]["route"][0]["src"], "198.51.100.3")
+
 
 class TestValidatorRoutingRules(Python26CompatTestCase):
     def setUp(self):
@@ -5270,7 +5380,6 @@ class TestValidatorDictBond(Python26CompatTestCase):
         ]
 
     def test_invalid_bond_option_ad(self):
-
         """
         Test the ad bond option restrictions
         """

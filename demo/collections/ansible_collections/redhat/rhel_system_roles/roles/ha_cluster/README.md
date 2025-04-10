@@ -5,9 +5,13 @@ An Ansible role for managing High Availability Clustering.
 
 ## Limitations
 
-* Supported OS: RHEL 8.3+, Fedora 31+
+* Compatible OS
+  * RHEL 8.3+, Fedora 31+
+  * SUSE Linux Enterprise Server 15 with HA extension
+  * SUSE Linux Enterprise Server for SAP Applications 15
 * Systems running RHEL are expected to be registered and have High-Availability
-  repositories accessible.
+  repositories accessible, and ResilientStorage repositories accessible if using
+  `ha_cluster_enable_repos_resilient_storage`
 * The role replaces the configuration of HA Cluster on specified nodes. Any
   settings not specified in the role variables will be lost.
 * The role is capable of configuring:
@@ -23,6 +27,14 @@ An Ansible role for managing High Availability Clustering.
   * stonith levels, also known as fencing topology
   * resource constraints
   * Pacemaker node attributes
+  * Pacemaker Access Control Lists (ACLs)
+  * node and resource utilization
+  * Pacemaker Alerts
+* The role is capable of exporting existing cluster configuration:
+  * single-link or multi-link cluster
+  * Corosync transport options including compression and encryption
+  * Corosync totem options
+  * Corosync quorum options
 
 ## Requirements
 
@@ -31,6 +43,13 @@ None
 ## Role Variables
 
 ### Defined in `defaults/main.yml`
+
+#### `ha_cluster_export_configuration`
+
+boolean, default: `false`
+
+Export existing cluster configuration. See
+Variables Exported by the Role for details.
 
 #### `ha_cluster_enable_repos`
 
@@ -92,7 +111,7 @@ boolean, default: `true`
 
 If set to `true`, HA cluster will be configured on the hosts according to other
 variables. If set to `false`, all HA Cluster configuration will be purged from
-target hosts.
+target hosts. If set to `null`, HA cluster configuration will not be changed.
 
 #### `ha_cluster_start_on_boot`
 
@@ -100,6 +119,17 @@ boolean, default: `true`
 
 If set to `true`, cluster services will be configured to start on boot. If set
 to `false`, cluster services will be configured not to start on boot.
+
+#### `ha_cluster_install_cloud_agents`
+
+boolean, default: `false`
+
+The role automatically installs needed HA Cluster packages. However, resource
+and fence agents for cloud environments are not installed by default on RHEL.
+If you need those to be installed, set this variable to `true`. Alternatively,
+you can specify those packages in
+`ha_cluster_fence_agent_packages` and
+`ha_cluster_extra_packages` variables.
 
 #### `ha_cluster_fence_agent_packages`
 
@@ -113,8 +143,15 @@ This variable can be used to install additional packages not installed
 automatically by the role, for example custom resource agents.
 
 It is possible to specify fence agents here as well. However,
-`ha_cluster_fence_agent_packages` is preferred for that, so that its default
-value is overridden.
+`ha_cluster_fence_agent_packages` is
+preferred for that, so that its default value is overridden.
+
+#### `ha_cluster_use_latest_packages`
+
+boolean, default: `false`
+
+If set to `true`, all packages will be installed with latest version.
+If set to `false`, existing packages will not be updated.
 
 #### `ha_cluster_hacluster_password`
 
@@ -449,8 +486,113 @@ options are:
 
 You may take a look at an example.
 
-Watchdog and SBD devices are configured on a node to node basis in
-inventory.
+Watchdog and SBD devices can be configured on a node to node basis in two
+variables:
+
+* `ha_cluster_node_options` is a single variable
+  expected to have the same value for all cluster nodes. It is a list of
+  dictionaries, each dictionary defines options for one node.
+* `ha_cluster` dictionary defines options for one
+  node only. To set different values for each node, you define the variable
+  separately for each node.
+
+#### `ha_cluster_node_options`
+
+structure, default: no node options
+
+```yaml
+ha_cluster_node_options:
+  - node_name: node1
+    pcs_address: node1-address
+    corosync_addresses:
+      - 192.168.1.11
+      - 192.168.2.11
+    sbd_watchdog_modules:
+      - module1
+      - module2
+    sbd_watchdog_modules_blocklist:
+      - module3
+    sbd_watchdog: /dev/watchdog2
+    sbd_devices:
+      - /dev/disk/by-id/000001
+      - /dev/disk/by-id/000002
+      - /dev/disk/by-id/000003
+    attributes:
+      - attrs:
+          - name: attribute1
+            value: value1_node1
+          - name: attribute2
+            value: value2_node1
+    utilization:
+      - attrs:
+          - name: utilization1
+            value: value1_node1
+          - name: utilization2
+            value: value2_node1
+  - node_name: node2
+    pcs_address: node2-address:2224
+    corosync_addresses:
+      - 192.168.1.12
+      - 192.168.2.12
+    sbd_watchdog_modules:
+      - module1
+    sbd_watchdog_modules_blocklist:
+      - module3
+    sbd_watchdog: /dev/watchdog1
+    sbd_devices:
+      - /dev/disk/by-id/000001
+      - /dev/disk/by-id/000002
+      - /dev/disk/by-id/000003
+    attributes:
+      - attrs:
+          - name: attribute1
+            value: value1_node2
+          - name: attribute2
+            value: value2_node2
+    utilization:
+      - attrs:
+          - name: utilization1
+            value: value1_node2
+          - name: utilization2
+            value: value2_node2
+```
+
+This variable defines various settings which vary from cluster node to cluster
+node.
+
+**Note:** Use an inventory or playbook hosts to specify which nodes form
+the cluster. This variable merely sets options for the specified nodes.
+
+The items are as follows:
+
+* `node_name` (mandatory) - Node name. It must match a name defined for a node.
+  See also `ha_cluster.node_name`.
+* `pcs_address` (optional) - Address used by pcs to communicate with the node,
+  it can be a name, a FQDN or an IP address. Port can be specified as well.
+* `corosync_addresses` (optional) - List of addresses used by Corosync, all
+  nodes must have the same number of addresses and the order of the addresses
+  matters.
+* `sbd_watchdog_modules` (optional) - Watchdog kernel modules to be loaded
+  (creates `/dev/watchdog*` devices). Defaults to empty list if not set.
+* `sbd_watchdog_modules_blocklist` (optional) - Watchdog kernel modules to be
+  unloaded and blocked. Defaults to empty list if not set.
+* `sbd_watchdog` (optional) - Watchdog device to be used by SBD. Defaults to
+  `/dev/watchdog` if not set.
+* `sbd_devices` (optional) - Devices to use for exchanging SBD messages and for
+  monitoring. Defaults to empty list if not set. Always refer to the devices
+  using the long, stable device name (`/dev/disk/by-id/`).
+* `attributes` (optional) - List of sets of Pacemaker node attributes for the
+  node. Currently, only one set is supported, so the first set is used and the
+  rest are ignored.
+* `utilization` (optional) - List of sets of the node's utilization. The field
+  `value` must be an integer. Currently, only one set is supported, so the first
+  set is used and the rest are ignored.
+
+You may take a look at examples:
+
+* configuring cluster to use SBD
+* configuring node attributes
+* configuring utilization
 
 #### `ha_cluster_cluster_properties`
 
@@ -466,44 +608,10 @@ ha_cluster_cluster_properties:
 ```
 
 List of sets of cluster properties - Pacemaker cluster-wide configuration.
-Currently, only one set is supported.
+Currently, only one set is supported, so the first set is used and the rest are
+ignored.
 
 You may take a look at an example.
-
-#### `ha_cluster_node_options`
-
-structure, default: no node options
-
-```yaml
-ha_cluster_node_options:
-  - node_name: node1
-    attributes:
-      - attrs:
-          - name: attribute1
-            value: value1_node1
-          - name: attribute2
-            value: value2_node1
-  - node_name: node2
-    attributes:
-      - attrs:
-          - name: attribute1
-            value: value1_node2
-          - name: attribute2
-            value: value2_node2
-```
-
-This variable defines various settings which vary from cluster node to cluster
-node. **Note:** Use an inventory or playbook hosts to specify which nodes form
-the cluster. This variable merely sets options for the specified nodes. The
-items are as follows:
-
-* `node_name` (mandatory) - Node name.
-* `attributes` (optional) - List of sets of Pacemaker node attributes for the
-  node. Currently, no more than one set for each node is supported.
-
-You may take a look at examples:
-
-* configuring node attributes
 
 #### `ha_cluster_resource_primitives`
 
@@ -539,6 +647,12 @@ ha_cluster_resource_primitives:
             value: operation2_attribute1_value
           - name: operation2_attribute2_name
             value: operation2_attribute2_value
+    utilization:
+      - attrs:
+          - name: utilization1_name
+            value: utilization1_value
+          - name: utilization2_name
+            value: utilization2_value
 ```
 
 This variable defines Pacemaker resources (including stonith) configured by the
@@ -555,11 +669,12 @@ role. The items are as follows:
   it will be unable to decide which agent should be used. Therefore, it is
   recommended to use full names.
 * `instance_attrs` (optional) - List of sets of the resource's instance
-  attributes. Currently, only one set is supported. The exact names and values
-  of attributes, as well as whether they are mandatory or not, depends on the
-  resource or stonith agent.
+  attributes. Currently, only one set is supported, so the first set is used and
+  the rest are ignored. The exact names and values of attributes, as well as
+  whether they are mandatory or not, depends on the resource or stonith agent.
 * `meta_attrs` (optional) - List of sets of the resource's meta attributes.
-  Currently, only one set is supported.
+  Currently, only one set is supported, so the first set is used and the rest
+  are ignored.
 * `copy_operations_from_agent` (optional) - Resource agents usually define
   default settings for resource operations (e.g. interval, timeout) optimized
   for the specific agent. If this variable is set to `true`, then those
@@ -573,9 +688,14 @@ role. The items are as follows:
     resource or stonith agent.
   * `attrs` (mandatory) - Operation options, at least one option must be
     specified.
+* `utilization` (optional) - List of sets of the resource's utilization. The
+  field `value` must be an integer. Currently, only one set is supported, so the
+  first set is used and the rest are ignored.
 
-You may take a look at
-an example.
+You may take a look at examples:
+
+* creating a cluster with fencing and several resources.
+* configuring utilization
 
 #### `ha_cluster_resource_groups`
 
@@ -603,7 +723,8 @@ This variable defines resource groups. The items are as follows:
   `ha_cluster_resource_primitives`. At least
   one resource must be listed.
 * `meta_attrs` (optional) - List of sets of the group's meta attributes.
-  Currently, only one set is supported.
+  Currently, only one set is supported, so the first set is used and the rest
+  are ignored.
 
 You may take a look at
 an example.
@@ -636,7 +757,8 @@ This variable defines resource clones. The items are as follows:
   generated. Warning will be emitted if this option is not supported by the
   cluster.
 * `meta_attrs` (optional) - List of sets of the clone's meta attributes.
-  Currently, only one set is supported.
+  Currently, only one set is supported, so the first set is used and the rest
+  are ignored.
 
 You may take a look at
 an example.
@@ -711,7 +833,8 @@ This variable defines resource bundles. The items are as follows:
   directories on the host's filesystem into the container. Each list of
   name-value dictionaries holds options for one directory mapping.
 * `meta_attrs` (optional) - List of sets of the bundle's meta attributes.
-  Currently, only one set is supported.
+  Currently, only one set is supported, so the first set is used and the rest
+  are ignored.
 
 Note, that the role does not install container launch technology automatically.
 However, you can install it by listing appropriate packages in
@@ -1167,6 +1290,136 @@ ha_cluster_constraints_ticket:
 You may take a look at
 an example.
 
+#### `ha_cluster_acls`
+
+structure, default: no ACLs
+
+```yaml
+ha_cluster_acls:
+  acl_roles:
+    - id: role-id-1
+      description: role description
+      permissions:
+        - kind: access-type
+          xpath: XPath expression
+        - kind: access-type
+          reference: cib-element-id
+    - id: role-id-2
+      permissions:
+        - kind: access-type
+          xpath: XPath expression
+  acl_users:
+    - id: user-name
+      roles:
+        - role-id-1
+        - role-id-2
+  acl_groups:
+    - id: group-name
+      roles:
+        - role-id-2
+```
+
+This variable defines ACLs roles, users and groups.
+
+The items of `acl_roles` are as follows:
+
+* `id` (mandatory) - ID of an ACL role.
+* `description` (optional) - Description of the ACL role.
+* `permissions` (optional) - List of ACL role permissions.
+  * `kind` (mandatory) - The access being granted. Allowed values are `read`,
+    `write`, and `deny`.
+  * `xpath` (optional) - An XPath specification selecting an XML element in the
+    CIB to which the permission applies. It is mandatory to specify exactly one
+    of the items: `xpath` or `reference`.
+  * `reference` (optional) - The ID of an XML element in the CIB to which the
+    permission applies. It is mandatory to specify exactly one of the items:
+    `xpath` or `reference`. **Note:** the ID must exist.
+
+The items of `acl_users` are as follows:
+
+* `id` (mandatory) - ID of an ACL user.
+* `roles` (optional) - List of ACL role IDs assigned to the user.
+
+The items of `acl_groups` are as follows:
+
+* `id` (mandatory) - ID of an ACL group.
+* `roles` (optional) - List of ACL role IDs assigned to the group.
+
+**Note:** Configure cluster property `enable-acl` to enable ACLs in the cluster:
+
+```yaml
+ha_cluster_cluster_properties:
+  - attrs:
+      - name: enable-acl
+        value: 'true'
+```
+
+You may take a look at an example.
+
+#### `ha_cluster_alerts`
+
+structure, default: no alerts
+
+```yaml
+ha_cluster_alerts:
+  - id: alert1
+    path: /alert1/path
+    description: Alert1 description
+    instance_attrs:
+      - attrs:
+        - name: alert_attr1_name
+          value: alert_attr1_value
+    meta_attrs:
+      - attrs:
+        - name: alert_meta_attr1_name
+          value: alert_meta_attr1_value
+    recipients:
+      - value: recipient_value
+        id: recipient1
+        description: Recipient1 description
+        instance_attrs:
+          - attrs:
+            - name: recipient_attr1_name
+              value: recipient_attr1_value
+        meta_attrs:
+          - attrs:
+            - name: recipient_meta_attr1_name
+              value: recipient_meta_attr1_value
+```
+
+This variable defines Pacemaker alerts.
+
+The items of `alerts` are as follows:
+
+* `id` (mandatory) - ID of an alert.
+* `path` (mandatory) - Path to the alert agent executable.
+* `description` (optional) - Description of the alert.
+* `instance_attrs` (optional) - List of sets of the alert's instance
+  attributes. Currently, only one set is supported, so the first set is used and
+  the rest are ignored.
+* `meta_attrs` (optional) - List of sets of the alert's meta attributes.
+  Currently, only one set is supported, so the first set is used and the rest
+  are ignored.
+* `recipients` (optional) - List of alert's recipients.
+
+The items of `recipients` are as follows:
+
+* `value` (mandatory) - Value of a recipient.
+* `id` (optional) - ID of the recipient.
+* `description` (optional) - Description of the recipient.
+* `instance_attrs` (optional) - List of sets of the recipient's instance
+  attributes. Currently, only one set is supported, so the first set is used and
+  the rest are ignored.
+* `meta_attrs` (optional) - List of sets of the recipient's meta attributes.
+  Currently, only one set is supported, so the first set is used and the rest
+  are ignored.
+
+**Note:** The role configures the cluster to call external programs to handle
+alerts. It is your responsibility to provide the programs and distribute them to
+cluster nodes.
+
+You may take a look at an example.
+
 #### `ha_cluster_qnetd`
 
 structure and default value:
@@ -1195,6 +1448,9 @@ for clusters. The items are as follows:
 Note that you cannot run qnetd on a cluster node as fencing would disrupt qnetd
 operation.
 
+If you set `ha_cluster_qnetd: null`, then qnetd host configuration will not be
+changed.
+
 You may take a look at [an
 example](#configuring-a-cluster-using-a-quorum-device).
 
@@ -1202,8 +1458,11 @@ example](#configuring-a-cluster-using-a-quorum-device).
 
 #### Nodes' names and addresses
 
-Nodes' names and addresses can be configured in inventory. This is optional. If
-no names or addresses are configured, play's targets will be used.
+Nodes' names and addresses can be configured in `ha_cluster` variable, for
+example in inventory. This is optional.
+Addresses configured in `ha_cluster_node_options`
+override those configured in `ha_cluster`.
+If no names or addresses are configured, play's targets will be used.
 
 Example inventory with targets `node1` and `node2`:
 
@@ -1235,10 +1494,13 @@ all:
 #### SBD watchdog and devices
 
 When using SBD, you may optionally configure watchdog and SBD devices for each
-node in inventory. Even though all SBD devices must be shared to and accessible
-from all nodes, each node may use different names for the devices. The loaded
-watchdog modules and used devices may also be different for each node. See also
-SBD variables.
+node in `ha_cluster` variable, for example in inventory.
+Even though all SBD devices must be shared to and accessible from all nodes,
+each node may use different names for the devices. The loaded watchdog modules
+and used devices may also be different for each node.
+SBD settings defined in `ha_cluster_node_options`
+override those defined in `ha_cluster`.
+See also SBD variables.
 
 Example inventory with targets `node1` and `node2`:
 
@@ -1252,8 +1514,9 @@ all:
           - module2
         sbd_watchdog: /dev/watchdog2
         sbd_devices:
-          - /dev/vdx
-          - /dev/vdy
+          - /dev/disk/by-id/000001
+          - /dev/disk/by-id/000001
+          - /dev/disk/by-id/000003
     node2:
       ha_cluster:
         sbd_watchdog_modules:
@@ -1262,8 +1525,9 @@ all:
           - module2
         sbd_watchdog: /dev/watchdog1
         sbd_devices:
-          - /dev/vdw
-          - /dev/vdz
+          - /dev/disk/by-id/000001
+          - /dev/disk/by-id/000002
+          - /dev/disk/by-id/000003
 ```
 
 * `sbd_watchdog_modules` (optional) - Watchdog kernel modules to be loaded
@@ -1273,7 +1537,114 @@ all:
 * `sbd_watchdog` (optional) - Watchdog device to be used by SBD. Defaults to
   `/dev/watchdog` if not set.
 * `sbd_devices` (optional) - Devices to use for exchanging SBD messages and for
-  monitoring. Defaults to empty list if not set.
+  monitoring. Defaults to empty list if not set. Always refer to the devices
+  using the long, stable device name (`/dev/disk/by-id/`).
+
+## Variables Exported by the Role
+
+The role contains `ha_cluster_info` module which exports current cluster
+configuration in a dictionary matching the structure of this role variables. If
+the role is run with these variables, it recreates the same cluster.
+
+Note that the dictionary of variables may not be complete and manual
+modification of it is expected. Most notably, you need to set
+`ha_cluster_hacluster_password`.
+
+Note that depending on pcs version installed on managed nodes, certain variables
+may not be present in the export.
+
+* Following variables are present in the export:
+  * `ha_cluster_cluster_present`
+  * `ha_cluster_start_on_boot`
+  * `ha_cluster_cluster_name`
+  * `ha_cluster_transport`
+  * `ha_cluster_totem`
+  * `ha_cluster_quorum`
+  * `ha_cluster_node_options` - currently only
+    `node_name`, `corosync_addresses` and `pcs_address` are present
+
+* Following variables are never present in the export (consult the role
+  documentation for impact of the variables missing when running the role):
+  * `ha_cluster_hacluster_password` - This is
+    a mandatory variable for the role but it cannot be extracted from existing
+    clusters.
+  * `ha_cluster_corosync_key_src`,
+    `ha_cluster_pacemaker_key_src` and
+    `ha_cluster_fence_virt_key_src` - These
+    are supposed to contain paths to files with the keys. Since the keys
+    themselves are not exported, these variables are not present in the export
+    either. Corosync and pacemaker keys are supposed to be unique for each
+    cluster.
+  * `ha_cluster_regenerate_keys` - It is your
+    responsibility to decide if you want to use existing keys or generate new
+    ones.
+
+To export current cluster configuration and store it in `ha_cluster_facts`
+variable, run the role with `ha_cluster_export_configuration: true`. This
+triggers the export once the role finishes configuring a cluster or a qnetd
+host. If you want to trigger the export without modifying existing
+configuration, run the role like this:
+
+```yaml
+- hosts: node1
+  vars:
+    ha_cluster_cluster_present: null
+    ha_cluster_qnetd: null
+    ha_cluster_export_configuration: true
+
+  roles:
+    - redhat.rhel_system_roles.ha_cluster
+```
+
+**Note:** By default, `ha_cluster_cluster_present` is set to `true` and
+`ha_cluster_qnetd.present` is set to `false`. If you do not set the variables as
+shown in the example above, the role will reconfigure your cluster on the
+specified hosts, remove qnetd configuration from the specified hosts, and then
+export configuration.
+
+You may use the `ha_cluster_facts` variable in your playbook depending on your
+needs.
+
+If you just want to see the content of the variable, use the ansible debug
+module like this:
+
+```yaml
+- hosts: node1
+  vars:
+    ha_cluster_cluster_present: null
+    ha_cluster_qnetd: null
+    ha_cluster_export_configuration: true
+
+  roles:
+    - redhat.rhel_system_roles.ha_cluster
+
+  tasks:
+    - name: Print ha_cluster_info_result variable
+      debug:
+        var: ha_cluster_facts
+```
+
+Or you may want to save the configuration to a file on your controller node in
+YAML format with a task similar to this one, so that you can write a playbook
+around it:
+
+```yaml
+- hosts: node1
+  vars:
+    ha_cluster_cluster_present: null
+    ha_cluster_qnetd: null
+    ha_cluster_export_configuration: true
+
+  roles:
+    - redhat.rhel_system_roles.ha_cluster
+
+  tasks:
+    - name: Save current cluster configuration to a file
+      delegate_to: localhost
+      copy:
+        content: "{{ ha_cluster_facts | to_nice_yaml(sort_keys=false) }}"
+        dest: /path/to/file
+```
 
 ## Example Playbooks
 
@@ -1383,10 +1754,71 @@ in /var/lib/pcsd with the file name FILENAME.crt and FILENAME.key, respectively.
 
 ### Configuring cluster to use SBD
 
-#### inventory
+#### Using `ha_cluster_node_options` variable
 
-These variables need to be set in inventory or via `host_vars`. Of course
-the SBD kernel modules and device path might differ depending on your setup.
+```yaml
+- hosts: node1 node2
+  vars:
+    my_sbd_devices:
+      # This variable is not used by the role directly.
+      # Its purpose is to define SBD devices once so they don't need
+      # to be repeated several times in the role variables.
+      # Instead, variables directly used by the role refer to this variable.
+      - /dev/disk/by-id/000001
+      - /dev/disk/by-id/000002
+      - /dev/disk/by-id/000003
+    ha_cluster_cluster_name: my-new-cluster
+    ha_cluster_hacluster_password: password
+    ha_cluster_sbd_enabled: true
+    ha_cluster_sbd_options:
+      - name: delay-start
+        value: 'no'
+      - name: startmode
+        value: always
+      - name: timeout-action
+        value: 'flush,reboot'
+      - name: watchdog-timeout
+        value: 30
+    ha_cluster_node_options:
+      - node_name: node1
+        sbd_watchdog_modules:
+          - iTCO_wdt
+        sbd_watchdog_modules_blocklist:
+          - ipmi_watchdog
+        sbd_watchdog: /dev/watchdog1
+        sbd_devices: "{{ my_sbd_devices }}"
+      - node_name: node2
+        sbd_watchdog_modules:
+          - iTCO_wdt
+        sbd_watchdog_modules_blocklist:
+          - ipmi_watchdog
+        sbd_watchdog: /dev/watchdog1
+        sbd_devices: "{{ my_sbd_devices }}"
+    # Best practice for setting SBD timeouts:
+    # watchdog-timeout * 2 = msgwait-timeout (set automatically)
+    # msgwait-timeout * 1.2 = stonith-timeout
+    ha_cluster_cluster_properties:
+      - attrs:
+          - name: stonith-timeout
+            value: 72
+    ha_cluster_resource_primitives:
+      - id: fence_sbd
+        agent: 'stonith:fence_sbd'
+        instance_attrs:
+          - attrs:
+              - name: devices
+                value: "{{ my_sbd_devices | join(',') }}"
+              - name: pcmk_delay_base
+                value: 30
+
+  roles:
+    - redhat.rhel_system_roles.ha_cluster
+```
+
+#### Using `ha_cluster` variable
+
+The same result can be achieved by specifying node-specific options in inventory
+like this:
 
 ```yaml
 all:
@@ -1399,9 +1831,9 @@ all:
           - ipmi_watchdog
         sbd_watchdog: /dev/watchdog1
         sbd_devices:
-          - /dev/vdx
-          - /dev/vdy
-          - /dev/vdz
+          - /dev/disk/by-id/000001
+          - /dev/disk/by-id/000002
+          - /dev/disk/by-id/000003
     node2:
       ha_cluster:
         sbd_watchdog_modules:
@@ -1410,16 +1842,12 @@ all:
           - ipmi_watchdog
         sbd_watchdog: /dev/watchdog1
         sbd_devices:
-          - /dev/vdx
-          - /dev/vdy
-          - /dev/vdz
+          - /dev/disk/by-id/000001
+          - /dev/disk/by-id/000002
+          - /dev/disk/by-id/000003
 ```
 
-#### playbook
-
-After setting the inventory correctly, use this playbook to configure a
-complete SBD setup including loading watchdog modules and creating the
-SBD stonith resource.
+Variables specified in inventory can be omitted when writing the playbook:
 
 ```yaml
 - hosts: node1 node2
@@ -1449,6 +1877,7 @@ SBD stonith resource.
         instance_attrs:
           - attrs:
               # taken from host_vars
+              # this only works if all nodes have the same sbd_devices
               - name: devices
                 value: "{{ ha_cluster.sbd_devices | join(',') }}"
               - name: pcmk_delay_base
@@ -1457,6 +1886,9 @@ SBD stonith resource.
   roles:
     - redhat.rhel_system_roles.ha_cluster
 ```
+
+If both the `ha_cluster_node_options` and `ha_cluster` variables contain SBD
+options, those in `ha_cluster_node_options` have precedence.
 
 ### Configuring cluster properties
 
@@ -1893,6 +2325,133 @@ Note that you cannot run a quorum device on a cluster node.
                 value: value1B
               - name: attribute2
                 value: value2B
+
+  roles:
+    - redhat.rhel_system_roles.ha_cluster
+```
+
+### Configuring ACLs
+
+```yaml
+- hosts: node1 node2
+  vars:
+    ha_cluster_cluster_name: my-new-cluster
+    ha_cluster_hacluster_password: password
+    # To use an ACL role permission reference, the reference must exist in CIB.
+    ha_cluster_resource_primitives:
+      - id: not-for-operator
+        # wokeignore:rule=dummy
+        agent: 'ocf:pacemaker:Dummy'
+    # ACLs must be enabled (using the enable-acl cluster property) in order to
+    # be effective.
+    ha_cluster_cluster_properties:
+      - attrs:
+          - name: enable-acl
+            value: 'true'
+    ha_cluster_acls:
+      acl_roles:
+        - id: operator
+          description: HA cluster operator
+          permissions:
+            - kind: write
+              xpath: //crm_config//nvpair[@name='maintenance-mode']
+            - kind: deny
+              reference: not-for-operator
+        - id: administrator
+          permissions:
+            - kind: write
+              xpath: /cib
+      acl_users:
+        - id: alice
+          roles:
+            - operator
+            - administrator
+        - id: bob
+          roles:
+            - administrator
+      acl_groups:
+        - id: admins
+          roles:
+            - administrator
+
+  roles:
+    - redhat.rhel_system_roles.ha_cluster
+```
+
+### Configuring utilization
+
+```yaml
+- hosts: node1 node2
+  vars:
+    ha_cluster_cluster_name: my-new-cluster
+    ha_cluster_hacluster_password: password
+    # For utilization to have an effect, the `placement-strategy` property
+    # must be set and its value must be different from the value `default`.
+    ha_cluster_cluster_properties:
+      - attrs:
+          - name: placement-strategy
+            value: utilization
+    ha_cluster_node_options:
+      - node_name: node1
+        utilization:
+          - attrs:
+              - name: utilization1
+                value: 1
+              - name: utilization2
+                value: 2
+      - node_name: node2
+        utilization:
+          - attrs:
+              - name: utilization1
+                value: 3
+              - name: utilization2
+                value: 4
+    ha_cluster_resource_primitives:
+      - id: resource1
+        # wokeignore:rule=dummy
+        agent: 'ocf:pacemaker:Dummy'
+        utilization:
+          - attrs:
+              - name: utilization1
+                value: 2
+              - name: utilization2
+                value: 3
+
+  roles:
+    - redhat.rhel_system_roles.ha_cluster
+```
+
+### Configuring Alerts
+
+```yaml
+- hosts: node1 node2
+  vars:
+    ha_cluster_cluster_name: my-new-cluster
+    ha_cluster_hacluster_password: password
+    ha_cluster_alerts:
+      - id: alert1
+        path: /alert1/path
+        description: Alert1 description
+        instance_attrs:
+          - attrs:
+              - name: alert_attr1_name
+                value: alert_attr1_value
+        meta_attrs:
+          - attrs:
+              - name: alert_meta_attr1_name
+                value: alert_meta_attr1_value
+        recipients:
+          - value: recipient_value
+            id: recipient1
+            description: Recipient1 description
+            instance_attrs:
+              - attrs:
+                  - name: recipient_attr1_name
+                    value: recipient_attr1_value
+            meta_attrs:
+              - attrs:
+                  - name: recipient_meta_attr1_name
+                    value: recipient_meta_attr1_value
 
   roles:
     - redhat.rhel_system_roles.ha_cluster

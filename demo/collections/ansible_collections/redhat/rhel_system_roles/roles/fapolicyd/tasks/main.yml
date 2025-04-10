@@ -134,25 +134,36 @@
           awk '/^-- cursor:/ {print $3}')" || :
       done
       systemctl restart fapolicyd
-      search_str='fapolicyd[^:\ ]*:\ Starting to listen for events$'
+      search_str='^Starting to listen for events$'
       # wait until we see the search_str - wait up to 30 seconds
       waittime=30  # seconds
       endtime="$(expr "$(date +%s)" + "$waittime")"
-      set +o pipefail  # the read will always return a failure code at EOF
-      journalctl -u fapolicyd --no-tail -f --after-cursor "$cursor" | \
-      while read -r line; do
-        if [[ "$line" =~ $search_str ]]; then
-          echo INFO: trustdb is updated
-          exit 0
-        fi
-      done & pid=$!
-      while ps -p "$pid"; do
-        if [ "$(date +%s)" -gt "$endtime" ]; then
-          echo ERROR: failed to update the trustdb
-          exit 1
+      found=0
+      prev_cursor="$cursor"
+      # NOTE: Cannot use -u fapolicyd - for some reason, on el10, sometime during
+      # the startup process, the UNIT field is dropped from fapolicyd journal
+      # entries - so use -t instead which relies on SYSLOG_IDENTIFIER which seems stable
+      while [ "$(date +%s)" -le "$endtime" ]; do
+        prev_cursor="$cursor"
+        output="$(journalctl -t fapolicyd --grep "$search_str" --show-cursor --after-cursor "$cursor" || :)"
+        found=1
+        while read -r line; do
+          if [ "$line" = "-- No entries --" ]; then
+            found=0
+          elif [[ "$line" =~ ^--\ cursor:\ (.+)$ ]]; then
+            cursor="${BASH_REMATCH[1]}"  # update cursor for next try
+          fi
+        done <<< "$output"
+        if [ "$found" = 1 ]; then
+          break
         fi
         sleep 1
       done
+      if [ "$found" = 0 ]; then
+          echo ERROR: failed to update the trustdb
+          journalctl -t fapolicyd
+          exit 1
+      fi
       echo INFO: trustdb is updated
       exit 0  # success
   changed_when: true

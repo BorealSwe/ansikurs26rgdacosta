@@ -33,11 +33,11 @@
         sshd_config_owner: "nobody"
         sshd_config_group: "nobody"
         sshd_config_mode: "660"
-        sshd:
+        sshd_config:
           AcceptEnv: LANG
           Banner: /etc/issue
           Ciphers: aes256-ctr
-        sshd_Compression: false # noqa var-naming
+        sshd_LogLevel: DEBUG1 # noqa var-naming
 
     - name: Configure second alternative sshd_config file
       ansible.builtin.include_role:
@@ -46,7 +46,7 @@
       # just anything -- will not get processed by sshd
         sshd_config_file: /etc/ssh/sshd_config_custom_second
         sshd_skip_defaults: true
-        sshd:
+        sshd_config:
           Banner: /etc/issue2
           Ciphers: aes128-ctr
         sshd_MaxStartups: 100 # noqa var-naming
@@ -56,7 +56,7 @@
         name: redhat.rhel_system_roles.sshd
       vars:
         sshd_config_file: /etc/ssh/sshd_config
-        sshd:
+        sshd_config:
           Banner: /etc/issue
           Ciphers: aes192-ctr
           HostKey:
@@ -95,7 +95,7 @@
               - "'AcceptEnv LANG' in config.content | b64decode"
               - "'Banner /etc/issue' in config.content | b64decode"
               - "'Ciphers aes256-ctr' in config.content | b64decode"
-              - "'Compression no' in config.content | b64decode"
+              - "'LogLevel DEBUG1' in config.content | b64decode"
 
         - name: Check Fedora/RHEL9+ defaults are present in the first configuration file
           ansible.builtin.assert:
@@ -159,7 +159,7 @@
               - "'Ciphers aes128-ctr' in config2.content | b64decode"
               - "'HostKey' not in config2.content | b64decode"
               - "'MaxStartups 100' in config2.content | b64decode"
-              - "'Compression no' not in config2.content | b64decode"
+              - "'LogLevel DEBUG1' not in config2.content | b64decode"
 
         - name: Check content of the main configuration file
           ansible.builtin.assert:
@@ -169,7 +169,7 @@
               - "'HostKey /tmp/ssh_host_ecdsa_key' in config3.content | b64decode"
               - "'PasswordAuthentication no' in config3.content | b64decode"
               - "'MaxStartups 100' not in config3.content | b64decode"
-              - "'Compression no' not in config3.content | b64decode"
+              - "'LogLevel DEBUG1' not in config3.content | b64decode"
 
         - name: Check the main configuration file contains some default values for RHEL 9
           ansible.builtin.assert:

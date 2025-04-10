@@ -1,6 +1,112 @@
 Changelog
 =========
 
+[1.6.10] - 2025-02-26
+--------------------
+
+### Other Changes
+
+- ci: ansible-plugin-scan is disabled for now (#212)
+- ci: bump ansible-lint to v25; provide collection requirements for ansible-lint (#215)
+- ci: Check spelling with codespell (#217)
+- ci: Revert .pandoc_template because it contains a typo in Licence (#218)
+- ci: Add test plan that runs CI tests and customize it for each role (#219)
+- tests: adjust UUID checks to newer versions of insights-core (#220)
+
+[1.6.9] - 2025-01-27
+--------------------
+
+### Bug Fixes
+
+- fix: use the right systemd service for remediations in EL 10+ (#209)
+
+### Other Changes
+
+- tests: stop adding pools to the activation key (#210)
+
+[1.6.8] - 2025-01-09
+--------------------
+
+### Other Changes
+
+- ci: Use Fedora 41, drop Fedora 39 (#206)
+- ci: Use Fedora 41, drop Fedora 39 - part two (#207)
+
+[1.6.7] - 2024-10-30
+--------------------
+
+### Other Changes
+
+- ci: Add tags to TF workflow, allow more [citest bad] formats (#198)
+- ci: ansible-test action now requires ansible-core version (#200)
+- ci: add YAML header to github action workflow files (#201)
+- refactor: Use vars/RedHat_N.yml symlink for CentOS, Rocky, Alma wherever possible (#203)
+- tests: simplify distro check in tests_environments.yml (#204)
+
+[1.6.6] - 2024-08-09
+--------------------
+
+### Bug Fixes
+
+- fix: drop usage of "auto_attach" of the "redhat_subscription" module (#189)
+
+### Other Changes
+
+- ci: Add tft plan and workflow (#187)
+- ci: Update fmf plan to add a separate job to prepare managed nodes (#190)
+- tests: factorize & fix URL for candlepin owner (#191)
+- ci: Bump sclorg/testing-farm-as-github-action from 2 to 3 (#192)
+- ci: Add workflow for ci_test bad, use remote fmf plan (#193)
+- ci: Fix missing slash in ARTIFACTS_URL (#194)
+- tests: switch to an SCA account for Candlepin (#195)
+- tests: run podman directly instead of using containers.podman (#196)
+
+[1.6.5] - 2024-07-02
+--------------------
+
+### Bug Fixes
+
+- fix: add support for EL10 (#184)
+
+### Other Changes
+
+- ci: ansible-lint action now requires absolute directory (#183)
+
+[1.6.4] - 2024-06-11
+--------------------
+
+### Other Changes
+
+- ci: use tox-lsr 3.3.0 which uses ansible-test 2.17 (#178)
+- ci: tox-lsr 3.4.0 - fix py27 tests; move other checks to py310 (#180)
+- ci: Add supported_ansible_also to .ansible-lint (#181)
+
+[1.6.3] - 2024-04-04
+--------------------
+
+### Other Changes
+
+- chore: I added PR description to changelog by mistake (#174)
+
+[1.6.2] - 2024-04-04
+--------------------
+
+### Other Changes
+
+- chore: Fix indentation in CHANGELOG (#172)
+
+[1.6.1] - 2024-04-02
+--------------------
+
+### Bug Fixes
+
+- fix: Ignore ansible_host: "" (#169)
+
+### Other Changes
+
+- ci: Bump ansible/ansible-lint from 6 to 24 (#168)
+- ci: Bump mathieudutour/github-tag-action from 6.1 to 6.2 (#170)
+
 [1.6.0] - 2024-02-21
 --------------------
 
@@ -98,7 +204,6 @@ Changelog
   
   Signed-off-by: Sergei Petrosian <spetrosi@redhat.com>
 
-
 [1.2.5] - 2023-09-07
 --------------------
 
@@ -131,7 +236,6 @@ Changelog
   - Remove badges from README.md prior to converting to HTML
   
   Signed-off-by: Sergei Petrosian <spetrosi@redhat.com>
-
 
 [1.2.4] - 2023-07-31
 --------------------
@@ -173,7 +277,6 @@ Changelog
   Wrap a couple of Insights tests into blocks, so it is possible to always ensure the unregistration at the end of the tests, even in case of failure.
   
   There should be no behaviour change w.r.t. what the tests themselves check.
-
 
 [1.2.1] - 2023-06-06
 --------------------

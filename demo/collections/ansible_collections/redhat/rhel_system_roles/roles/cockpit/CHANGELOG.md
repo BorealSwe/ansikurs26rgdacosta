@@ -1,6 +1,97 @@
 Changelog
 =========
 
+[1.5.15] - 2025-02-03
+--------------------
+
+### Other Changes
+
+- ci: ansible-plugin-scan is disabled for now (#190)
+- ci: bump ansible-lint to v25; provide collection requirements for ansible-lint (#193)
+- test: cockpit-composer is deprecated, so use storaged for test (#194)
+
+[1.5.14] - 2024-12-13
+--------------------
+
+### Other Changes
+
+- ci: Use Fedora 41, drop Fedora 39 (#185)
+- ci: Use Fedora 41, drop Fedora 39 - part two (#186)
+- test: Drop cockpit-ws* groups (#187)
+
+[1.5.13] - 2024-11-20
+--------------------
+
+### Other Changes
+
+- test: full test uses cockpit-composer or cockpit-machines (#183)
+
+[1.5.12] - 2024-11-19
+--------------------
+
+### Other Changes
+
+- test: cockpit-pcp is deprecated - use cockpit-machines (#181)
+
+[1.5.11] - 2024-10-30
+--------------------
+
+### Other Changes
+
+- ci: Add tags to TF workflow, allow more [citest bad] formats (#175)
+- ci: ansible-test action now requires ansible-core version (#176)
+- ci: add YAML header to github action workflow files (#177)
+- refactor: Use vars/RedHat_N.yml symlink for CentOS, Rocky, Alma wherever possible (#179)
+
+[1.5.10] - 2024-08-21
+--------------------
+
+### Other Changes
+
+- ci: Add tft plan and workflow (#167)
+- ci: Update fmf plan to add a separate job to prepare managed nodes (#169)
+- ci: Bump sclorg/testing-farm-as-github-action from 2 to 3 (#170)
+- ci: Add workflow for ci_test bad, use remote fmf plan (#171)
+- ci: Fix missing slash in ARTIFACTS_URL (#172)
+- test: skip check for excluded packages on ostree (#173)
+
+[1.5.9] - 2024-07-23
+--------------------
+
+### Other Changes
+
+- ci: Handle reboot for transactional update systems (#165)
+
+[1.5.8] - 2024-07-02
+--------------------
+
+### Bug Fixes
+
+- fix: wildcard package installation not working with dnf module (#161)
+- fix: add support for EL10 (#163)
+
+### Other Changes
+
+- test: find cockpit test group dynamically (#160)
+- ci: ansible-lint action now requires absolute directory (#162)
+
+[1.5.7] - 2024-06-11
+--------------------
+
+### Other Changes
+
+- ci: use tox-lsr 3.3.0 which uses ansible-test 2.17 (#155)
+- ci: tox-lsr 3.4.0 - fix py27 tests; move other checks to py310 (#157)
+- ci: Add supported_ansible_also to .ansible-lint (#158)
+
+[1.5.6] - 2024-04-04
+--------------------
+
+### Other Changes
+
+- ci: Bump ansible/ansible-lint from 6 to 24 (#152)
+- ci: Bump mathieudutour/github-tag-action from 6.1 to 6.2 (#153)
+
 [1.5.5] - 2024-02-26
 --------------------
 
@@ -14,35 +105,7 @@ Changelog
 ### Other Changes
 
 - ci: fix python unit test - copy pytest config to tests/unit (#147)
-
-  This is fixed by tox-lsr 3.2.2 - all actions that use tox-lsr are updated to
-  3.2.2, not just the python unit tests, even though the fix is only related to
-  pytest.  All roles are updated to use tox-lsr 3.2.2 for the sake of consistency
-  even if not affected by the pytest issue.
-  
-  Something changed recently in the way github actions provisions systems which
-  means some of the directories are not readable by the python unit test actions.
-  In addition, the python unit tests were causing a lot of unnecessary directory
-  traversal doing collection/discovery of unit test files, because of using
-  `pytest -c /path/to/tox-lsr/pytest.ini` Unfortunately, with `pytest`, the
-  directory of the config file is the root directory for the tests and tests
-  discovery, and there is no way around this.
-  
-  Therefore, the only solution is to copy the tox-lsr `pytest.ini` to the
-  `tests/unit` directory, which makes that the test root directory.
-  
-  See also https://github.com/linux-system-roles/tox-lsr/pull/160
-  
-  Signed-off-by: Rich Megginson <rmeggins@redhat.com>
-
 - test: Add python_version to test facts gather ansible_python_version (#148)
-
-  Enhancement: Gather python_version is tests_config.yml to gather ansible_python_version fact
-  
-  Reason: The role didn't gather ansible_python_version but used it in tests_fcontext.yml, hence this test failed on Ansible-2.14 on RHEL 8.10
-  
-  Result: The bug is fixed
-
 
 [1.5.3] - 2024-01-23
 --------------------
@@ -116,7 +179,6 @@ Changelog
   - Remove badges from README.md prior to converting to HTML
   
   Signed-off-by: Sergei Petrosian <spetrosi@redhat.com>
-
 
 [1.4.7] - 2023-07-19
 --------------------

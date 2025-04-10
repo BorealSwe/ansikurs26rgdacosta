@@ -405,20 +405,14 @@
 
         - name: Fetch cluster versions of cluster components
           include_tasks: tasks/fetch_versions.yml
-
-        - name: Discover CIB schema version
-          command:
-            cmd: >
-              xmllint
-              --xpath 'substring-after(/cib/@validate-with, "pacemaker-")'
-              /var/lib/pacemaker/cib/cib.xml
-          register: __test_cib_validate_with
-          changed_when: false
+          vars:
+            with_cib_schema_version: true
 
         - name: Discover role names
           set_fact:
             __test_new_roles_pcs: "{{ __test_pcs_version is version('0.11', '>=') }}"
-            __test_new_roles_cib: "{{ __test_pcs_version is version('0.11', '>=') and __test_cib_validate_with.stdout is version('3.7', '>=') }}"
+            __test_new_roles_cib: "{{ __test_pcs_version is version('0.11', '>=') and __test_cib_validate_with is version('3.7', '>=') }}"
+            __test_inner_rules_score: "{{ __test_cib_validate_with is version('3.9', '<') or __test_pcs_version is version('0.12', '<') }}"
 
       # yamllint disable rule:line-length
         - name: Verify location constraints
@@ -541,7 +535,7 @@
           when:
             - '"pcmk.constraint.config.output-formats" in __test_pcs_capabilities'
           vars:
-            __test_expected_lines: >
+            __test_expected_lines: |
               {
                   "colocation": [],
                   "colocation_set": [],
@@ -706,6 +700,9 @@
                                       "id": "location-d3-rule",
                                       "in_effect": "UNKNOWN",
                                       "options": {
+                                          {% if __test_pcs_version is version("0.12", ">=") %}
+                                            "boolean-op": "and",
+                                          {% endif %}
                                           "score": "INFINITY"
                                       },
                                       "type": "RULE"
@@ -747,6 +744,9 @@
                                       "id": "location-dd-rule",
                                       "in_effect": "UNKNOWN",
                                       "options": {
+                                          {% if __test_pcs_version is version("0.12", ">=") %}
+                                            "boolean-op": "and",
+                                          {% endif %}
                                           "score": "INFINITY"
                                       },
                                       "type": "RULE"
@@ -824,7 +824,9 @@
                                               "in_effect": "UNKNOWN",
                                               "options": {
                                                   "boolean-op": "or",
-                                                  "score": "0"
+                                                  {% if __test_inner_rules_score %}
+                                                    "score": "0"
+                                                  {% endif %}
                                               },
                                               "type": "RULE"
                                           }
@@ -910,7 +912,9 @@
                                               "in_effect": "UNKNOWN",
                                               "options": {
                                                   "boolean-op": "or",
-                                                  "score": "0"
+                                                  {% if __test_inner_rules_score %}
+                                                    "score": "0"
+                                                  {% endif %}
                                               },
                                               "type": "RULE"
                                           }
@@ -1207,7 +1211,9 @@
                                               "in_effect": "UNKNOWN",
                                               "options": {
                                                   "boolean-op": "or",
-                                                  "score": "0"
+                                                  {% if __test_inner_rules_score %}
+                                                    "score": "0"
+                                                  {% endif %}
                                               },
                                               "type": "RULE"
                                           },
@@ -1292,7 +1298,9 @@
                                               "in_effect": "UNKNOWN",
                                               "options": {
                                                   "boolean-op": "or",
-                                                  "score": "0"
+                                                  {% if __test_inner_rules_score %}
+                                                    "score": "0"
+                                                  {% endif %}
                                               },
                                               "type": "RULE"
                                           },
@@ -1356,6 +1364,9 @@
                                       "id": "location-d3-4-rule",
                                       "in_effect": "UNKNOWN",
                                       "options": {
+                                          {% if __test_pcs_version is version("0.12", ">=") %}
+                                            "boolean-op": "and",
+                                          {% endif %}
                                           "score": "INFINITY"
                                       },
                                       "type": "RULE"
@@ -1397,6 +1408,9 @@
                                       "id": "location-dd-4-rule",
                                       "in_effect": "UNKNOWN",
                                       "options": {
+                                          {% if __test_pcs_version is version("0.12", ">=") %}
+                                            "boolean-op": "and",
+                                          {% endif %}
                                           "score": "INFINITY"
                                       },
                                       "type": "RULE"
@@ -1438,6 +1452,9 @@
                                       "id": "cl9-rule",
                                       "in_effect": "UNKNOWN",
                                       "options": {
+                                          {% if __test_pcs_version is version("0.12", ">=") %}
+                                            "boolean-op": "and",
+                                          {% endif %}
                                           "role": "Unpromoted",
                                           "score": "-47"
                                       },
@@ -1480,6 +1497,9 @@
                                       "id": "cl10-rule",
                                       "in_effect": "UNKNOWN",
                                       "options": {
+                                          {% if __test_pcs_version is version("0.12", ">=") %}
+                                            "boolean-op": "and",
+                                          {% endif %}
                                           "role": "Unpromoted",
                                           "score": "-47"
                                       },
@@ -1512,12 +1532,12 @@
 
             - name: Print expected location constraints configuration
               debug:
-                var: __test_expected_lines | from_json
+                var: __test_expected_lines
 
             - name: Check location constraints configuration
               assert:
                 that:
-                  - __test_pcs_location_config.stdout | from_json == __test_expected_lines | from_json
+                  - __test_pcs_location_config.stdout | from_json == __test_expected_lines
 
         - name: Verify colocation constraints
           when:

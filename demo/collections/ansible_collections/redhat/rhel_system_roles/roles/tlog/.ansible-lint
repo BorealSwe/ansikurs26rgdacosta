@@ -24,3 +24,5 @@ mock_modules:
   - redhat.rhel_system_roles.ini_file
 mock_roles:
   - rhel-system-roles.tlog
+supported_ansible_also:
+  - "2.14.0"

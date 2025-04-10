@@ -59,7 +59,7 @@ SOFTWARE.
   <style type="text/css">code{white-space: pre;}</style>
   <style type="text/css">
 pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span { line-height: 1.25; }
 pre > code.sourceCode > span:empty { height: 1.2em; }
 .sourceCode { overflow: visible; }
 code.sourceCode > span { color: inherit; text-decoration: inherit; }
@@ -70,7 +70,7 @@ div.sourceCode { overflow: auto; }
 }
 @media print {
 pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
 }
 pre.numberSource code
   { counter-reset: source-line 0; }
@@ -169,6 +169,8 @@ id="toc-sshd_sysconfig_override_crypto_policy">sshd_sysconfig_override_crypto_po
 id="toc-sshd_sysconfig_use_strong_rng">sshd_sysconfig_use_strong_rng</a></li>
 <li><a href="#sshd_config_file"
 id="toc-sshd_config_file">sshd_config_file</a></li>
+<li><a href="#sshd_main_config_file"
+id="toc-sshd_main_config_file">sshd_main_config_file</a></li>
 <li><a href="#sshd_config_namespace"
 id="toc-sshd_config_namespace">sshd_config_namespace</a></li>
 <li><a href="#sshd_config_owner-sshd_config_group-sshd_config_mode"
@@ -267,7 +269,7 @@ for those hosts.</p>
 <h1 id="requirements">Requirements</h1>
 <p>Tested on:</p>
 <ul>
-<li>Ubuntu precise, trusty, xenial, bionic, focal, jammy
+<li>Ubuntu precise, trusty, xenial, bionic, focal, jammy, noble
 <ul>
 <li><a
 href="https://github.com/willshersystems/ansible-sshd/actions/workflows/ansible-ubuntu.yml"><img
@@ -281,7 +283,7 @@ href="https://github.com/willshersystems/ansible-sshd/actions/workflows/ansible-
 src="https://github.com/willshersystems/ansible-sshd/actions/workflows/ansible-debian-check.yml/badge.svg"
 alt="Run tests on Debian" /></a></li>
 </ul></li>
-<li>EL 6, 7, 8, 9 derived distributions
+<li>EL 6, 7, 8, 9, 10 derived distributions
 <ul>
 <li><a
 href="https://github.com/willshersystems/ansible-sshd/actions/workflows/ansible-centos-check.yml"><img
@@ -427,6 +429,19 @@ to Include from drop-in directory (default in Fedora and RHEL9).</p>
 configuration file (defined with the variable
 <code>sshd_main_config_file</code>) is checked to contain a proper
 <code>Include</code> directive.</p>
+<h3 id="sshd_main_config_file">sshd_main_config_file</h3>
+<p>When the system is using drop-in directory, this option can be used
+to set a path to the main configuration file and let you configure only
+the drop-in configuration file using <code>sshd_config_file</code>. This
+is useful in cases when you need to configure second independent sshd
+service with different configuration file. This is also the file used in
+the service file.</p>
+<p>On systems without drop-in directory, it defaults to
+<code>None</code>. Otherwise it defaults to
+<code>/etc/ssh/sshd_config</code>. When the
+<code>sshd_config_file</code> is set outside of the drop in directory
+(its parent directory is not <code>sshd_main_config_file</code> ~ '.d'),
+this variable is ignored.</p>
 <h3 id="sshd_config_namespace">sshd_config_namespace</h3>
 <p>By default (<em>null</em>), the role defines whole content of the
 configuration file including system defaults. You can use this variable

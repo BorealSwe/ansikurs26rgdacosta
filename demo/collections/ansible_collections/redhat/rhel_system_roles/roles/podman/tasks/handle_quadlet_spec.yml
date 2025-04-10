@@ -20,7 +20,7 @@
     __podman_quadlet_file_src: "{{ __podman_quadlet_spec_item['file_src'] if 'file_src' in __podman_quadlet_spec_item else none }}"
     __podman_quadlet_template_src: "{{ __podman_quadlet_spec_item['template_src'] if 'template_src' in __podman_quadlet_spec_item else none }}"
   vars:
-    __del_params: "^(file_src|file_content|file|run_as_user|run_as_group|systemd_unit_scope|name|type|state|activate_systemd_unit|template_src|pull_image|continue_if_pull_fails)$"
+    __del_params: "^(file_src|file_content|file|run_as_user|run_as_group|systemd_unit_scope|name|type|state|activate_systemd_unit|template_src|pull_image|continue_if_pull_fails|registry_username|registry_password)$"
 
 - name: Set per-container variables part 1
   set_fact:
@@ -68,7 +68,7 @@
     __podman_activate_systemd_unit: "{{ __podman_quadlet_spec_item['activate_systemd_unit'] | d(podman_activate_systemd_unit) }}"
     __podman_images_found: "{{ __podman_quadlet_str | regex_search('(?m)^Image=\"?([^\"]+?)\"?$', '\\1') if __podman_quadlet_str and __podman_quadlet_type == 'container' else [__podman_quadlet_spec['Container']['Image']] if __podman_quadlet_spec.get('Container', {}).get('Image') else [] }}"
     __podman_kube_yamls_raw: "{{ __podman_quadlet_str | regex_search('(?m)^Yaml=\"?([^\"]+?)\"?$', '\\1') if __podman_quadlet_str and __podman_quadlet_type == 'kube' else __podman_quadlet_spec['Yaml'] | d(none) }}"
-    __podman_service_name: "{{ __podman_quadlet_name ~ '.service' if __podman_quadlet_type in ['container', 'kube'] else __podman_quadlet_name ~ '-volume.service' if __podman_quadlet_type in ['volume'] else none }}"
+    __podman_service_name: "{{ __podman_quadlet_name ~ '.service' if __podman_quadlet_type in ['container', 'kube'] else __podman_quadlet_name ~ '-volume.service' if __podman_quadlet_type in ['volume'] else __podman_quadlet_name ~ '-network.service' if __podman_quadlet_type in ['network'] else __podman_quadlet_name ~ '-pod.service' if __podman_quadlet_type in ['pod'] else none }}"
 
 - name: Set per-container variables part 4
   set_fact:
@@ -90,15 +90,24 @@
     __podman_images: "{{ __podman_images_found if __podman_images_found else __images + __init_images }}"
     __podman_volumes: "{{ __volumes_from_unit_spec + __volumes_from_kube_spec if podman_create_host_directories else [] }}"
   vars:
+    __volumes_from_container: "{{ __podman_quadlet_spec.get('Container', {}).get('Volume', []) | map('regex_search', '^([^:]+):.+$') | reject('search', '[.]volume$') | select | list }}"
+    __volumes_from_pod: "{{ __podman_quadlet_spec.get('Pod', {}).get('Volume', []) | map('regex_search', '^([^:]+):.+$') | reject('search', '[.]volume$') | select | list }}"
     __file: "{{ __podman_quadlet_spec_item['file'] if 'file' in __podman_quadlet_spec_item else none }}"
     __podman_kube: "{{ __podman_kube_content.content | b64decode | from_yaml_all | list if __podman_kube_content.content is defined else [] }}"
     __images: "{{ __podman_kube | selectattr('spec', 'defined') | map(attribute='spec') | selectattr('containers', 'defined') | map(attribute='containers') | flatten | selectattr('image', 'defined') | map(attribute='image') | list if __podman_kube else [] }}"
     __init_images: "{{ __podman_kube | selectattr('spec', 'defined') | map(attribute='spec') | selectattr('initContainers', 'defined') | map(attribute='initContainers') | flatten | selectattr('image', 'defined') | map(attribute='image') | list if __podman_kube else [] }}"
-    __volumes_from_unit_spec: "{{ __podman_quadlet_str | regex_findall('(?m)^Volume=\"?([^:]+):.+$') | reject('search', '[.]volume$') | list if __podman_quadlet_str and __podman_quadlet_type == 'container' and podman_create_host_directories else __podman_quadlet_spec.get('Container', {}).get('Volume', []) | map('regex_search', '^([^:]+):.+$') | reject('search', '[.]volume$') | select | list if podman_create_host_directories else [] }}"
+    __volumes_from_unit_spec: "{{ __podman_quadlet_str | regex_findall('(?m)^Volume=\"?([^:]+):.+$') | reject('search', '[.]volume$') | list if __podman_quadlet_str and __podman_quadlet_type in ['container', 'pod'] and podman_create_host_directories else __volumes_from_container + __volumes_from_pod if podman_create_host_directories else [] }}"
     __host_paths: "{{ __podman_kube | selectattr('spec', 'defined') | map(attribute='spec') | selectattr('volumes', 'defined') | map(attribute='volumes') | flatten | map('dict2items') | list | flatten | selectattr('key', 'match', '^hostPath$') | map(attribute='value') | list if __podman_kube else [] }}"
     __dir_vols: "{{ __host_paths | selectattr('type', 'defined') | selectattr('type', 'match', '^Directory') | list if __podman_kube else [] }}"
     __notype_vols: "{{ __host_paths | rejectattr('type', 'defined') | list }}"
     __volumes_from_kube_spec: "{{ (__dir_vols + __notype_vols) | map(attribute='path') | unique | list if __podman_kube and podman_create_host_directories else [] }}"
+
+- name: Set per-container variables part 6
+  set_fact:
+    __podman_registry_username: "{{ __podman_quadlet_spec_item['registry_username'] if 'registry_username' in __podman_quadlet_spec_item else podman_registry_username }}"
+    __podman_registry_password: "{{ __podman_quadlet_spec_item['registry_password'] if 'registry_password' in __podman_quadlet_spec_item else podman_registry_password }}"
+    __podman_validate_certs: "{{ __podman_quadlet_spec_item['validate_certs'] if 'validate_certs' in __podman_quadlet_spec_item else podman_validate_certs }}"
+  no_log: true
 
 - name: Cleanup quadlets
   include_tasks: cleanup_quadlet_spec.yml

@@ -477,7 +477,7 @@ class ArgValidatorDict(ArgValidator):
             items = list(value.items())
         except AttributeError:
             raise ValidationError(name, "invalid content is not a dictionary")
-        for (setting, value) in items:
+        for setting, value in items:
             try:
                 validator = self.nested[setting]
             except KeyError:
@@ -493,7 +493,7 @@ class ArgValidatorDict(ArgValidator):
             except ValidationError as e:
                 raise ValidationError(e.name, e.error_message)
             result[setting] = validated_value
-        for (setting, validator) in self.nested.items():
+        for setting, validator in self.nested.items():
             if setting in seen_keys:
                 continue
             if validator.required:
@@ -543,7 +543,7 @@ class ArgValidatorList(ArgValidator):
             value = [s for s in value.split(" ") if s]
 
         result = []
-        for (idx, v) in enumerate(value):
+        for idx, v in enumerate(value):
             if (v is None or v == "") and self.remove_none_or_empty:
                 continue
             try:
@@ -680,6 +680,9 @@ class ArgValidatorIPRoute(ArgValidatorDict):
                     enum_values=["blackhole", "prohibit", "unreachable"],
                 ),
                 ArgValidatorRouteTable("table"),
+                ArgValidatorIP(
+                    "src", family=family, default_value=None, plain_address=False
+                ),
             ],
             default_value=None,
         )
@@ -715,6 +718,16 @@ class ArgValidatorIPRoute(ArgValidatorDict):
             result["prefix"] = prefix
         elif not Util.addr_family_valid_prefix(family, prefix):
             raise ValidationError(name, "invalid prefix %s in '%s'" % (prefix, value))
+
+        src = result["src"]
+        if src is not None:
+            if family != src["family"]:
+                raise ValidationError(
+                    name,
+                    "conflicting address family between network and src "
+                    "address {0}".format(src["address"]),
+                )
+            result["src"] = src["address"]
 
         return result
 
@@ -894,6 +907,11 @@ class ArgValidator_DictIP(ArgValidatorDict):
                 ArgValidatorBool("auto6", default_value=None),
                 ArgValidatorBool("ipv4_ignore_auto_dns", default_value=None),
                 ArgValidatorBool("ipv6_ignore_auto_dns", default_value=None),
+                ArgValidatorStr(
+                    "wait_ip",
+                    enum_values=["any", "ipv4", "ipv6", "ipv4+ipv6"],
+                    default_value="any",
+                ),
                 ArgValidatorBool("ipv6_disabled", default_value=None),
                 ArgValidatorIP("gateway6", family=socket.AF_INET6),
                 ArgValidatorNum(
@@ -947,6 +965,7 @@ class ArgValidator_DictIP(ArgValidatorDict):
                 "auto6": True,
                 "ipv4_ignore_auto_dns": None,
                 "ipv6_ignore_auto_dns": None,
+                "wait_ip": "any",
                 "ipv6_disabled": False,
                 "gateway6": None,
                 "route_metric6": None,
@@ -1853,6 +1872,12 @@ class ArgValidator_DictConnection(ArgValidatorDict):
                     "type", enum_values=ArgValidator_DictConnection.VALID_TYPES
                 ),
                 ArgValidatorBool("autoconnect", default_value=True),
+                ArgValidatorNum(
+                    "autoconnect_retries",
+                    val_min=0,
+                    val_max=UINT32_MAX,
+                    default_value=-1,
+                ),
                 ArgValidatorStr(
                     "port_type",
                     enum_values=ArgValidator_DictConnection.VALID_PORT_TYPES,
@@ -2503,6 +2528,14 @@ class ArgValidator_ListConnections(ArgValidatorList):
                     "ip.ipv4_ignore_auto_dns or ip.ipv6_ignore_auto_dns is not "
                     "supported by initscripts.",
                 )
+        # initscripts does not support ip.wait_ip,
+        # so raise errors when network provider is initscripts
+        if connection["ip"]["wait_ip"] != "any":
+            if mode == self.VALIDATE_ONE_MODE_INITSCRIPTS:
+                raise ValidationError.from_connection(
+                    idx,
+                    "ip.wait_ip is not supported by initscripts.",
+                )
         # initscripts does not support ip.dns_options, so raise errors when network
         # provider is initscripts
         if connection["ip"]["dns_options"]:
@@ -2627,6 +2660,12 @@ class ArgValidator_ListConnections(ArgValidatorList):
                             idx,
                             "type is not supported by initscripts",
                         )
+                    if route["src"] is not None:
+                        raise ValidationError.from_connection(
+                            idx,
+                            "configuring the route source is not supported by initscripts",
+                        )
+
         if connection["ip"]["routing_rule"]:
             if mode == self.VALIDATE_ONE_MODE_INITSCRIPTS:
                 raise ValidationError.from_connection(

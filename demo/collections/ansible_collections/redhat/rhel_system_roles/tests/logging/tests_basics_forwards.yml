@@ -90,6 +90,7 @@
                 target: host.domain
               - name: forwards_no_severity_and_facility_protocol_port_target
                 type: forwards
+                target: host.domain
               - target: no_name.localdomain
                 type: forwards
             logging_inputs:
@@ -139,10 +140,11 @@
             grep '{{ __test_template_trad }}' '{{ __test_forward_module_conf }}'
           changed_when: false
 
-        - name: Generate a file to check severity_and_facility
-          copy:
-            dest: /tmp/__testfile__
-            content: |
+        - name: Check severity_and_facility
+          include_tasks: tasks/compare_file_to_content.yml
+          vars:
+            compare_file: "{{ __test_forward_conf_s_f }}"
+            expected_content: |
               #
               # Ansible managed
               #
@@ -160,16 +162,12 @@
                       queue.saveonshutdown="on"
                   )
               }
-            mode: '0600'
 
-        - name: Check severity_and_facility
-          command: diff -B /tmp/__testfile__ '{{ __test_forward_conf_s_f }}'
-          changed_when: false
-
-        - name: Generate a file to check facility_only
-          copy:
-            dest: /tmp/__testfile__
-            content: |
+        - name: Check facility_only
+          include_tasks: tasks/compare_file_to_content.yml
+          vars:
+            compare_file: "{{ __test_forward_conf_f }}"
+            expected_content: |
               #
               # Ansible managed
               #
@@ -183,16 +181,12 @@
                       Template="{{ __test_template }}"
                   )
               }
-            mode: '0600'
 
-        - name: Check facility_only
-          command: diff -B /tmp/__testfile__ '{{ __test_forward_conf_f }}'
-          changed_when: false
-
-        - name: Generate a file to check severity_only
-          copy:
-            dest: /tmp/__testfile__
-            content: |
+        - name: Check severity_only
+          include_tasks: tasks/compare_file_to_content.yml
+          vars:
+            compare_file: "{{ __test_forward_conf_s }}"
+            expected_content: |
               #
               # Ansible managed
               #
@@ -206,16 +200,12 @@
                       Template="{{ __test_template }}"
                   )
               }
-            mode: '0600'
 
-        - name: Check severity_only
-          command: diff -B /tmp/__testfile__ '{{ __test_forward_conf_s }}'
-          changed_when: false
-
-        - name: Generate a file to check no_severity_and_facility
-          copy:
-            dest: /tmp/__testfile__
-            content: |
+        - name: Check no_severity_and_facility
+          include_tasks: tasks/compare_file_to_content.yml
+          vars:
+            compare_file: "{{ __test_forward_conf_no }}"
+            expected_content: |
               #
               # Ansible managed
               #
@@ -229,16 +219,12 @@
                       Template="{{ __test_template }}"
                   )
               }
-            mode: '0600'
 
-        - name: Check no_severity_and_facility
-          command: diff -B /tmp/__testfile__ '{{ __test_forward_conf_no }}'
-          changed_when: false
-
-        - name: Generate a file to check no_severity_and_facility_udp
-          copy:
-            dest: /tmp/__testfile__
-            content: |
+        - name: Check no_severity_and_facility_udp
+          include_tasks: tasks/compare_file_to_content.yml
+          vars:
+            compare_file: "{{ __test_forward_conf_no_udp }}"
+            expected_content: |
               #
               # Ansible managed
               #
@@ -252,17 +238,13 @@
                       Template="{{ __test_template }}"
                   )
               }
-            mode: '0600'
-
-        - name: Check no_severity_and_facility_udp
-          command: diff -B /tmp/__testfile__ '{{ __test_forward_conf_no_udp }}'
-          changed_when: false
 
       # yamllint disable rule:line-length
-        - name: Generate a file to check no_severity_and_facility_protocol_port
-          copy:
-            dest: /tmp/__testfile__
-            content: |
+        - name: Check no_severity_and_facility_protocol_port
+          include_tasks: tasks/compare_file_to_content.yml
+          vars:
+            compare_file: "{{ __test_forward_conf_no_p_p }}"
+            expected_content: |
               #
               # Ansible managed
               #
@@ -274,11 +256,6 @@
                       Template="{{ __test_template }}"
                   )
               }
-            mode: '0600'
-
-        - name: Check no_severity_and_facility_protocol_port
-          command: diff -B /tmp/__testfile__ '{{ __test_forward_conf_no_p_p }}'
-          changed_when: false
 
         - name: Grep no_severity_and_facility_protocol_port_target
           shell: |-
@@ -286,7 +263,7 @@
             /bin/grep '<action.*forwards_no_severity_and_facility_protocol_port_target>' /etc/rsyslog.d/30-output-forwards*.conf
           register: __result
           changed_when: false
-          failed_when: "__result is not failed"
+          failed_when: __result is not failed
 
         - name: Grep no_name
           shell: |-
@@ -294,7 +271,7 @@
             /bin/grep '<action.*forwards_no_name\.localdomain>' /etc/rsyslog.d/30-output-forwards*.conf
           register: __result
           changed_when: false
-          failed_when: "__result is not failed"
+          failed_when: __result is not failed
 
         - name: Check output to messages line
           command: >-
@@ -376,10 +353,11 @@
             __check_systemctl_status: true
           include_tasks: tasks/check_daemon_config_files.yml
 
-        - name: Generate a file to check severity_and_facility
-          copy:
-            dest: /tmp/__testfile__
-            content: |
+        - name: Check severity_and_facility
+          include_tasks: tasks/compare_file_to_content.yml
+          vars:
+            compare_file: "{{ __test_forward_conf_s_f }}"
+            expected_content: |
               #
               # Ansible managed
               #
@@ -397,11 +375,6 @@
                       Template="{{ __test_template }}"
                   )
               }
-            mode: '0600'
-
-        - name: Check severity_and_facility
-          command: diff -B /tmp/__testfile__ '{{ __test_forward_conf_s_f }}'
-          changed_when: false
 
         - name: Check the fake ca cert is successfully copied
           stat:
@@ -490,10 +463,11 @@
             __check_systemctl_status: true
           include_tasks: tasks/check_daemon_config_files.yml
 
-        - name: Generate a file to check severity_and_facility
-          copy:
-            dest: /tmp/__testfile__
-            content: |
+        - name: Check severity_and_facility
+          include_tasks: tasks/compare_file_to_content.yml
+          vars:
+            compare_file: "{{ __test_forward_conf_s_f }}"
+            expected_content: |
               #
               # Ansible managed
               #
@@ -511,11 +485,6 @@
                       Template="{{ __test_template }}"
                   )
               }
-            mode: '0600'
-
-        - name: Check severity_and_facility
-          command: diff -B /tmp/__testfile__ '{{ __test_forward_conf_s_f }}'
-          changed_when: false
 
         - name: Check the fake key/certs are successfully copied
           stat:
@@ -567,6 +536,9 @@
             done
             rmdir /tmp/rsyslog.d-backup
           changed_when: false
+
+        - name: Assert {{ __default_system_log }}
+          include_tasks: tasks/assert_varlogmessages.yml
 
       # TEST CASE 3
         - name: Test case 3
@@ -632,8 +604,3 @@
             path: "{{ _tmpdir.path }}"
             state: absent
           delegate_to: localhost
-
-        - name: Remove test file
-          file:
-            path: /tmp/__testfile__
-            state: absent

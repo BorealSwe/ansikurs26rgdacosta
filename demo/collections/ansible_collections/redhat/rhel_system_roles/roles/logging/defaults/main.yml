@@ -101,6 +101,10 @@ logging_manage_firewall: false
 # configure the selinux for the ports using the selinux role.
 logging_manage_selinux: false
 
+# A list of custom config files to copy to the default logging
+# configuration directory
+logging_custom_config_files: []
+
 # If you want the role to generate the certificates in the logging
 # configuration, specify the arguments to pass to the certificate
 # system role. Here's an example.
@@ -109,6 +113,14 @@ logging_manage_selinux: false
 #     dns: ['localhost', 'www.example.com']
 #     ca: self-sign
 logging_certificates: []
+
+# logging_custom_templates
+#
+# List of custom templates to provide
+# Each element is the string definition of
+# an rsyslog output template as defined here:
+# https://www.rsyslog.com/doc/configuration/templates.html
+logging_custom_templates: []
 
 # ansible_facts required by the role
 __logging_required_facts:
@@ -122,3 +134,21 @@ __logging_required_facts:
 # facts in required_facts is missing; see the documentation of
 # the 'gather_subset' parameter of the 'setup' module
 __logging_required_facts_subsets: "{{ ['!all', '!min'] + __logging_required_facts }}"
+
+# BEGIN - DO NOT EDIT THIS BLOCK - rh distros variables
+# Ansible distribution identifiers that the role treats like RHEL
+__logging_rh_distros:
+  - AlmaLinux
+  - CentOS
+  - RedHat
+  - Rocky
+
+# Same as above but includes Fedora
+__logging_rh_distros_fedora: "{{ __logging_rh_distros + ['Fedora'] }}"
+
+# Use this in conditionals to check if distro is Red Hat or clone
+__logging_is_rh_distro: "{{ ansible_distribution in __logging_rh_distros }}"
+
+# Use this in conditionals to check if distro is Red Hat or clone, or Fedora
+__logging_is_rh_distro_fedora: "{{ ansible_distribution in __logging_rh_distros_fedora }}"
+# END - DO NOT EDIT THIS BLOCK - rh distros variables

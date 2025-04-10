@@ -16,7 +16,7 @@
     __podman_kube_spec: "{{ __podman_kube_spec_item | dict2items | rejectattr('key', 'match', __del_params) | list | items2dict }}"
     __podman_kube_str: "{{ __podman_kube_spec_item['kube_file_content'] if 'kube_file_content' in __podman_kube_spec_item and not __podman_kube_spec_item['kube_file_content'] is mapping else __podman_kube_spec_item['kube_file_content'] | to_nice_yaml if 'kube_file_content' in __podman_kube_spec_item and __podman_kube_spec_item['kube_file_content'] is mapping else lookup('file', __podman_kube_spec_item['kube_file_src']) if 'kube_file_src' in __podman_kube_spec_item and __podman_kube_spec_item['kube_file_src'] is exists else none }}"
   vars:
-    __del_params: "^(kube_file_src|kube_file_content|run_as_user|run_as_group|systemd_unit_scope|activate_systemd_unit|pull_image|continue_if_pull_fails)$"
+    __del_params: "^(kube_file_src|kube_file_content|run_as_user|run_as_group|systemd_unit_scope|activate_systemd_unit|pull_image|continue_if_pull_fails|registry_username|registry_password)$"
 
 - name: Set per-container variables part 1
   set_fact:
@@ -64,6 +64,13 @@
 - name: Set per-container variables part 5
   set_fact:
     __podman_kube_file: "{{ __podman_kube_file if __podman_kube_file and __podman_kube_file is abs else __podman_kube_path ~ '/' ~ __podman_kube_file if __podman_kube_file else __podman_kube_path ~ '/' ~ __podman_kube_name ~ '.yml' }}"
+
+- name: Set per-container variables part 6
+  set_fact:
+    __podman_registry_username: "{{ __podman_kube_spec_item['registry_username'] if 'registry_username' in __podman_kube_spec_item else podman_registry_username }}"
+    __podman_registry_password: "{{ __podman_kube_spec_item['registry_password'] if 'registry_password' in __podman_kube_spec_item else podman_registry_password }}"
+    __podman_validate_certs: "{{ __podman_kube_spec_item['validate_certs'] if 'validate_certs' in __podman_kube_spec_item else podman_validate_certs }}"
+  no_log: true
 
 - name: Get service name using systemd-escape
   command: >-

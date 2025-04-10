@@ -22,6 +22,7 @@ galaxy_info:
     - pcp
     - graph
     - redis
+    - valkey
     - vector
     - grafana
     - metrics
@@ -33,3 +34,7 @@ galaxy_info:
     - lightweight
     - visualization
     - instrumentation
+    - el
+    - fedora
+    - debian
+    - ubuntu

@@ -43,3 +43,21 @@ __keylime_server_registrar_keys_certs_config: registrar-keys-certs.conf
 # time, in seconds, to wait for the verifier and registrar
 # services to become available
 __keylime_service_timeout: 30
+
+# BEGIN - DO NOT EDIT THIS BLOCK - rh distros variables
+# Ansible distribution identifiers that the role treats like RHEL
+__keylime_server_rh_distros:
+  - AlmaLinux
+  - CentOS
+  - RedHat
+  - Rocky
+
+# Same as above but includes Fedora
+__keylime_server_rh_distros_fedora: "{{ __keylime_server_rh_distros + ['Fedora'] }}"
+
+# Use this in conditionals to check if distro is Red Hat or clone
+__keylime_server_is_rh_distro: "{{ ansible_distribution in __keylime_server_rh_distros }}"
+
+# Use this in conditionals to check if distro is Red Hat or clone, or Fedora
+__keylime_server_is_rh_distro_fedora: "{{ ansible_distribution in __keylime_server_rh_distros_fedora }}"
+# END - DO NOT EDIT THIS BLOCK - rh distros variables

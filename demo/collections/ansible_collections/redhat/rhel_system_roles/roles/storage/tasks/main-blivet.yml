@@ -25,6 +25,7 @@
     pool_defaults: "{{ storage_pool_defaults }}"
     volume_defaults: "{{ storage_volume_defaults }}"
     packages_only: true
+    uses_kmod_kvdo: "{{ __storage_uses_kmod_kvdo }}"
   register: package_info
   when: storage_skip_checks is not defined or not "packages_installed" in storage_skip_checks
 
@@ -78,6 +79,7 @@
       # yamllint disable-line rule:line-length
         diskvolume_mkfs_option_map: "{{ __storage_blivet_diskvolume_mkfs_option_map | d(omit) }}"
       # yamllint enable rule:line-length
+        uses_kmod_kvdo: "{{ __storage_uses_kmod_kvdo }}"
       register: blivet_output
 
     - name: Workaround for udev issue on some platforms
@@ -87,6 +89,24 @@
         - storage_udevadm_trigger | d(false)
         - blivet_output is changed
 
+    - name: Check if /etc/fstab is present
+      stat:
+        path: /etc/fstab
+      register: __storage_fstab
+
+    - name: Add fingerprint to /etc/fstab if present
+      lineinfile:
+        insertbefore: "^#"
+        firstmatch: true
+        line: "{{ __str }}"
+        regexp: "{{ __str }}"
+        path: /etc/fstab
+        state: present
+      vars:
+        __str: "# system_role:storage"
+      when:
+        - __storage_fstab.stat.exists
+        - blivet_output is changed
   rescue:
     - name: Failed message
       fail:

@@ -1,6 +1,71 @@
 Changelog
 =========
 
+[1.4.3] - 2025-01-09
+--------------------
+
+### Other Changes
+
+- ci: Bump codecov/codecov-action from 4 to 5 (#83)
+- ci: Use Fedora 41, drop Fedora 39 (#84)
+- ci: Use Fedora 41, drop Fedora 39 - part two (#85)
+
+[1.4.2] - 2024-10-30
+--------------------
+
+### Other Changes
+
+- ci: Add tags to TF workflow, allow more [citest bad] formats (#77)
+- ci: ansible-test action now requires ansible-core version (#78)
+- ci: add YAML header to github action workflow files (#79)
+- refactor: Use vars/RedHat_N.yml symlink for CentOS, Rocky, Alma wherever possible (#81)
+
+[1.4.1] - 2024-08-16
+--------------------
+
+### Other Changes
+
+- ci: Add tft plan and workflow (#68)
+- ci: Update fmf plan to add a separate job to prepare managed nodes (#70)
+- ci: Bump sclorg/testing-farm-as-github-action from 2 to 3 (#71)
+- ci: Add workflow for ci_test bad, use remote fmf plan (#72)
+- ci: Fix missing slash in ARTIFACTS_URL (#73)
+- test: should only operate on test_ vgs (#75)
+
+[1.4.0] - 2024-07-15
+--------------------
+
+### New Features
+
+- feat: rewrite snapshot.py as an Ansible module / add support for thin origins (#58)
+
+### Bug Fixes
+
+- fix: add support for EL10 (#66)
+
+### Other Changes
+
+- ci: use tox-lsr 3.3.0 which uses ansible-test 2.17 (#60)
+- ci: tox-lsr 3.4.0 - fix py27 tests; move other checks to py310 (#62)
+- ci: Add supported_ansible_also to .ansible-lint (#63)
+- ci: ansible-lint action now requires absolute directory (#64)
+
+[1.3.3] - 2024-05-21
+--------------------
+
+### Other Changes
+
+- refactor: translate command line arguments into JSON format and use common functions  (#55)
+
+[1.3.2] - 2024-04-04
+--------------------
+
+### Other Changes
+
+- test: use storage_udevadm_trigger, gather debug when fail (#49)
+- ci: Bump ansible/ansible-lint from 6 to 24 (#50)
+- ci: Bump mathieudutour/github-tag-action from 6.1 to 6.2 (#53)
+
 [1.3.1] - 2024-02-21
 --------------------
 

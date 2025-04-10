@@ -41,6 +41,7 @@
   when:
     - rhc_insights.ansible_host is defined
     - not rhc_insights.ansible_host is none
+    - rhc_insights.ansible_host != ""
     - rhc_insights.ansible_host != __rhc_state_absent
     - rhc_insights.ansible_host != omit
   lineinfile:
@@ -55,6 +56,7 @@
   when:
     - rhc_insights.ansible_host is defined
     - not rhc_insights.ansible_host is none
+    - rhc_insights.ansible_host != ""
     - rhc_insights.ansible_host != omit
     - rhc_insights.ansible_host != __rhc_state_absent
     - __insights_ansible_host_exists.changed
@@ -169,13 +171,13 @@
       systemd:
         enabled: true
         state: started
-        name: rhcd
+        name: "{{ __rhc_yggdrasil_systemd_service }}"
 
 - name: Disable remediation
   systemd:
     enabled: false
     state: stopped
-    name: rhcd
+    name: "{{ __rhc_yggdrasil_systemd_service }}"
   when:
     - rhc_insights.remediation | d("present") == "absent"
     - '"rhc" in ansible_facts.packages'

@@ -1,0 +1,8 @@
+bpftrace
+grafana
+grafana-pcp
+pcp-export-pcp2elasticsearch
+pcp-pmda-bpftrace
+pcp-pmda-mssql
+pcp-system-tools
+valkey

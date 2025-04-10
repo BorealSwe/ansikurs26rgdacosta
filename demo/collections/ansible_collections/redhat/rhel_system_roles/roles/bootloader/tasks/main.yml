@@ -3,11 +3,43 @@
 - name: Set platform/version specific variables
   include_tasks: tasks/set_vars.yml
 
+- name: Fail on s390x architecture
+  fail:
+    msg: >-
+      This role does not support s390x architecture.
+      Let us know if you need the role to support it.
+  when: ansible_architecture == 's390x'
+
 - name: Ensure required packages are installed
   package:
     name: "{{ __bootloader_packages }}"
     state: present
     use: "{{ (__bootloader_is_ostree | d(false)) | ternary('redhat.rhel_system_roles.rhel_rpm_ostree', omit) }}"
+
+- name: Get stat of {{ __bootloader_default_grub }}
+  stat:
+    path: "{{ __bootloader_default_grub }}"
+  register: __bootloader_default_grub_stat
+
+- name: If missing, add {{ __bootloader_default_grub }}
+  when: not __bootloader_default_grub_stat.stat.exists
+  block:
+    - name: Get bootloader args of the default kernel
+      shell: >-
+        set -euo pipefail;
+        grubby --info=DEFAULT | grep -oP 'args=\K(.*)'
+      register: __bootloader_default_args
+      changed_when: false
+
+    - name: Generate {{ __bootloader_default_grub }}
+      vars:
+        grub_cmdline_linux: "{{ __bootloader_default_args.stdout }}"
+      template:
+        src: etc_default_grub.j2
+        dest: "{{ __bootloader_default_grub }}"
+        owner: root
+        group: root
+        mode: "0644"
 
 - name: Determine platform type
   stat:
@@ -16,13 +48,13 @@
 
 - name: Set boot loader configuration files
   vars:
-    efi_path: "{{ __bootloader_efi_dir.stat.exists }}"
+    efi: "{{ __bootloader_efi_dir.stat.exists }}"
   set_fact:
     __bootloader_grub_conf: >-
-      {{ efi_path | ternary(__bootloader_uefi_conf_dir ~ 'grub.cfg',
+      {{ efi | ternary(__bootloader_uefi_conf_dir ~ 'grub.cfg',
       '/boot/grub2/grub.cfg') }}
     __bootloader_user_conf: >-
-      {{ efi_path | ternary(__bootloader_uefi_conf_dir ~ 'user.cfg',
+      {{ efi | ternary(__bootloader_uefi_conf_dir ~ 'user.cfg',
       '/boot/grub2/user.cfg') }}
 
 - name: Get stat of {{ __bootloader_default_grub }}
@@ -35,12 +67,22 @@
     path: "{{ __bootloader_grub_conf }}"
   register: __bootloader_grub_conf_stat
 
-- name: Use a general grub conf path if UEFI path is a stub
-  when:
-    - __bootloader_grub_conf_stat.stat.size < 500
-    - __bootloader_grub_conf == __bootloader_uefi_conf_dir ~ 'grub.cfg'
-  set_fact:
-    __bootloader_grub_conf: /boot/grub2/grub.cfg
+- name: Use a general grub conf path if UEFI path has a stub config
+  when: __bootloader_grub_conf_stat.stat.exists | bool
+  block:
+    - name: Verify if there is a stab config in {{ __bootloader_grub_conf }}
+      shell: grep "configfile" {{ __bootloader_grub_conf }} || true
+      changed_when: false
+      register: __bootloader_grep_configfile
+      ignore_errors: true
+
+    - name: Use a general grub and user conf path if UEFI path has a stub config
+      when:
+        - __bootloader_grep_configfile.stdout | length > 0
+        - __bootloader_grub_conf == __bootloader_uefi_conf_dir ~ 'grub.cfg'
+      set_fact:
+        __bootloader_grub_conf: /boot/grub2/grub.cfg
+        __bootloader_user_conf: /boot/grub2/user.cfg
 
 - name: >-
     Update boot loader timeout configuration in {{ __bootloader_default_grub }}
@@ -83,7 +125,7 @@
       copy:
         content: GRUB2_PASSWORD={{ __bootloader_pass_hash.stdout }}
         dest: "{{ __bootloader_user_conf }}"
-        mode: 0600
+        mode: "0600"
       changed_when: true
       no_log: true
 

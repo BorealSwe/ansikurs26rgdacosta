@@ -81,7 +81,7 @@
         - name: Verify the ExecStart line contains the configuration file
           ansible.builtin.assert:
             that:
-              - "' -f /etc/ssh/' in service.content | b64decode"
+              - "' -f/etc/ssh/' in service.content | b64decode"
 
         - name: Decode socket file
           ansible.builtin.set_fact:
@@ -112,6 +112,7 @@
       when:
         - ansible_facts['service_mgr'] == 'systemd' or (ansible_facts['os_family'] == 'RedHat' and ansible_facts['distribution_major_version'] == '7')
         - ansible_facts['distribution'] != "Debian" or ansible_facts['distribution_major_version'] | int < 12
+        - not (ansible_facts['distribution'] == 'Ubuntu' and ansible_facts['distribution_version'] is version('24.04', '>='))
       block:
         - name: Read the distribution instantiated service file
           ansible.builtin.slurp:
@@ -146,7 +147,7 @@
         - name: Verify the ExecStart line contains the configuration file
           ansible.builtin.assert:
             that:
-              - "' -f /etc/ssh/' in service_inst.content | b64decode"
+              - "' -f/etc/ssh/' in service_inst.content | b64decode"
 
     - name: "Restore configuration files"
       ansible.builtin.include_tasks: tasks/restore.yml

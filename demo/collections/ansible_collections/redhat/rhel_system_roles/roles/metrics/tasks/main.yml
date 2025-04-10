@@ -73,11 +73,9 @@
   when: metrics_from_bpftrace | d(false) | bool
 
 - name: Setup metric querying service.
-  vars:
-    redis_metrics_provider: "{{ metrics_provider }}"
   include_role:
   # noqa role-name[path]
-    name: "redhat.rhel_system_roles.private_metrics_subrole_redis"
+    name: "redhat.rhel_system_roles.private_metrics_subrole_keyserver"
   when: metrics_query_service | bool
 
 - name: Setup metric collection service.

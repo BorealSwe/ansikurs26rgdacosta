@@ -17,7 +17,7 @@ kinds:
 skip_list:
   - fqcn-builtins
   - var-naming[no-role-prefix]
-  - sanity[cannot-ignore]
+  - sanity[cannot-ignore]  # wokeignore:rule=sanity
 exclude_paths:
   - tests/timesync/roles/
   - roles/timesync/.github/
@@ -25,3 +25,5 @@ exclude_paths:
   - roles/timesync/examples/roles/
 mock_roles:
   - rhel-system-roles.timesync
+supported_ansible_also:
+  - "2.14.0"

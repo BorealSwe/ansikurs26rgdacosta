@@ -1,6 +1,165 @@
 Changelog
 =========
 
+[1.22.2] - 2025-01-27
+--------------------
+
+### Bug Fixes
+
+- fix: update for EL10 (#254)
+
+[1.22.1] - 2025-01-09
+--------------------
+
+### Other Changes
+
+- style: fix ansible-lint issues introduced in 7771830 (#251)
+
+[1.22.0] - 2024-12-13
+--------------------
+
+### New Features
+
+- feat: Remove python expect dependency in crmsh (#249)
+
+[1.21.1] - 2024-12-09
+--------------------
+
+### Bug Fixes
+
+- fix: update constraints commands syntax for pcs-0.12 (#245)
+
+[1.21.0] - 2024-12-09
+--------------------
+
+### New Features
+
+- feat: export corosync configuration (#231)
+
+### Bug Fixes
+
+- fix: list cloud agent packages by architecture (#244)
+
+### Other Changes
+
+- ci: tests update for pcs-0.12 and pacemaker-3 (#238)
+- ci: bump codecov/codecov-action from 4 to 5 (#239)
+- ci: Use Fedora 41, drop Fedora 39 (#242)
+- ci: Use Fedora 41, drop Fedora 39 - part two (#243)
+
+[1.20.0] - 2024-10-30
+--------------------
+
+### New Features
+
+- feat: crmsh 4.6.0 support and stonith-enabled workflow update (#232)
+
+### Other Changes
+
+- ci: Add tags to TF workflow, allow more [citest bad] formats (#229)
+- docs: improve comments in SBD examples (#230)
+- ci: ansible-test action now requires ansible-core version (#233)
+- ci: add YAML header to github action workflow files (#234)
+- refactor: Use vars/RedHat_N.yml symlink for CentOS, Rocky, Alma wherever possible (#236)
+
+[1.19.2] - 2024-08-21
+--------------------
+
+### Bug Fixes
+
+- fix: openssl is now required for password (#227)
+
+[1.19.1] - 2024-08-20
+--------------------
+
+### Bug Fixes
+
+- fix: Fixes for new pcs and ansible (#223)
+
+### Other Changes
+
+- ci: Add workflow for ci_test bad, use remote fmf plan (#221)
+- ci: Fix missing slash in ARTIFACTS_URL (#222)
+- docs: fix sbd_devices documentation and examples (#224)
+- test: add gather_facts true for tests that need facts (#225)
+
+[1.19.0] - 2024-08-01
+--------------------
+
+### New Features
+
+- feat: crmsh watchdog correction, remove obsolete assert for softdog (#217)
+- feat: Add alerts support (#218)
+
+### Other Changes
+
+- ci: Add tft plan and workflow (#214)
+- ci: Update fmf plan to add a separate job to prepare managed nodes (#216)
+- ci: bump sclorg/testing-farm-as-github-action from 2 to 3 (#219)
+
+[1.18.0] - 2024-07-02
+--------------------
+
+### New Features
+
+- feat: crmsh corosync jinja2 template rework (#212)
+
+### Other Changes
+
+- ci: ansible-lint action now requires absolute directory (#211)
+
+[1.17.1] - 2024-06-11
+--------------------
+
+### Other Changes
+
+- ci: use tox-lsr 3.3.0 which uses ansible-test 2.17 (#205)
+- ci: tox-lsr 3.4.0 - fix py27 tests; move other checks to py310 (#207)
+- ci: fix Python discovery with Ansible 2.17+ (#208)
+- ci: Add supported_ansible_also to .ansible-lint (#209)
+
+[1.17.0] - 2024-04-22
+--------------------
+
+### New Features
+
+- feat: crmsh enhancements, master slave, validations (#197)
+- feat: Add support for utilization (#202)
+
+### Bug Fixes
+
+- fix: make consistent approach for multiple node attributes sets (#201)
+
+### Other Changes
+
+- ci: fix internal gitlab CI (#200)
+
+[1.16.0] - 2024-04-04
+--------------------
+
+### New Features
+
+- feat: SLES15 enablement, HAE detection (#192)
+- feat: Add support for ACL (#193)
+- feat: easily install cloud agents (#194)
+- feat: ha_cluster_node_options allows per-node addresses and SBD options to be set (#196)
+
+### Other Changes
+
+- ci: bump ansible/ansible-lint from 6 to 24 (#195)
+- ci: bump mathieudutour/github-tag-action from 6.1 to 6.2 (#198)
+
+[1.15.0] - 2024-02-13
+--------------------
+
+### New Features
+
+- feat: crmsh workflow and SUSE support (#186)
+
+### Other Changes
+
+- docs: change Supported to Compatible (#188)
+
 [1.14.0] - 2024-02-07
 --------------------
 
@@ -127,7 +286,6 @@ Changelog
   - Remove badges from README.md prior to converting to HTML
   
   Signed-off-by: Sergei Petrosian <spetrosi@redhat.com>
-
 
 [1.10.0] - 2023-07-19
 --------------------

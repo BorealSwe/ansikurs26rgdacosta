@@ -1,5 +1,93 @@
 Changelog
 =========
+
+[1.95.7] - 2025-03-06
+----------------------------
+
+### New Features
+
+- [aide - New role aide to manage system integrity checking [rhel-10]](https://issues.redhat.com/browse/RHEL-67411)
+- [ha_cluster - [RFE] rhel_system_roles.ha_cluster - export corosync configuration](https://issues.redhat.com/browse/RHEL-46219)
+- [logging - [RFE] Add methods to define and set up custom templates in the logging role of RHEL systems roles [rhel-10]](https://issues.redhat.com/browse/RHEL-67286)
+- [network - Support autoconnect_retries in the network role [rhel-10]](https://issues.redhat.com/browse/RHEL-67416)
+- [network - Support may-fail in the network role [rhel-10]](https://issues.redhat.com/browse/RHEL-67415)
+- [podman - support the pod quadlet type [rhel-10]](https://issues.redhat.com/browse/RHEL-67417)
+- [postfix - feat: support postfix_default_database_type [rhel-10]](https://issues.redhat.com/browse/RHEL-70554)
+- [sshd - fix: rename var sshd -> sshd_config and deprecate the former [rhel-10]](https://issues.redhat.com/browse/RHEL-73440)
+- [sudo - feat: Add variable that handles semantic check for sudoers [rhel-10]](https://issues.redhat.com/browse/RHEL-67419)
+- [systemd - support management of user units [rhel-10]](https://issues.redhat.com/browse/RHEL-67420)
+
+### Bug Fixes
+
+- [certificate - rhel-system-roles.certificate with IPA backend hangs processes when repeating playbook [rhel-10]](https://issues.redhat.com/browse/RHEL-70536)
+- [firewall - fix: Prevent interface definitions overriding 'changed' value when other elements are changed [rhel-10]](https://issues.redhat.com/browse/RHEL-67412)
+- [ha_cluster - list cloud agent packages by architecture [rhel-10]](https://issues.redhat.com/browse/RHEL-70549)
+- [ha_cluster - rhel_system_roles.ha_cluster - adapt the role for pcs-0.12](https://issues.redhat.com/browse/RHEL-45303)
+- [metrics - fix: add support for Valkey [rhel-10]](https://issues.redhat.com/browse/RHEL-67413)
+- [network - fix: Prioritize find link info by permanent MAC address, with fallback to current address [rhel-10]](https://issues.redhat.com/browse/RHEL-73442)
+- [podman - fix: get user information for secrets [rhel-10]](https://issues.redhat.com/browse/RHEL-73443)
+- [postgresql - postgresql role: The postgresql_cert_name variable doesn't work with existing certificates [rhel-10]](https://issues.redhat.com/browse/RHEL-67418)
+- [rhc - rhc: does not enable content in EL10 systems [rhel-10]](https://issues.redhat.com/browse/RHEL-82525)
+- [sshd - fix: use quote with command, shell and validate with variable [rhel-10]](https://issues.redhat.com/browse/RHEL-73441)
+- [sshd - fix: Reload the service when needed [rhel-10]](https://issues.redhat.com/browse/RHEL-73439)
+- [storage - Ansible storage role 'grow_to_fill' option on LVM pools always failing with LVM resize failure due to miscalculation of free extents. [rhel-10]](https://issues.redhat.com/browse/RHEL-76504)
+- [storage - "Make sure required packages are installed' task fails because Blivet requires the kmod-kvdo package, which is no longer available on RHEL-10 [rhel-10]](https://issues.redhat.com/browse/RHEL-82526)
+- [systemd - fix: Always become user we are managing [rhel-10]](https://issues.redhat.com/browse/RHEL-70571)
+- [vpn - no ansible-doc for redhat.rhel_system_roles.vpn_ipaddr [rhel-10]](https://issues.redhat.com/browse/RHEL-67421)
+
+[1.88.9] - 2024-09-13
+---------------------
+
+### New Features
+
+- [bootloader - bootloader role tests do not work on ostree [rhel-10]](https://issues.redhat.com/browse/RHEL-34881)
+- [gfs2 - add gfs2 system role [rhel-10]](https://issues.redhat.com/browse/RHEL-34828)
+- [ha_cluster - [RFE] rhel_system_roles.ha_cluster - ACL Support [rhel-10]](https://issues.redhat.com/browse/RHEL-34898)
+- [ha_cluster - [RFE] make it easier to install cloud agents [rhel-10]](https://issues.redhat.com/browse/RHEL-34894)
+- [ha_cluster - [RFE] ha_cluster_node_options allows per-node addresses and SBD options to be set [rhel-10]](https://issues.redhat.com/browse/RHEL-34893)
+- [ha_cluster - [RFE] rhel_system_roles.ha_cluster - Utilization Support [rhel-10]](https://issues.redhat.com/browse/RHEL-34885)
+- [ha_cluster - alerts support](https://issues.redhat.com/browse/RHEL-45285)
+- [journald - feat: Add options for rate limit interval and burst [rhel-10]](https://issues.redhat.com/browse/RHEL-34892)
+- [logging - RFE - system-roles - logging: Add truncate options for local file inputs](https://issues.redhat.com/browse/RHEL-48609)
+- [logging - redhat.rhel_system_roles.logging role fails to process logging_outputs: of type: "custom"](https://issues.redhat.com/browse/RHEL-50288)
+- [logging - [RFE] Add the umask settings or enable a variable in linux-system-roles.logging](https://issues.redhat.com/browse/RHEL-50289)
+- [nbde_client - feat: Allow initrd configuration to be skipped](https://issues.redhat.com/browse/RHEL-45718)
+- [network - support route src parameter](https://issues.redhat.com/browse/RHEL-53901)
+- [podman - podman role should support containers-auth.json [rhel-10]](https://issues.redhat.com/browse/RHEL-34891)
+- [podman - podman role should support default credentials and per-unit credentials [rhel-10]](https://issues.redhat.com/browse/RHEL-34890)
+- [podman - feat: manage TLS cert/key files for registry connections and validate certs [rhel-10]](https://issues.redhat.com/browse/RHEL-34884)
+- [postfix - feat: Added postfix_files feature as a simple means to add extra files/maps to config](https://issues.redhat.com/browse/RHEL-46855)
+- [snapshot - feat: rewrite snapshot.py as an Ansible module / add support for thin origins](https://issues.redhat.com/browse/RHEL-48230)
+- [ssh - feat: Add new configuration options and remove false positives in the test](https://issues.redhat.com/browse/RHEL-40181)
+- [storage - Fingerprint storage RHEL System Role managed config files](https://issues.redhat.com/browse/RHEL-50291)
+- [storage - [RFE] manage stratis [rhel-10]](https://issues.redhat.com/browse/RHEL-40798)
+- [storage - [RHEL9][RFE] resize LVM PVs [rhel-10]](https://issues.redhat.com/browse/RHEL-40797)
+- [sudo - Add sudo system role EL10](https://issues.redhat.com/browse/RHEL-37551)
+
+### Bug Fixes
+
+- [ - package rhel-system-roles.noarch does not provide docs for ansible-doc [rhel-10]](https://issues.redhat.com/browse/RHEL-34897)
+- [ad_integration - fix: Sets domain name lower case in realmd.conf section header [rhel-10]](https://issues.redhat.com/browse/RHEL-34883)
+- [bootloader - fix: Set user.cfg path to /boot/grub2/ on EL 9 UEFI [rhel-10]](https://issues.redhat.com/browse/RHEL-40759)
+- [cockpit - cockpit install all wildcard match does not work in newer el9](https://issues.redhat.com/browse/RHEL-45944)
+- [ha_cluster - Fix inconsistent approach for multiple `attributes.attrs` in `ha_cluster_node_options` [rhel-10]](https://issues.redhat.com/browse/RHEL-34886)
+- [ha_cluster - Fixes for new pcs and ansible](https://issues.redhat.com/browse/RHEL-55296)
+- [kdump - [RHEL-10] rhel-system-roles should depend on kdump-utils](https://issues.redhat.com/browse/RHEL-40071)
+- [kernel_settings - fix: Use tuned files instead of using it as a module](https://issues.redhat.com/browse/RHEL-53897)
+- [logging - Setup imuxsock using rhel-system-roles.logging causing an error EL10](https://issues.redhat.com/browse/RHEL-38456)
+- [network - Make sure that the network role CI is solid robust [rhel-10]](https://issues.redhat.com/browse/RHEL-34896)
+- [network - Fix testing Failures due to connection.autoconnect-ports Unknown Property [rhel-10]](https://issues.redhat.com/browse/RHEL-34887)
+- [podman - Create podman secret when skip_existing=True and it does not exist [rhel-10]](https://issues.redhat.com/browse/RHEL-40795)
+- [podman - fix: proper cleanup for networks; ensure cleanup of resources](https://issues.redhat.com/browse/RHEL-50104)
+- [podman - fix: grab name of network to remove from quadlet file](https://issues.redhat.com/browse/RHEL-40760)
+- [podman - fix: use correct user for cancel linger file name [rhel-10]](https://issues.redhat.com/browse/RHEL-34889)
+- [podman - fix: do not use become for changing hostdir ownership, and expose subuid/subgid info [rhel-10]](https://issues.redhat.com/browse/RHEL-34888)
+- [podman - fails to configure and run containers with podman rootless using different username and groupname](https://issues.redhat.com/browse/RHEL-57100)
+- [rhc - fix: drop usage of "auto_attach" of the "redhat_subscription" module](https://issues.redhat.com/browse/RHEL-53905)
+- [sshd - second SSHD service broken [rhel-10]](https://issues.redhat.com/browse/RHEL-34879)
+- [storage - [RHEL8 ] var unused_disks get different sector size disks    [rhel-10]](https://issues.redhat.com/browse/RHEL-40796)
+- [storage - rhel-system-role.storage is not idempotent [rhel-10]](https://issues.redhat.com/browse/RHEL-34895)
+
 [1.23.0] - 2024-01-15
 ----------------------------
 

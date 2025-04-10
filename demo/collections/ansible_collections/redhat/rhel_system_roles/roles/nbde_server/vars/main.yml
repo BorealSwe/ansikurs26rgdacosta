@@ -2,7 +2,7 @@
 ---
 __nbde_server_tangd_socket_dir: /etc/systemd/system/tangd.socket.d
 __nbde_server_tangd_socket_file_name: override.conf
-__nbde_server_tangd_socket_file_path: "{{ __nbde_server_tangd_socket_dir}}/{{ __nbde_server_tangd_socket_file_name }}"
+__nbde_server_tangd_socket_file_path: "{{ __nbde_server_tangd_socket_dir }}/{{ __nbde_server_tangd_socket_file_name }}"
 
 # ansible_facts required by the role
 __nbde_server_required_facts:
@@ -17,3 +17,21 @@ __nbde_server_required_facts:
 __nbde_server_required_facts_subsets: "{{ ['!all', '!min'] + __nbde_server_required_facts }}"
 
 # vim:set ts=2 sw=2 et:
+
+# BEGIN - DO NOT EDIT THIS BLOCK - rh distros variables
+# Ansible distribution identifiers that the role treats like RHEL
+__nbde_server_rh_distros:
+  - AlmaLinux
+  - CentOS
+  - RedHat
+  - Rocky
+
+# Same as above but includes Fedora
+__nbde_server_rh_distros_fedora: "{{ __nbde_server_rh_distros + ['Fedora'] }}"
+
+# Use this in conditionals to check if distro is Red Hat or clone
+__nbde_server_is_rh_distro: "{{ ansible_distribution in __nbde_server_rh_distros }}"
+
+# Use this in conditionals to check if distro is Red Hat or clone, or Fedora
+__nbde_server_is_rh_distro_fedora: "{{ ansible_distribution in __nbde_server_rh_distros_fedora }}"
+# END - DO NOT EDIT THIS BLOCK - rh distros variables

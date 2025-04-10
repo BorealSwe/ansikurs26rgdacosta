@@ -1,6 +1,61 @@
 Changelog
 =========
 
+[1.3.10] - 2025-01-09
+--------------------
+
+### Other Changes
+
+- ci: Use Fedora 41, drop Fedora 39 (#108)
+- ci: Use Fedora 41, drop Fedora 39 - part two (#109)
+
+[1.3.9] - 2024-10-30
+--------------------
+
+### Bug Fixes
+
+- fix: postgresql_cert_name didn't work properly, using this parameter (#102)
+
+### Other Changes
+
+- ci: Add tft plan and workflow (#95)
+- ci: Update fmf plan to add a separate job to prepare managed nodes (#97)
+- ci: bump sclorg/testing-farm-as-github-action from 2 to 3 (#98)
+- ci: Add workflow for ci_test bad, use remote fmf plan (#99)
+- ci: Fix missing slash in ARTIFACTS_URL (#100)
+- ci: Add tags to TF workflow, allow more [citest bad] formats (#101)
+- ci: ansible-test action now requires ansible-core version (#103)
+- ci: add YAML header to github action workflow files (#104)
+- refactor: Use vars/RedHat_N.yml symlink for CentOS, Rocky, Alma wherever possible (#106)
+
+[1.3.8] - 2024-07-02
+--------------------
+
+### Bug Fixes
+
+- fix: add support for EL10 (#93)
+
+### Other Changes
+
+- ci: ansible-lint action now requires absolute directory (#92)
+
+[1.3.7] - 2024-06-11
+--------------------
+
+### Other Changes
+
+- ci: use tox-lsr 3.3.0 which uses ansible-test 2.17 (#87)
+- ci: tox-lsr 3.4.0 - fix py27 tests; move other checks to py310 (#89)
+- ci: Add supported_ansible_also to .ansible-lint (#90)
+
+[1.3.6] - 2024-04-04
+--------------------
+
+### Other Changes
+
+- ci: bump ansible/ansible-lint from 6 to 24 (#84)
+- ci: bump mathieudutour/github-tag-action from 6.1 to 6.2 (#85)
+
 [1.3.5] - 2024-02-26
 --------------------
 
@@ -115,7 +170,6 @@ Changelog
   - Add Postgresql version 15 into README
   
 - ci: fix mode of vars/main.yml for ansible-test (#50)
-
 
 [1.1.0] - 2023-07-19
 --------------------

@@ -6,7 +6,7 @@
     storage_safe_mode: false
     storage_use_partitions: true
     volume_group_size: '10g'
-    volume_size: '20m'
+    volume_size: '300m'
   tags:
     - tests::lvm
 
@@ -35,8 +35,9 @@
 
   # end early when running with old blivet where removing PVs from a VG fails
     - name: Run test only if blivet supports this functionality
-      when: (blivet_pkg_version is defined and ((is_fedora and blivet_pkg_version is version("3.4.3-1", ">=")) or (is_rhel7 and blivet_pkg_version is version("3.4.0-10", ">=")) or (is_rhel8 and blivet_pkg_version is version("3.4.0-10", ">=")) or (is_rhel9 and blivet_pkg_version is version("3.4.0-14", ">="))))
+      when: (blivet_pkg_version is defined and ((is_fedora and blivet_pkg_version is version("3.4.3-1", ">=")) or (is_rhel7 and blivet_pkg_version is version("3.4.0-10", ">=")) or (is_rhel8 and blivet_pkg_version is version("3.4.0-10", ">=")) or (is_rhel9 and blivet_pkg_version is version("3.4.0-14", ">=")) or is_rhel10))
       vars:
+        is_rhel10: "{{ ansible_facts['os_family'] == 'RedHat' and ansible_facts['distribution_major_version'] == '10' }}"
         is_rhel9: "{{ ansible_facts['os_family'] == 'RedHat' and ansible_facts['distribution_major_version'] == '9' }}"
         is_rhel8: "{{ ansible_facts['os_family'] == 'RedHat' and ansible_facts['distribution_major_version'] == '8' }}"
         is_rhel7: "{{ ansible_facts['os_family'] == 'RedHat' and ansible_facts['distribution_major_version'] == '7' }}"
@@ -47,6 +48,7 @@
           vars:
             min_size: "{{ volume_group_size }}"
             disks_needed: 3
+            match_sector_size: true
 
         - name: Create volume group 'foo' with 3 PVs
           include_role:
@@ -91,6 +93,16 @@
             storage_pools:
               - name: foo
                 disks: "{{ [unused_disks[0]] }}"
+
+        - name: Get the partition table type on disk removed from the VG
+          command: blkid -p -ovalue -s PTTYPE /dev/{{ unused_disks[1] }}
+          register: storage_test_removed_pttype
+          changed_when: false
+          failed_when: not storage_test_removed_pttype.rc in [0, 2]
+
+        - name: Verify that removing the PV from the VG also removed the partition table
+          assert:
+            that: storage_test_removed_pttype.stdout == ''
 
         - name: Verify role results
           include_tasks: verify-role-results.yml
@@ -255,6 +267,16 @@
                 volumes:
                   - name: test
                     size: "{{ volume_size }}"
+
+        - name: Get the partition table type on disk removed from the VG
+          command: blkid -p -ovalue -s PTTYPE /dev/{{ unused_disks[0] }}
+          register: storage_test_removed_pttype
+          changed_when: false
+          failed_when: not storage_test_removed_pttype.rc in [0, 2]
+
+        - name: Verify that removing the PV from the VG also removed the partition table
+          assert:
+            that: storage_test_removed_pttype.stdout == ''
 
         - name: Get UUID of the 'foo' volume group
           command: vgs --noheading -o vg_uuid foo

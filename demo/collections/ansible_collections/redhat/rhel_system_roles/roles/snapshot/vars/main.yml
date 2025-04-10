@@ -15,5 +15,20 @@ __snapshot_required_facts:
 # the 'gather_subset' parameter of the 'setup' module
 __snapshot_required_facts_subsets: "{{ ['!all', '!min'] + __snapshot_required_facts }}"
 
-__snapshot_cmd: "{{ 'snapshot.py ' ~ snapshot_lvm_action ~ ' ' ~ ('--check-mode ' if ansible_check_mode else '') ~ ('-a ' if snapshot_lvm_all_vgs else '') ~ ('-v ' if snapshot_lvm_verify_only else '') ~ ('-O ' if snapshot_lvm_mount_origin else '') ~ ('-c ' if snapshot_lvm_mountpoint_create else '') ~ ('-A ' if snapshot_lvm_unmount_all else '') ~ ('-r ' if snapshot_lvm_percent_space_required else '') ~ ' ' ~ (snapshot_lvm_percent_space_required | string | quote if snapshot_lvm_percent_space_required else '') ~ ' ' ~ ('-vg ' if snapshot_lvm_vg else '') ~ ' ' ~ (snapshot_lvm_vg | quote if snapshot_lvm_vg else '') ~ ' ' ~ ('-lv ' if snapshot_lvm_lv else '') ~ ' ' ~ (snapshot_lvm_lv | quote if snapshot_lvm_lv else '') ~ ' ' ~ ('-s ' if snapshot_lvm_snapset_name else '') ~ ' ' ~ (snapshot_lvm_snapset_name | quote if snapshot_lvm_snapset_name else '') ~ ' ' ~ ('-o ' if snapshot_lvm_mount_options else '') ~ ' ' ~ (snapshot_lvm_mount_options | quote if snapshot_lvm_mount_options else '') ~ ' ' ~ ('-m ' if snapshot_lvm_mountpoint\
-  \ else '') ~ ' ' ~ (snapshot_lvm_mountpoint | quote if snapshot_lvm_mountpoint else '') ~ ' ' ~ ('-g ' if snapshot_lvm_set else '') ~ ' ' ~ (snapshot_lvm_set | to_json | quote if snapshot_lvm_set else '') ~ ('--vg-include ' if snapshot_lvm_vg_include else '') ~ ' ' ~ (snapshot_lvm_vg_include | quote if snapshot_lvm_vg_include else '') }}"
+# BEGIN - DO NOT EDIT THIS BLOCK - rh distros variables
+# Ansible distribution identifiers that the role treats like RHEL
+__snapshot_rh_distros:
+  - AlmaLinux
+  - CentOS
+  - RedHat
+  - Rocky
+
+# Same as above but includes Fedora
+__snapshot_rh_distros_fedora: "{{ __snapshot_rh_distros + ['Fedora'] }}"
+
+# Use this in conditionals to check if distro is Red Hat or clone
+__snapshot_is_rh_distro: "{{ ansible_distribution in __snapshot_rh_distros }}"
+
+# Use this in conditionals to check if distro is Red Hat or clone, or Fedora
+__snapshot_is_rh_distro_fedora: "{{ ansible_distribution in __snapshot_rh_distros_fedora }}"
+# END - DO NOT EDIT THIS BLOCK - rh distros variables

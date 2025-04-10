@@ -59,7 +59,7 @@ SOFTWARE.
   <style type="text/css">code{white-space: pre;}</style>
   <style type="text/css">
 pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span { line-height: 1.25; }
 pre > code.sourceCode > span:empty { height: 1.2em; }
 .sourceCode { overflow: visible; }
 code.sourceCode > span { color: inherit; text-decoration: inherit; }
@@ -70,7 +70,7 @@ div.sourceCode { overflow: auto; }
 }
 @media print {
 pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
 }
 pre.numberSource code
   { counter-reset: source-line 0; }
@@ -162,24 +162,24 @@ Keylime Remote Attestation.</p>
 secrets.</p>
 <table>
 <thead>
-<tr class="header">
+<tr>
 <th><strong>Variable</strong></th>
 <th><strong>Default/Choices</strong></th>
 <th><strong>Description</strong></th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td><code>keylime_server_verifier_ip</code></td>
 <td>127.0.0.1</td>
 <td>The IP address of the <code>verifier</code></td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>keylime_server_verifier_port</code></td>
 <td>8881</td>
 <td>The port of the <code>verifier</code></td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>keylime_server_verifier_database_url</code></td>
 <td>sqlite / empty string (legacy Keylime)</td>
 <td>The URL connection for the verifier database. If set to
@@ -191,7 +191,7 @@ When using systems with legacy Keylime, e.g. Fedora 36 and/or Fedora 37,
 this should be set to an empty string, if one wants to use default
 sqlite configuration</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>keylime_server_verifier_tls_dir</code></td>
 <td>generate</td>
 <td>This option defines the directory where the keys and certificates
@@ -209,7 +209,7 @@ contain the files indicated by
 <code>keylime_server_verifier_trusted_server_ca</code> options
 <code>keylime_server_verifier_server_key</code></td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>keylime_server_verifier_server_key_passphrase</code></td>
 <td>default</td>
 <td>Set the password used to decrypt the server private key file. If
@@ -218,7 +218,7 @@ contain the files indicated by
 generated server private key. If left empty, the private key will not be
 encrypted</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>keylime_server_verifier_server_cert</code></td>
 <td>default</td>
 <td>The name of the file containing the Keylime verifier server
@@ -227,7 +227,7 @@ certificate. The file should be stored in the directory set in the
 <code>default</code>, the value <code>server-cert.crt</code> is
 used</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>keylime_server_verifier_trusted_client_ca</code></td>
 <td>default</td>
 <td>The list of trusted client CA certificates. The files in the list
@@ -235,7 +235,7 @@ should be stored in the directory set in the
 <code>keylime_server_verifier_tls_dir</code> option. If set as
 <code>default</code>, the value is set as <code>[cacert.crt]</code></td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>keylime_server_verifier_client_key</code></td>
 <td>default</td>
 <td>The name of the file containing the Keylime verifier client private
@@ -245,7 +245,7 @@ used by the Keylime verifier to connect to the other services using TLS.
 If set as <code>default</code>, the <code>client-private.pem</code>
 value is used</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>keylime_server_verifier_client_key_passphrase</code></td>
 <td>default</td>
 <td>Set the password used to decrypt the client private key file. If
@@ -254,7 +254,7 @@ value is used</td>
 generated client private key. If left empty, the private key will not be
 encrypted</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>keylime_server_verifier_client_cert</code></td>
 <td>default</td>
 <td>The name of the file containing the Keylime verifier client
@@ -264,7 +264,7 @@ used by the Keylime verifier to connect to the other services using TLS.
 If set as <code>default</code>, the value <code>client-cert.crt</code>
 value is used</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>keylime_server_verifier_trusted_server_ca</code></td>
 <td>default</td>
 <td>The list of trusted server CA certificates. The files in the list
@@ -272,17 +272,17 @@ should be stored in the directory set in the
 <code>keylime_server_verifier_tls_dir</code> option. If set as
 <code>default</code>, the value is set as <code>[cacert.crt]</code></td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>keylime_server_registrar_ip</code></td>
 <td>127.0.0.1</td>
 <td>The IP address of the <code>registrar</code></td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>keylime_server_registrar_port</code></td>
 <td>8891</td>
 <td>The port of the <code>registrar</code></td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>keylime_server_registrar_database_url</code></td>
 <td>sqlite / empty string (legacy Keylime)</td>
 <td>The URL connection for the registrar database. If set to
@@ -294,7 +294,7 @@ When using systems with legacy Keylime, e.g. Fedora 36 and/or Fedora 37,
 this should be set to an empty string, if one wants to use default
 sqlite configuration</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>keylime_server_registrar_tls_dir</code></td>
 <td>default</td>
 <td>Similarly to <code>keylime_server_verifier_tls_dir</code>, the
@@ -314,7 +314,7 @@ files indicated by the <code>keylime_server_registrar_server_key</code>,
 <code>keylime_server_registrar_server_cert</code> and
 <code>keylime_server_registrar_trusted_client_ca</code> options</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>keylime_server_registrar_server_key</code></td>
 <td>default</td>
 <td>The name of the file containing the Keylime registrar server private
@@ -323,7 +323,7 @@ key, and it should be stored in the directory set in the
 <code>default</code>, the value <code>server-private.pem</code> is
 used</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>keylime_server_registrar_server_key_passphrase</code></td>
 <td>default</td>
 <td>This option sets the password used to decrypt the private key file.
@@ -332,7 +332,7 @@ If <code>keylime_server_registrar_tls_dir</code> is set to
 generated server private key. If left empty, the private key will not be
 encrypted</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code>keylime_server_registrar_server_cert</code></td>
 <td>default</td>
 <td>The name of the file containing the Keylime registrar server
@@ -341,7 +341,7 @@ in the <code>keylime_server_registrar_tls_dir</code> option. If set as
 <code>default</code>, the value <code>server-cert.crt</code> is
 used</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code>keylime_server_registrar_trusted_client_ca</code></td>
 <td>default</td>
 <td>The list of trusted client CA certificates. The files in the list

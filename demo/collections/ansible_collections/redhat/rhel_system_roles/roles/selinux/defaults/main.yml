@@ -1,6 +1,7 @@
 ---
 selinux_state:
 selinux_policy:
+selinux_transactional_update_reboot_ok:
 
 # Set up empty lists for SELinux changes.
 selinux_booleans: []

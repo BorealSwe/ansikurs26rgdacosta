@@ -22,6 +22,7 @@ kinds:
 - tasks: '**/tests/tasks/*/*.yml'
 - vars: '**/tests/vars/*.yml'
 - playbook: '**/examples/*.yml'
+- tasks: '**/tasks/*.yml'
 mock_modules:
 - redhat.rhel_system_roles.sefcontext
 - redhat.rhel_system_roles.selogin
@@ -33,7 +34,6 @@ mock_modules:
 - win_domain_user
 - ansible.windows.win_command
 - ansible.windows.win_shell
-- redhat.rhel_system_roles.podman_container
 mock_roles:
 - rhel-system-roles.postfix
 - rhel-system-roles.selinux
@@ -48,7 +48,7 @@ mock_roles:
 - performancecopilot.metrics.mssql
 - performancecopilot.metrics.pcp
 - performancecopilot.metrics.postfix
-- performancecopilot.metrics.redis
+- performancecopilot.metrics.keyserver
 - performancecopilot.metrics.repository
 - performancecopilot.metrics.spark
 - rhel-system-roles.tlog
@@ -75,6 +75,9 @@ mock_roles:
 - rhel-system-roles.fapolicyd
 - rhel-system-roles.bootloader
 - rhel-system-roles.snapshot
+- rhel-system-roles.gfs2
+- rhel-system-roles.sudo
+- rhel-system-roles.aide
 profile: production
 skip_list:
 - yaml[line-length]
@@ -82,3 +85,7 @@ skip_list:
 - var-naming[no-role-prefix]
 - sanity[cannot-ignore]
 - galaxy[no-changelog]
+- meta-runtime[unsupported-version]
+- experimental
+supported_ansible_also:
+- 2.14.0

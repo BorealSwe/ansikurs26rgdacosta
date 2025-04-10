@@ -8,6 +8,7 @@
 __postgresql_packages: [postgresql-server]
 __postgresql_versions_el8: ["10", "12", "13", "15", "16"]
 __postgresql_versions_el9: ["13", "15", "16"]
+__postgresql_versions_el10: ["16"]
 
 __postgresql_data_dir: /var/lib/pgsql/data
 
@@ -31,3 +32,21 @@ __postgresql_no_subset_facts: [ansible_memory_mb]
 # facts in required_facts is missing; see the documentation of
 # the 'gather_subset' parameter of the 'setup' module
 __postgresql_required_facts_subsets: "{{ ['!all', '!min', 'hardware'] + __postgresql_required_facts | difference(__postgresql_no_subset_facts) }}"
+
+# BEGIN - DO NOT EDIT THIS BLOCK - rh distros variables
+# Ansible distribution identifiers that the role treats like RHEL
+__postgresql_rh_distros:
+  - AlmaLinux
+  - CentOS
+  - RedHat
+  - Rocky
+
+# Same as above but includes Fedora
+__postgresql_rh_distros_fedora: "{{ __postgresql_rh_distros + ['Fedora'] }}"
+
+# Use this in conditionals to check if distro is Red Hat or clone
+__postgresql_is_rh_distro: "{{ ansible_distribution in __postgresql_rh_distros }}"
+
+# Use this in conditionals to check if distro is Red Hat or clone, or Fedora
+__postgresql_is_rh_distro_fedora: "{{ ansible_distribution in __postgresql_rh_distros_fedora }}"
+# END - DO NOT EDIT THIS BLOCK - rh distros variables

@@ -11,8 +11,8 @@
     invalid_size1: xyz GiB
     invalid_size2: none
     unused_disk_subfact: '{{ ansible_devices[unused_disks[0]] }}'
-    too_large_size: '{{ unused_disk_subfact.sectors | int * 1.2 * unused_disk_subfact.sectorsize | int }}'
-    disk_size: '{{ unused_disk_subfact.sectors | int * unused_disk_subfact.sectorsize | int }}'
+    too_large_size: '{{ unused_disk_subfact.sectors | int * 1.2 * 512 }}'
+    disk_size: '{{ unused_disk_subfact.sectors | int * 512 }}'
   tags:
     - tests::lvm
   tasks:
@@ -328,14 +328,15 @@
 
     - name: Set distribution version
       set_fact:
-        is_rhel9: "{{ (ansible_facts.distribution == 'CentOS' or ansible_facts.distribution == 'RedHat') and ansible_facts.distribution_major_version == '9' }}"
-        is_rhel8: "{{ (ansible_facts.distribution == 'CentOS' or ansible_facts.distribution == 'RedHat') and ansible_facts.distribution_major_version == '8' }}"
+        is_rhel10: "{{ (ansible_facts['os_family'] == 'RedHat') and ansible_facts.distribution_major_version == '10' }}"
+        is_rhel9: "{{ (ansible_facts['os_family'] == 'RedHat') and ansible_facts.distribution_major_version == '9' }}"
+        is_rhel8: "{{ (ansible_facts['os_family'] == 'RedHat') and ansible_facts.distribution_major_version == '8' }}"
         is_fedora: "{{ ansible_facts.distribution == 'Fedora' }}"
 
   # For ext4 FS -- online resize
 
     - name: Run test on supported platforms
-      when: ((is_fedora and blivet_pkg_version is version("3.7.1-3", ">=")) or (is_rhel8 and blivet_pkg_version is version("3.6.0-6", ">=")) or (is_rhel9 and blivet_pkg_version is version("3.6.0-8", ">=")))
+      when: ((is_fedora and blivet_pkg_version is version("3.7.1-3", ">=")) or (is_rhel8 and blivet_pkg_version is version("3.6.0-6", ">=")) or (is_rhel9 and blivet_pkg_version is version("3.6.0-8", ">=")) or is_rhel10)
       block:
         - name: >-
             Create one LVM logical volume under one volume group with size

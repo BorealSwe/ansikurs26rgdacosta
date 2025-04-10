@@ -2,8 +2,7 @@
 ---
 galaxy_info:
   author: Sergio Correia <scorreia@redhat.com>
-  description: >
-    Ansible role for configuring Keylime attestation servers
+  description: Ansible role for configuring Keylime attestation servers
   company: Red Hat, Inc.
   license: MIT
   min_ansible_version: "2.9"
@@ -14,11 +13,11 @@ galaxy_info:
     - name: EL
       versions:
         - "9"
-
   galaxy_tags:
     - centos
+    - el9
+    - el10
     - fedora
-    - redhat
     - keylime
-
+    - redhat
 dependencies: []

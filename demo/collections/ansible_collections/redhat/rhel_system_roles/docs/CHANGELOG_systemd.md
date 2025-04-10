@@ -1,6 +1,78 @@
 Changelog
 =========
 
+[1.3.1] - 2024-12-09
+--------------------
+
+### Bug Fixes
+
+- fix: Always become user we are managing (#73)
+
+### Other Changes
+
+- ci: Bump codecov/codecov-action from 4 to 5 (#69)
+- ci: Use Fedora 41, drop Fedora 39 (#70)
+- ci: Use Fedora 41, drop Fedora 39 - part two (#71)
+
+[1.3.0] - 2024-11-12
+--------------------
+
+### New Features
+
+- feat: support user units (#67)
+
+[1.2.1] - 2024-10-30
+--------------------
+
+### Other Changes
+
+- ci: Add tft plan and workflow (#55)
+- ci: Update fmf plan to add a separate job to prepare managed nodes (#57)
+- ci: Bump sclorg/testing-farm-as-github-action from 2 to 3 (#58)
+- ci: Add workflow for ci_test bad, use remote fmf plan (#59)
+- ci: Fix missing slash in ARTIFACTS_URL (#60)
+- ci: Add tags to TF workflow, allow more [citest bad] formats (#61)
+- ci: ansible-test action now requires ansible-core version (#62)
+- ci: add YAML header to github action workflow files (#63)
+- refactor: Use vars/RedHat_N.yml symlink for CentOS, Rocky, Alma wherever possible (#65)
+
+[1.2.0] - 2024-07-15
+--------------------
+
+### New Features
+
+- feat: add support for transactional update (#53)
+
+[1.1.5] - 2024-07-02
+--------------------
+
+### Bug Fixes
+
+- fix: add support for EL10 (#51)
+
+### Other Changes
+
+- ci: ansible-lint action now requires absolute directory (#50)
+
+[1.1.4] - 2024-06-11
+--------------------
+
+### Other Changes
+
+- ci: use tox-lsr 3.3.0 which uses ansible-test 2.17 (#45)
+- ci: tox-lsr 3.4.0 - fix py27 tests; move other checks to py310 (#47)
+- ci: Add supported_ansible_also to .ansible-lint (#48)
+
+[1.1.3] - 2024-04-04
+--------------------
+
+### Other Changes
+
+- ci: Bump codecov/codecov-action from 3 to 4 (#40)
+- ci: fix python unit test - copy pytest config to tests/unit (#41)
+- ci: Bump ansible/ansible-lint from 6 to 24 (#42)
+- ci: Bump mathieudutour/github-tag-action from 6.1 to 6.2 (#43)
+
 [1.1.2] - 2024-01-16
 --------------------
 
@@ -63,7 +135,6 @@ Changelog
   - Remove badges from README.md prior to converting to HTML
   
   Signed-off-by: Sergei Petrosian <spetrosi@redhat.com>
-
 
 [1.0.1] - 2023-07-26
 --------------------

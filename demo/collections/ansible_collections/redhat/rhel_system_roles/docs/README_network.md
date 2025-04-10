@@ -31,6 +31,18 @@ NetworkManager's API version since which the settings are introduced.
 
 The `network` role supports two modules: `network_connections` and `network_state`.
 
+Since the backend of `network_state` is Nmstate, the `network_state` modules represents
+the future direction for the network role, aiming to provide a more streamlined and
+reliable way of managing network. As a result, the focus is on promoting the use of
+`network_state` over the `network_connections` variable to ensure better consistency
+and functionality moving forward. Additionally, most of the features currently
+supported in NetworkManager are also available with `network_state`. For more
+information and examples on how to configure the network using Nmstate schema in
+`network_state` variable, please refer to the official documentation at
+[nmstate.io](https://nmstate.io). For detailed syntax and explanations of each
+parameter, visit
+[nmstate's API documentation](https://docs.rs/nmstate/latest/nmstate/index.html).
+
 For each host a list of networking profiles can be configured via the
 `network_connections` variable.
 
@@ -81,11 +93,14 @@ the name prefix. List of variables:
 - `network_connections` - The connection profiles are configured as
   `network_connections`, which is a list of dictionaries that include specific
   options.
-- `network_allow_restart` - Certain configurations require the role to restart
-  network services. For example, if a wireless connection is configured and
-  NetworkManager-wifi is not installed, NetworkManager must be restarted prior
-  to the connection being configured. Setting this to `false` will prevent the
-  role from restarting network service.
+- `network_allow_restart` - It defaults to `false`. To load NetworkManager plugins
+  after installation, NetworkManager requires to be restarted. For example, if a
+  wireless connection is configured and NetworkManager-wifi is not installed,
+  NetworkManager must be restarted prior to the connection being configured. The
+  restart can result in connectivity loss and therefore the role does not allow it
+  without explicit consent. The user can consent to it by setting
+  `network_allow_restart` to `true`. Setting `network_allow_restart` to `false` will
+  prevent the role from restarting NetworkManager.
 - `network_state` - The network state settings can be configured in the managed
   host, and the format and the syntax of the configuration should be consistent
   with the [nmstate state examples](https://nmstate.io/examples.html) (YAML).
@@ -298,7 +313,14 @@ configuration is supported at the moment.
 #### `type: vlan`
 
 Similar to `controller`, the `parent` references the connection profile in the ansible
-role.
+role. The vlan ID can be specified by using nested vlan setting, the valid vlan ID
+value ranges from 0 to 4094. Here is how to specify the vlan ID:
+
+```yaml
+type: vlan
+vlan:
+  id: 6
+```
 
 #### `type: macvlan`
 
@@ -356,6 +378,15 @@ By default, profiles are created with autoconnect enabled.
 - For `NetworkManager`, this corresponds to the `connection.autoconnect` property.
 
 - For `initscripts`, this corresponds to the `ONBOOT` property.
+
+### `autoconnect_retries`
+
+The number of times a connection should be tried when autoactivating before giving up.
+Zero means forever, -1 means the global default in NetworkManager (4 times if not
+overridden). Setting this to 1 means to try activation only once before blocking
+autoconnect. Note that after a timeout, NetworkManager will try to autoconnect again.
+
+- For `NetworkManager`, this corresponds to the `connection.autoconnect-retries` property.
 
 ### `mac`
 
@@ -549,6 +580,16 @@ The IP configuration supports the following options:
 
   The default gateway for IPv4 (`gateway4`) or IPv6 (`gateway6`) packets.
 
+- `wait_ip`
+
+  The property controls whether the system should wait for a specific IP stack to be
+  configured before considering the connection activated. It can be set to "any",
+  "ipv4","ipv6," or "ipv4+ipv6". When set to "any," the system considers the connection
+  activated when any IP stack is configured. "ipv4" ensures the system waits for IPv4
+  configuration, while "ipv6" ensures the system waits for IPv6 configuration. The
+  "ipv4+ipv6" option requires both IPv4 and IPv6 to be configured before the connection
+  is considered activated.
+
 - `ipv4_ignore_auto_dns` and `ipv6_ignore_auto_dns`
 
   If enabled, the automatically configured name servers and search domains (via
@@ -575,10 +616,11 @@ The IP configuration supports the following options:
 
   Static route configuration can be specified via a list of routes given in the
   `route` option. The default value is an empty list. Each route is a dictionary with
-  the following entries: `gateway`, `metric`, `network`, `prefix`, `table` and `type`.
-  `network` and `prefix` specify the destination network. `table` supports both the
-  numeric table and named table. In order to specify the named table, the users have to
-  ensure the named table is properly defined in `/etc/iproute2/rt_tables` or
+  the following entries: `gateway`, `metric`, `network`, `prefix`, `src`, `table` and
+  `type`. `network` and `prefix` specify the destination network. `src` specifies the
+  source IP address for a route. `table` supports both the numeric table and named
+  table. In order to specify the named table, the users have to ensure the named table
+  is properly defined in `/etc/iproute2/rt_tables` or
   `/etc/iproute2/rt_tables.d/*.conf`. The optional `type` key supports the values
   `blackhole`, `prohibit`, and `unreachable`.
   See [man 8 ip-route](https://man7.org/linux/man-pages/man8/ip-route.8.html#DESCRIPTION)
@@ -1287,6 +1329,50 @@ network_state:
         dhcp: false
 ```
 
+Configuring the Linux bridge with custom multicast, stp options, along with a port
+with specific stp settings:
+
+```yaml
+network_state:
+  interfaces:
+    - name: br0
+      type: linux-bridge
+      state: up
+      bridge:
+        options:
+          gc-timer: 29657
+          group-addr: 01:80:C2:00:00:00
+          group-forward-mask: 0
+          group-fwd-mask: 0
+          hash-max: 4096
+          hello-timer: 0
+          mac-ageing-time: 300
+          multicast-last-member-count: 2
+          multicast-last-member-interval: 100
+          multicast-membership-interval: 26000
+          multicast-querier: false
+          multicast-querier-interval: 25500
+          multicast-query-interval: 12500
+          multicast-query-response-interval: 1000
+          multicast-query-use-ifaddr: false
+          multicast-router: auto
+          multicast-snooping: true
+          multicast-startup-query-count: 2
+          multicast-startup-query-interval: 3125
+          stp:
+            enabled: false
+            forward-delay: 15
+            hello-time: 2
+            max-age: 20
+            priority: 32768
+          vlan-protocol: 802.1q
+        port:
+          - name: eth1
+            stp-hairpin-mode: false
+            stp-path-cost: 100
+            stp-priority: 32
+```
+
 Configuring the route:
 
 ```yaml
@@ -1330,6 +1416,13 @@ network_state:
 The `network` role rejects invalid configurations. It is recommended to test the role
 with `--check` first. There is no protection against wrong (but valid) configuration.
 Double-check your configuration before applying it.
+
+### network_connections Internal Module
+
+The `network_connections` internal module is intended for internal use or integration
+testing and is not intended for direct external access or use. When this internal
+module is utilized in integration tests, the tasks specified in `tasks/main.yaml`
+are skipped, thereby speeding up the test execution.
 
 ## Compatibility
 

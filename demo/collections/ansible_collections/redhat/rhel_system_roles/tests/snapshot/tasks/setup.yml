@@ -19,6 +19,8 @@
 - name: Run the storage role install base packages
   include_role:
     name: redhat.rhel_system_roles.storage
+  vars:
+    storage_udevadm_trigger: true # helps with get_unused_disks, cleanup
 
 - name: Get unused disks
   include_tasks: get_unused_disk.yml
@@ -31,3 +33,4 @@
     name: redhat.rhel_system_roles.storage
   vars:
     storage_pools: "{{ test_storage_pools }}"
+    storage_udevadm_trigger: true # helps with get_unused_disks, cleanup

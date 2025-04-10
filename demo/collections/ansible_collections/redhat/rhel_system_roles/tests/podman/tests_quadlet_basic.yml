@@ -18,13 +18,15 @@
         state: present
         data: "{{ __json_secret_data | string }}"
     __podman_quadlet_specs:
-      - name: quadlet-basic
+      - template_src: templates/quadlet-basic.network.j2
+        state: started
+      - name: quadlet-basic-unused-network
         type: network
-        Network:
-          Subnet: 192.168.29.0/24
-          Gateway: 192.168.29.1
-          Label: app=wordpress
+        Network: {}
       - name: quadlet-basic-mysql
+        type: volume
+        Volume: "{{ {} if podman_version is version('4.7.0', '<') else {'VolumeName': 'quadlet-basic-mysql-name'} }}"
+      - name: quadlet-basic-unused-volume
         type: volume
         Volume: {}
       - name: quadlet-basic-mysql
@@ -33,7 +35,7 @@
           WantedBy: default.target
         Container:
           Image: "{{ mysql_image }}"
-          ContainerName: quadlet-basic-mysql
+          ContainerName: quadlet-basic-mysql-name
           Volume: quadlet-basic-mysql.volume:/var/lib/mysql
           Network: quadlet-basic.network
         # Once 4.5 is released change this line to use the quadlet Secret key
@@ -44,6 +46,17 @@
             - FOO=/bin/busybox-extras
             - BAZ=test
   tasks:
+    - name: Test is only supported on x86_64
+      debug:
+        msg: >
+          This test is only supported on x86_64 because the test images used are only
+          available on that platform.
+      when: ansible_facts["architecture"] != "x86_64"
+
+    - name: End test
+      meta: end_play
+      when: ansible_facts["architecture"] != "x86_64"
+
     - name: Run test
       block:
         - name: See if not pulling images fails
@@ -173,10 +186,11 @@
           include_role:
             name: redhat.rhel_system_roles.podman
           vars:
-            podman_run_as_user: user_quadlet_basic
-            podman_secrets: "{{ __podman_secrets }}"
-            podman_quadlet_specs: "{{ __podman_quadlet_specs }}"
+            podman_quadlet_specs: "{{ __podman_quadlet_specs | map('combine', __run_as_user) | list }}"
             podman_pull_retry: true
+            podman_secrets: "{{ __podman_secrets | map('combine', __run_as_user) | list }}"
+            __run_as_user:
+              run_as_user: user_quadlet_basic
 
         - name: Check files
           command: cat {{ __dir }}/{{ item }}
@@ -194,16 +208,28 @@
           register: __stat
           failed_when: not __stat.stat.exists
 
-      # must clean up networks last - cannot remove a network
-      # in use by a container
+      # must clean up in the reverse order of creating - and
+      # ensure networks are removed last
         - name: Cleanup user
           include_role:
             name: redhat.rhel_system_roles.podman
           vars:
+            podman_prune_images: true
+            __podman_test_debug: true
             podman_run_as_user: user_quadlet_basic
             __absent: {"state": "absent"}
             podman_secrets: "{{ __podman_secrets | map('combine', __absent) | list }}"
-            podman_quadlet_specs: "{{ ((__podman_quadlet_specs | rejectattr('type', 'match', '^network$') | list) + (__podman_quadlet_specs | selectattr('type', 'match', '^network$') | list)) | map('combine', __absent) | list }}"
+            podman_quadlet_specs: "{{ __podman_quadlet_specs | reverse | map('combine', __absent) | list }}"
+
+        - name: Ensure no resources
+          assert:
+            that:
+              - __podman_test_debug_images.stdout == ""
+              - __podman_test_debug_networks.stdout_lines | reject("match", "^podman$") | reject("match", "^podman-default-kube-network$") | list | length == 0
+              - __podman_test_debug_volumes.stdout == ""
+              - __podman_test_debug_containers.stdout == ""
+              - __podman_test_debug_secrets.stdout == ""
+              - ansible_facts["services"] | dict2items | rejectattr("value.status", "match", "not-found") | selectattr("key", "match", "quadlet-demo") | list | length == 0
 
         - name: Ensure no linger
           stat:
@@ -229,12 +255,33 @@
             - quadlet-basic-mysql.volume
 
         - name: Check JSON
-          command: podman exec quadlet-basic-mysql cat /tmp/test.json
+          command: podman exec quadlet-basic-mysql-name cat /tmp/test.json
           register: __result
           failed_when: __result.stdout != __json_secret_data
           changed_when: false
 
       rescue:
+        - name: Debug3
+          shell: |
+            set -x
+            set -o pipefail
+            exec 1>&2
+            #podman volume rm --all
+            #podman network prune -f
+            podman volume ls
+            podman network ls
+            podman secret ls
+            podman container ls
+            podman pod ls
+            podman images
+            systemctl list-units | grep quadlet
+          changed_when: false
+
+        - name: Check AVCs
+          command: grep type=AVC /var/log/audit/audit.log
+          changed_when: false
+          failed_when: false
+
         - name: Dump journal
           command: journalctl -ex
           changed_when: false
@@ -247,10 +294,11 @@
               include_role:
                 name: redhat.rhel_system_roles.podman
               vars:
+                podman_prune_images: true
                 podman_run_as_user: user_quadlet_basic
                 __absent: {"state": "absent"}
                 podman_secrets: "{{ __podman_secrets | map('combine', __absent) | list }}"
-                podman_quadlet_specs: "{{ ((__podman_quadlet_specs | rejectattr('type', 'match', '^network$') | list) + (__podman_quadlet_specs | selectattr('type', 'match', '^network$') | list)) | map('combine', __absent) | list }}"
+                podman_quadlet_specs: "{{ __podman_quadlet_specs | reverse | map('combine', __absent) | list }}"
 
             - name: Remove test user
               user:
@@ -262,9 +310,21 @@
               include_role:
                 name: redhat.rhel_system_roles.podman
               vars:
+                podman_prune_images: true
+                __podman_test_debug: true
                 __absent: {"state": "absent"}
                 podman_secrets: "{{ __podman_secrets | map('combine', __absent) | list }}"
-                podman_quadlet_specs: "{{ ((__podman_quadlet_specs | rejectattr('type', 'match', '^network$') | list) + (__podman_quadlet_specs | selectattr('type', 'match', '^network$') | list)) | map('combine', __absent) | list }}"
+                podman_quadlet_specs: "{{ __podman_quadlet_specs | reverse | map('combine', __absent) | list }}"
+
+            - name: Ensure no resources
+              assert:
+                that:
+                  - __podman_test_debug_images.stdout == ""
+                  - __podman_test_debug_networks.stdout_lines | reject("match", "^podman$") | reject("match", "^podman-default-kube-network$") | list | length == 0
+                  - __podman_test_debug_volumes.stdout == ""
+                  - __podman_test_debug_containers.stdout == ""
+                  - __podman_test_debug_secrets.stdout == ""
+                  - ansible_facts["services"] | dict2items | rejectattr("value.status", "match", "not-found") | selectattr("key", "match", "quadlet-demo") | list | length == 0
 
           rescue:
             - name: Dump journal

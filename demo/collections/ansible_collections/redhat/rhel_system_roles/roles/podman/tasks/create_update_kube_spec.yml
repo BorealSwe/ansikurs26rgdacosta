@@ -22,8 +22,6 @@
     __owner_group: "{{ {'owner': __podman_user, 'group': __podman_group} if __podman_rootless else {'owner': 'root', 'group': 'root'} }}"
     __defaults: "{{ {'path': item} | combine(__podman_hostdirs_defaults) | combine(__owner_group) }}"
   loop: "{{ __podman_volumes }}"
-  become: "{{ __podman_rootless | ternary(true, omit) }}"
-  become_user: "{{ __podman_rootless | ternary(__podman_user, omit) }}"
   when:
     - podman_create_host_directories | bool
     - __podman_volumes | d([]) | length > 0
@@ -32,8 +30,9 @@
   redhat.rhel_system_roles.podman_image:
     name: "{{ item }}"
     force: true
-    username: "{{ container_image_user | default(omit) }}"
-    password: "{{ container_image_password | default(omit) }}"
+    username: "{{ __podman_registry_username if __podman_registry_username | length > 0 else omit }}"
+    password: "{{ __podman_registry_password if __podman_registry_password | length > 0 else omit }}"
+    validate_certs: "{{ (__podman_validate_certs in ['', none]) | ternary(omit, __podman_validate_certs) }}"
   register: __podman_image_updated
   when: __podman_pull_image | bool
   until: __podman_image_updated is success
@@ -49,6 +48,7 @@
   vars:
     __images: "{{ __podman_kube['spec']['containers'] | selectattr('image', 'defined') | map(attribute='image') | list if 'containers' in __podman_kube['spec'] else [] }}"
     __init_images: "{{ __podman_kube['spec']['initContainers'] | selectattr('image', 'defined') | map(attribute='image') | list if 'initContainers' in __podman_kube['spec'] else [] }}"
+  no_log: true
 
 - name: Check the kubernetes yaml file
   stat:

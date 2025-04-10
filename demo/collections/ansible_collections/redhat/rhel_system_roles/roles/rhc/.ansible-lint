@@ -20,7 +20,7 @@ exclude_paths:
   - roles/rhc/.github/
   - roles/rhc/.markdownlint.yaml
   - roles/rhc/examples/roles/
-mock_modules:
-  - redhat.rhel_system_roles.podman_container
 mock_roles:
   - rhel-system-roles.rhc
+supported_ansible_also:
+  - "2.14.0"

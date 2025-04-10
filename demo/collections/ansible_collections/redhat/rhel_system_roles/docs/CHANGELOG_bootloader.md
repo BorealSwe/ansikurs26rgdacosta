@@ -1,6 +1,69 @@
 Changelog
 =========
 
+[1.0.8] - 2024-10-30
+--------------------
+
+### Other Changes
+
+- ci: Add tft plan and workflow (#111)
+- ci: Update fmf plan to add a separate job to prepare managed nodes (#113)
+- ci: bump sclorg/testing-farm-as-github-action from 2 to 3 (#114)
+- ci: Add workflow for ci_test bad, use remote fmf plan (#115)
+- ci: Fix missing slash in ARTIFACTS_URL (#116)
+- ci: Add tags to TF workflow, allow more [citest bad] formats (#117)
+- ci: ansible-test action now requires ansible-core version (#118)
+- ci: add YAML header to github action workflow files (#119)
+- refactor: Use vars/RedHat_N.yml symlink for CentOS, Rocky, Alma wherever possible (#121)
+
+[1.0.7] - 2024-07-02
+--------------------
+
+### Bug Fixes
+
+- fix: add support for EL10 (#109)
+
+### Other Changes
+
+- test: Skip hosts on s390x. Asserting error doesn't work due to a bug (#107)
+- ci: ansible-lint action now requires absolute directory (#108)
+
+[1.0.6] - 2024-06-11
+--------------------
+
+### Bug Fixes
+
+- fix: Set user.cfg path to /boot/grub2/ on EL 9 UEFI (#101)
+
+### Other Changes
+
+- ci: use tox-lsr 3.3.0 which uses ansible-test 2.17 (#102)
+- ci: tox-lsr 3.4.0 - fix py27 tests; move other checks to py310 (#104)
+- ci: Add supported_ansible_also to .ansible-lint (#105)
+
+[1.0.5] - 2024-04-22
+--------------------
+
+### Bug Fixes
+
+- fix: Fail on the s390x architecture with a not supported msg (#96)
+
+### Other Changes
+
+- refactor: Refactor bootloader_settings to run cmds from functions, use mock in unittests (#97)
+
+[1.0.4] - 2024-04-04
+--------------------
+
+### Bug Fixes
+
+- fix: Add /etc/default/grub if missing (#93)
+
+### Other Changes
+
+- ci: bump ansible/ansible-lint from 6 to 24 (#92)
+- ci: bump mathieudutour/github-tag-action from 6.1 to 6.2 (#94)
+
 [1.0.3] - 2024-02-26
 --------------------
 
@@ -22,38 +85,10 @@ Changelog
 
 - fix: Modify grub timeout in grub config directly (#86)
 
-  Enhancement: Modify grub timeout in grub config directly
-  
-  Reason: On RHEL 7, rebuilding grub config with grubby2-mkconfig has a bug that returns previously removed kernels
-  
-  Result: This workaround doesn't require rebuilding grub config and hence avoids the bug
-
 ### Other Changes
 
 - ci: bump codecov/codecov-action from 3 to 4 (#84)
-
 - ci: fix python unit test - copy pytest config to tests/unit (#85)
-
-  This is fixed by tox-lsr 3.2.2 - all actions that use tox-lsr are updated to
-  3.2.2, not just the python unit tests, even though the fix is only related to
-  pytest.  All roles are updated to use tox-lsr 3.2.2 for the sake of consistency
-  even if not affected by the pytest issue.
-  
-  Something changed recently in the way github actions provisions systems which
-  means some of the directories are not readable by the python unit test actions.
-  In addition, the python unit tests were causing a lot of unnecessary directory
-  traversal doing collection/discovery of unit test files, because of using
-  `pytest -c /path/to/tox-lsr/pytest.ini` Unfortunately, with `pytest`, the
-  directory of the config file is the root directory for the tests and tests
-  discovery, and there is no way around this.
-  
-  Therefore, the only solution is to copy the tox-lsr `pytest.ini` to the
-  `tests/unit` directory, which makes that the test root directory.
-  
-  See also https://github.com/linux-system-roles/tox-lsr/pull/160
-  
-  Signed-off-by: Rich Megginson <rmeggins@redhat.com>
-
 
 [1.0.0] - 2024-01-09
 --------------------

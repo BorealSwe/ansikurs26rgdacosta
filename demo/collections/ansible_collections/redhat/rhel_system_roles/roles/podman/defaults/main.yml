@@ -109,3 +109,36 @@ podman_continue_if_pull_fails: false
 # If true, if a pull attempt fails, it will be retried according
 # to the default Ansible `until` behavior.
 podman_pull_retry: false
+
+# username to use to authenticate to the registry
+# override by specifying registry_username on a per-spec basis
+podman_registry_username: "{{ container_image_user | d('') }}"
+
+# password to use to authenticate to the registry
+# override by specifying registry_password on a per-spec basis
+podman_registry_password: "{{ container_image_password | d('') }}"
+
+# List of files containing registry credentials
+# If not using the default containers-auth.json, you may need to
+# also provide an entry for "credential-helpers" in the registries.conf
+# For more information, see "man containers-auth.json" and
+# "man containers-registries.conf"
+podman_credential_files: []
+
+# This variable is a `list` of `dict` elements that allows you to manage TLS
+# certificates and keys used to connect to registries
+podman_registry_certificates: []
+
+# Can set to true or false to control if pulling images from
+# registries will validate the TLS certs.
+# The default null means to use whatever is the default used
+# by the redhat.rhel_system_roles.podman_image module
+# You can override this on a per-spec basis using validate_certs
+podman_validate_certs:
+
+# Prune images when removing quadlets/kube specs -
+# this will remove all unused/unreferenced images
+podman_prune_images: false
+
+# var to manage reboots for transactional update systems
+podman_transactional_update_reboot_ok:

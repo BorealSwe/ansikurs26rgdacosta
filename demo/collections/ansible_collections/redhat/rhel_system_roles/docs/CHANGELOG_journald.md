@@ -1,6 +1,70 @@
 Changelog
 =========
 
+[1.3.5] - 2025-01-09
+--------------------
+
+### Other Changes
+
+- ci: Use Fedora 41, drop Fedora 39 (#91)
+- ci: Use Fedora 41, drop Fedora 39 - part two (#92)
+
+[1.3.4] - 2024-10-30
+--------------------
+
+### Other Changes
+
+- ci: Add tags to TF workflow, allow more [citest bad] formats (#84)
+- ci: ansible-test action now requires ansible-core version (#85)
+- ci: add YAML header to github action workflow files (#86)
+- refactor: Use vars/RedHat_N.yml symlink for CentOS, Rocky, Alma wherever possible (#88)
+- test: disable service start limit to avoid errors during testing (#89)
+
+[1.3.3] - 2024-08-19
+--------------------
+
+### Other Changes
+
+- ci: Add tft plan and workflow (#75)
+- ci: Update fmf plan to add a separate job to prepare managed nodes (#77)
+- ci: Bump sclorg/testing-farm-as-github-action from 2 to 3 (#78)
+- ci: Add workflow for ci_test bad, use remote fmf plan (#79)
+- ci: Fix missing slash in ARTIFACTS_URL (#80)
+- test: fix check for max journal size (#81)
+
+[1.3.2] - 2024-07-02
+--------------------
+
+### Bug Fixes
+
+- fix: add support for EL10 (#73)
+
+### Other Changes
+
+- ci: ansible-lint action now requires absolute directory (#72)
+
+[1.3.1] - 2024-06-11
+--------------------
+
+### Other Changes
+
+- ci: use tox-lsr 3.3.0 which uses ansible-test 2.17 (#67)
+- ci: tox-lsr 3.4.0 - fix py27 tests; move other checks to py310 (#69)
+- ci: Add supported_ansible_also to .ansible-lint (#70)
+
+[1.3.0] - 2024-04-04
+--------------------
+
+### New Features
+
+- feat: Add options for rate limit interval and burst (#64)
+
+### Other Changes
+
+- ci: fix python unit test - copy pytest config to tests/unit (#62)
+- ci: Bump ansible/ansible-lint from 6 to 24 (#63)
+- ci: Bump mathieudutour/github-tag-action from 6.1 to 6.2 (#65)
+
 [1.2.3] - 2024-01-23
 --------------------
 
@@ -87,7 +151,6 @@ Changelog
   - Remove badges from README.md prior to converting to HTML
   
   Signed-off-by: Sergei Petrosian <spetrosi@redhat.com>
-
 
 [1.0.5] - 2023-07-19
 --------------------

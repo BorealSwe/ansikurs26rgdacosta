@@ -1,0 +1,8 @@
+download_url: https://galaxy.ansible.com/api/v3/plugin/ansible/content/published/collections/artifacts/datadog-dd-5.10.0.tar.gz
+format_version: 1.0.0
+name: dd
+namespace: datadog
+server: https://galaxy.ansible.com/api/
+signatures: []
+version: 5.10.0
+version_url: /api/v3/plugin/ansible/content/published/collections/index/datadog/dd/versions/5.10.0/

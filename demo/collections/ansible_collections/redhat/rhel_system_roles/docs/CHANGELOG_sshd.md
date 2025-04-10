@@ -1,6 +1,73 @@
 Changelog
 =========
 
+[v0.26.0] - 2025-01-06
+--------------------
+
+### New Features
+
+- feat: New options in OpenSSH + fixes for bugx in OpenSSH 9.9p1 (#304)
+- feat: Use sshd_config instead of sshd which has been deprecated (#299)
+
+### Bug Fixes
+
+- fix: use quote with command, shell and validate with variable (#298)
+- fix: Reload the service when needed (#303)
+
+### Other Changes
+
+- test: set TMPDIR in block of role invocation (#300)
+
+[v0.25.0] - 2024-08-19
+--------------------
+
+### New Features
+
+- feat: Add new configuration options from OpenSSH 9.8
+
+[v0.24.1] - 2024-07-03
+--------------------
+
+### Bug Fixes
+
+- fix: add support for EL10 (#293)
+
+[v0.24.0] - 2024-06-21
+--------------------
+
+### New Features
+
+- feat:  Ubuntu Noble support (#290)
+
+### Bug Fixes
+
+- fix: Ubuntu 22.04 PrintMotd set default to false (#290)
+
+### Other Changes
+
+- build(deps): bump mathieudutour/github-tag-action from 6.1 to 6.2 (#283)
+
+[v0.23.5] - 2024-04-09
+--------------------
+
+### Other Changes
+
+- test: ensure that sshd2 is completely stopped and removed
+
+[v0.23.4] - 2024-04-05
+--------------------
+
+### Bug Fixes
+
+- fix: Document and streamline the sshd_main_config_file (#281)
+
+[v0.23.3] - 2024-04-03
+--------------------
+
+### Other Changes
+
+- build(deps): bump ansible/ansible-lint from 6 to 24 (#279)
+
 [v0.23.2] - 2024-02-19
 --------------------
 
@@ -58,7 +125,6 @@ Changelog
   
   Issue Tracker Tickets (Jira or BZ if any):
   #259 #260 #261
-
 
 [v0.21.0] - 2023-09-12
 --------------------
@@ -214,7 +280,6 @@ Changelog
 - chore: moved debian 7 (wheezy) config to explicit file (#239)
 
   This removes the `defaults/Debian.yml` file and moves it to the `defaults/Debian_7.yml` file. This prohibits rolling out ancient config on new Debian-Systems which aren't supported by this role.
-
 
 [v0.19.0] - 2023-04-27
 --------------------

@@ -1,0 +1,9 @@
+---
+# vars file for rgdacosta.foo
+my_state: installed        
+my_systemd_state: started
+my_systemd_enabled: true
+my_fw_service: http
+my_fw_state: enabled
+my_fw_permanance: true
+my_fw_immediate: true

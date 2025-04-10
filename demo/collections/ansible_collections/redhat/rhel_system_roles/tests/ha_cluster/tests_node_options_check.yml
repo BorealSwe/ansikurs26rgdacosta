@@ -21,8 +21,7 @@
           include_tasks: tasks/assert_node_options_check.yml
           loop:
           # yamllint disable rule:hyphens
-            -   -
-                  node_name: "{{ __test_first_node }}"
+            -   - node_name: "{{ __test_first_node }}"
                 - node_name: "{{ __test_first_node }}"
             -   - node_name: "{{ __test_first_node }}"
                 - node_name: "{{ __test_first_node ~ 'x' }}"

@@ -36,8 +36,9 @@
 
     - name: Set distribution version
       set_fact:
-        is_rhel9: "{{ (ansible_facts.distribution == 'CentOS' or ansible_facts.distribution == 'Enterprise Linux' or ansible_facts.distribution == 'RedHat') and ansible_facts.distribution_major_version == '9' }}"
-        is_rhel8: "{{ (ansible_facts.distribution == 'CentOS' or ansible_facts.distribution == 'Enterprise Linux' or ansible_facts.distribution == 'RedHat') and ansible_facts.distribution_major_version == '8' }}"
+        is_rhel10: "{{ (ansible_facts['os_family'] == 'RedHat') and ansible_facts.distribution_major_version == '10' }}"
+        is_rhel9: "{{ (ansible_facts['os_family'] == 'RedHat') and ansible_facts.distribution_major_version == '9' }}"
+        is_rhel8: "{{ (ansible_facts['os_family'] == 'RedHat') and ansible_facts.distribution_major_version == '8' }}"
         is_fedora: "{{ ansible_facts.distribution == 'Fedora' }}"
 
     - name: Get unused disks
@@ -46,6 +47,7 @@
         min_size: "{{ volume_group_size }}"
         max_return: 2
         disks_needed: 2
+        match_sector_size: true
 
     - name: Create a cached LVM logical volume under volume group 'foo'
       include_role:
@@ -80,7 +82,7 @@
       include_tasks: verify-role-results.yml
 
     - name: Run test on supported platforms
-      when: ((is_fedora and blivet_pkg_version is version("3.5.0-1", ">=")) or (is_rhel8 and blivet_pkg_version is version("3.4.0-10", ">=")) or (is_rhel9 and blivet_pkg_version is version("3.4.0-14", ">=")))
+      when: ((is_fedora and blivet_pkg_version is version("3.5.0-1", ">=")) or (is_rhel8 and blivet_pkg_version is version("3.4.0-10", ">=")) or (is_rhel9 and blivet_pkg_version is version("3.4.0-14", ">=")) or is_rhel10)
       block:
         - name: Attach the cache to the 'test' LV created above
           include_role:

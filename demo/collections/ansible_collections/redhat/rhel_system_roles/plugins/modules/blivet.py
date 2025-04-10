@@ -51,6 +51,18 @@ options:
             encryption_password:
                 description: encryption_password
                 type: str
+            encryption_clevis_pin:
+                description: encryption_clevis_pin
+                type: str
+            encryption_tang_url:
+                description: encryption_tang_url
+                type: str
+            encryption_tang_thumbprint:
+                description: encryption_tang_thumbprint
+                type: str
+            grow_to_fill:
+                description: grow_to_fill
+                type: bool
             name:
                 description: name
                 type: str
@@ -297,6 +309,11 @@ options:
               when creating a disk volume (that is, a whole disk filesystem)
         type: dict
         default: {}
+    uses_kmod_kvdo:
+        description:
+            - bool - set if platform uses_kmod_kvdo
+        type: bool
+        default: false
 author:
     - David Lehman (@dwlehman)
 '''
@@ -370,7 +387,7 @@ try:
     from blivet3.callbacks import callbacks
     from blivet3 import devicelibs
     from blivet3 import devices
-    from blivet3.deviceaction import ActionConfigureFormat, ActionAddMember, ActionRemoveMember
+    from blivet3.deviceaction import ActionConfigureFormat, ActionResizeFormat, ActionAddMember, ActionRemoveMember
     from blivet3.devicefactory import DEFAULT_THPOOL_RESERVE
     from blivet3.flags import flags as blivet_flags
     from blivet3.formats import fslib, get_format
@@ -386,7 +403,7 @@ except ImportError:
         from blivet.callbacks import callbacks
         from blivet import devicelibs
         from blivet import devices
-        from blivet.deviceaction import ActionConfigureFormat, ActionAddMember, ActionRemoveMember
+        from blivet.deviceaction import ActionConfigureFormat, ActionResizeFormat, ActionAddMember, ActionRemoveMember
         from blivet.devicefactory import DEFAULT_THPOOL_RESERVE
         from blivet.flags import flags as blivet_flags
         from blivet.formats import fslib, get_format
@@ -412,6 +429,7 @@ if BLIVET_PACKAGE:
     blivet_flags.allow_online_fs_resize = True
     blivet_flags.gfs2 = True
     set_up_logging()
+
     log = logging.getLogger(BLIVET_PACKAGE + ".ansible")
 
     # XXX add support for LVM RAID raid0 level
@@ -591,7 +609,9 @@ class BlivetVolume(BlivetBase):
         if self._volume.get('encryption'):
             packages.extend(get_format('luks').packages)
         if self._volume.get('compression') or self._volume.get('deduplication'):
-            packages.extend(['vdo', 'kmod-kvdo'])
+            packages.append('vdo')
+            if uses_kmod_kvdo:
+                packages.append('kmod-kvdo')
         return packages
 
     @property
@@ -630,7 +650,7 @@ class BlivetVolume(BlivetBase):
             device.original_format._key_file = self._volume.get('encryption_key')
             device.original_format.passphrase = self._volume.get('encryption_password')
             if device.isleaf:
-                self._blivet.populate()
+                self._blivet.devicetree.populate()
 
             if not device.isleaf:
                 device = device.children[0]
@@ -642,6 +662,9 @@ class BlivetVolume(BlivetBase):
             self._device = None
             return  # TODO: see if we can create this device w/ the specified name
 
+    # pylint doesn't understand that "luks_fmt" is always set when "encrypted" is true
+    # pylint: disable=unknown-option-value
+    # pylint: disable=possibly-used-before-assignment
     def _update_from_device(self, param_name):
         """ Return True if param_name's value was retrieved from a looked-up device. """
         log.debug("Updating volume settings from device: %r", self._device)
@@ -826,6 +849,9 @@ class BlivetVolume(BlivetBase):
         if ((fmt is None and self._device.format.type is None)
                 or (fmt is not None and self._device.format.type == fmt.type)):
             # format is the same, no need to run reformatting
+            if not hasattr(self._device.format, "label"):
+                # not all formats support labels
+                return
             dev_label = '' if self._device.format.label is None else self._device.format.label
             if dev_label != fmt.label:
                 # ...but the label has changed - schedule modification action
@@ -1314,11 +1340,89 @@ class BlivetMDRaidVolume(BlivetVolume):
             leaves = [a for a in ancestors if a.isleaf]
 
 
+class BlivetStratisVolume(BlivetVolume):
+    blivet_device_class = devices.StratisFilesystemDevice if hasattr(devices, "StratisFilesystemDevice") else None
+
+    def _update_from_device(self, param_name):
+        if param_name == 'fs_type':
+            # Blivet internally uses "stratis xfs" as filesystem type for stratis to distinguish
+            # between "xfs" and "xfs on stratis" but we want to use "xfs" here because that's
+            # the type used for mounting and what the other system tools see
+            self._volume['fs_type'] = self._device.format.mount_type
+            return True
+        else:
+            return super()._update_from_device(param_name)
+
+    def _get_device_id(self):
+        if not self._blivet_pool._device:
+            return None
+        return "%s/%s" % (self._blivet_pool._device.name, self._volume['name'])
+
+    def _get_size(self):
+        size = super(BlivetStratisVolume, self)._get_size()
+        if isinstance(self._volume['size'], str) and '%' in self._volume['size']:
+            size = self._blivet_pool._device.align(size, roundup=True)
+        return size
+
+    def _trim_size(self, size, parent_device):
+        trim_percent = (1.0 - float(parent_device.free_space / size)) * 100
+        log.debug("size: %s ; %s", size, trim_percent)
+
+        if size > parent_device.free_space:
+            if trim_percent > MAX_TRIM_PERCENT:
+                raise BlivetAnsibleError("specified size for volume '%s' '%s' exceeds available space in pool '%s' (%s)" % (self._volume['name'],
+                                                                                                                            size,
+                                                                                                                            parent_device.name,
+                                                                                                                            parent_device.free_space))
+            else:
+                log.info("adjusting %s size from %s to %s to fit in %s free space",
+                         self._volume['name'],
+                         size,
+                         parent_device.free_space,
+                         parent_device.name)
+                return parent_device.free_space
+        return size
+
+    def _get_format(self):
+        if self._volume['fs_type'] and self._volume['fs_type'] not in ('xfs', 'stratis xfs'):
+            raise BlivetAnsibleError("format cannot be specified for Stratis volumes")
+
+    def _reformat(self):
+        if self._volume['fs_type'] and self._volume['fs_type'] not in ('xfs', 'stratis xfs'):
+            raise BlivetAnsibleError("format cannot be changed for Stratis volumes")
+
+    def _manage_cache(self):
+        if self._volume['cached']:
+            raise BlivetAnsibleError("caching is not supported for Stratis volumes")
+
+    def _create(self):
+        if self._device:
+            return
+
+        parent_device = self._blivet_pool._device
+        if parent_device is None:
+            raise BlivetAnsibleError("failed to find pool '%s' for volume '%s'" % (self._blivet_pool._device.name,
+                                                                                   self._volume['name']))
+
+        size = self._trim_size(self._get_size(), parent_device)
+
+        try:
+            device = self._blivet.new_stratis_filesystem(name=self._volume['name'],
+                                                         parents=[parent_device],
+                                                         size=size)
+        except Exception as e:
+            raise BlivetAnsibleError("failed to set up volume '%s': %s" % (self._volume['name'], str(e)))
+
+        self._blivet.create_device(device)
+        self._device = device
+
+
 _BLIVET_VOLUME_TYPES = {
     "disk": BlivetDiskVolume,
     "lvm": BlivetLVMVolume,
     "partition": BlivetPartitionVolume,
-    "raid": BlivetMDRaidVolume
+    "raid": BlivetMDRaidVolume,
+    "stratis": BlivetStratisVolume,
 }
 
 
@@ -1714,6 +1818,8 @@ class BlivetLVMPool(BlivetPool):
 
         if auto_size_dev_count > 0:
             calculated_thinlv_size = available_space / auto_size_dev_count
+        else:
+            calculated_thinlv_size = available_space
 
         for thinlv in thinlvs_to_create:
 
@@ -1742,14 +1848,30 @@ class BlivetLVMPool(BlivetPool):
             return
 
         add_disks = [d for d in self._disks if d not in self._device.ancestors]
-        remove_disks = [pv for pv in self._device.pvs if not any(d in pv.ancestors for d in self._disks)]
+        remove_pvs = [pv for pv in self._device.pvs if not any(d in pv.ancestors for d in self._disks)]
 
-        if not (add_disks or remove_disks):
+        if self._pool['grow_to_fill']:
+            grow_pv_candidates = [pv for pv in self._device.pvs if pv not in remove_pvs and pv not in add_disks]
+
+            for pv in grow_pv_candidates:
+                if abs(self._device.size - self._device.current_size) < 2 * self._device.pe_size:
+                    continue
+
+                pv.format.update_size_info()  # set pv to be resizable
+
+                if pv.format.resizable:
+                    pv.format.grow_to_fill = True
+                    ac = ActionResizeFormat(pv, pv.size)
+                    self._blivet.devicetree.actions.add(ac)
+                else:
+                    log.warning("cannot grow/resize PV '%s', format is not resizable", pv.name)
+
+        if not (add_disks or remove_pvs):
             return
 
-        if remove_disks and safe_mode:
+        if remove_pvs and safe_mode:
             raise BlivetAnsibleError("cannot remove members '%s' from pool '%s' in safe mode" %
-                                     (", ".join(d.name for d in remove_disks),
+                                     (", ".join(d.name for d in remove_pvs),
                                       self._device.name))
 
         if self._is_raid:
@@ -1767,26 +1889,33 @@ class BlivetLVMPool(BlivetPool):
                                                                                        self._pool['name'],
                                                                                        str(e)))
 
-        for disk in remove_disks:
-            if self._device.free_space < disk.size:
-                raise BlivetAnsibleError("disk '%s' cannot be removed from pool '%s'" % (disk.name,
-                                                                                         self._pool['name']))
+        for pv in remove_pvs:
+            if self._device.free_space < pv.size:
+                raise BlivetAnsibleError("member '%s' cannot be removed from pool '%s'" % (pv.name,
+                                                                                           self._pool['name']))
 
             try:
-                ac = ActionRemoveMember(self._device, disk)
+                ac = ActionRemoveMember(self._device, pv)
                 # XXX: scheduling ActionRemoveMember is currently broken, we need to execute
                 # the action now manually, see https://bugzilla.redhat.com/show_bug.cgi?id=2076956
                 # self._blivet.devicetree.actions.add(ac)
                 ac.apply()
                 ac.execute()
             except Exception as e:
-                raise BlivetAnsibleError("failed to remove disk '%s' from pool '%s': %s" % (disk.name,
-                                                                                            self._pool['name'],
-                                                                                            str(e)))
+                raise BlivetAnsibleError("failed to remove member '%s' from pool '%s': %s" % (pv.name,
+                                                                                              self._pool['name'],
+                                                                                              str(e)))
             # XXX workaround for https://github.com/storaged-project/blivet/pull/1040
-            disk.format.vg_name = None
+            pv.format.vg_name = None
 
-            self._blivet.devicetree.recursive_remove(disk.raw_device)
+            self._blivet.devicetree.recursive_remove(pv.raw_device)
+
+            # if we are using partitions remove also the disklabel from the disk (but make sure
+            # there aren't other partitions first)
+            if use_partitions and not pv.is_disk:
+                for disk in pv.disks:
+                    if disk.format.type == "disklabel" and not disk.format.partitions:
+                        self._blivet.devicetree.recursive_remove(disk)
 
     def _create(self):
         if not self._device:
@@ -1815,9 +1944,108 @@ class BlivetLVMPool(BlivetPool):
             self._thinpools = [d for d in self._device.children if d.type == 'lvmthinpool']
 
 
+class BlivetStratisPool(BlivetPool):
+    blivet_device_class = devices.StratisPoolDevice if hasattr(devices, "StratisPoolDevice") else None
+
+    def _type_check(self):
+        return self._device.type == "stratis pool"
+
+    def _update_from_device(self, param_name):
+        """ Return True if param_name's value was retrieved from a looked-up device. """
+        log.debug("BlivetStratisPool._update_from_device: %s", self._device)
+
+        if param_name == 'disks':
+            self._pool['disks'] = [d.name for d in self._device.disks]
+        elif param_name == 'encryption':
+            self._pool['encryption'] = self._device.encrypted
+        elif param_name == 'encryption_clevis_pin':
+            self._pool['encryption_clevis_pin'] = self._device._clevis.pin
+        elif param_name == 'encryption_tang_url':
+            self._pool['encryption_tang_url'] = self._device._clevis.tang_url
+        elif param_name == 'encryption_tang_thumbprint':
+            self._pool['encryption_tang_thumbprint'] = self._device._clevis.tang_thumbprint
+        else:
+            return False
+
+        return True
+
+    def _member_management_is_destructive(self):
+        if self._device is None:
+            return False
+
+        if self._pool['encryption'] and not self._device.encrypted:
+            return True
+        elif not self._pool['encryption'] and self._device.encrypted:
+            return True
+
+        return False
+
+    def _manage_members(self):
+        """ Schedule actions as needed to configure this pool's members. """
+        if not self._device:
+            return
+
+        add_disks = [d for d in self._disks if d not in self._device.ancestors]
+        remove_disks = [bd for bd in self._device.blockdevs if not any(d in bd.ancestors for d in self._disks)]
+
+        if remove_disks:
+            raise BlivetAnsibleError("cannot remove members '%s' from pool '%s': Stratis doesn't "
+                                     "support removing members from existing pools" %
+                                     (", ".join(d.name for d in remove_disks),
+                                      self._device.name))
+
+        if not add_disks:
+            return
+
+        for disk in add_disks:
+            member = self._create_one_member(disk)
+            try:
+                ac = ActionAddMember(self._device, member)
+                self._blivet.devicetree.actions.add(ac)
+            except Exception as e:
+                raise BlivetAnsibleError("failed to add disk '%s' to pool '%s': %s" % (disk.name,
+                                                                                       self._pool['name'],
+                                                                                       str(e)))
+
+    def _get_format(self):
+        fmt = get_format("stratis")
+        if not fmt.supported or not fmt.formattable:
+            raise BlivetAnsibleError("required tools for managing Stratis are missing")
+
+        return fmt
+
+    def _create(self):
+        if not self._device:
+            members = self._create_members()
+            try:
+                if self._spec_dict['encryption'] and self._spec_dict['encryption_clevis_pin']:
+                    clevis_config = devices.stratis.StratisClevisConfig(pin=self._spec_dict['encryption_clevis_pin'],
+                                                                        tang_url=self._spec_dict['encryption_tang_url'],
+                                                                        tang_thumbprint=self._spec_dict['encryption_tang_thumbprint'])
+                    pool_device = self._blivet.new_stratis_pool(name=self._pool['name'],
+                                                                parents=members,
+                                                                encrypted=self._spec_dict['encryption'],
+                                                                passphrase=self._spec_dict.get('encryption_password') or None,
+                                                                key_file=self._spec_dict.get('encryption_key') or None,
+                                                                clevis=clevis_config)
+                else:
+                    pool_device = self._blivet.new_stratis_pool(name=self._pool['name'],
+                                                                parents=members,
+                                                                encrypted=self._spec_dict['encryption'],
+                                                                passphrase=self._spec_dict.get('encryption_password') or None,
+                                                                key_file=self._spec_dict.get('encryption_key') or None)
+
+            except Exception as e:
+                raise BlivetAnsibleError("failed to set up pool '%s': %s" % (self._pool['name'], str(e)))
+
+            self._blivet.create_device(pool_device)
+            self._device = pool_device
+
+
 _BLIVET_POOL_TYPES = {
     "partition": BlivetPartitionPool,
-    "lvm": BlivetLVMPool
+    "lvm": BlivetLVMPool,
+    "stratis": BlivetStratisPool,
 }
 
 
@@ -2132,6 +2360,10 @@ def run_module():
                                 encryption_key_size=dict(type='int'),
                                 encryption_luks_version=dict(type='str'),
                                 encryption_password=dict(type='str', no_log=True),
+                                encryption_clevis_pin=dict(type='str'),
+                                encryption_tang_url=dict(type='str'),
+                                encryption_tang_thumbprint=dict(type='str'),
+                                grow_to_fill=dict(type='bool'),
                                 name=dict(type='str'),
                                 raid_level=dict(type='str'),
                                 raid_device_count=dict(type='int'),
@@ -2151,7 +2383,9 @@ def run_module():
         pool_defaults=dict(type='dict', required=False),
         volume_defaults=dict(type='dict', required=False),
         use_partitions=dict(type='bool', required=False),
-        diskvolume_mkfs_option_map=dict(type='dict', required=False, default={}))
+        diskvolume_mkfs_option_map=dict(type='dict', required=False, default={}),
+        uses_kmod_kvdo=dict(type='bool', required=False, default=False),
+    )
 
     # comment this out if not generating module docs
     # mod_arg_str = generate_module_doc(module_args)
@@ -2208,6 +2442,9 @@ def run_module():
     global volume_defaults
     if 'volume_defaults' in module.params:
         volume_defaults = module.params['volume_defaults']
+
+    global uses_kmod_kvdo
+    uses_kmod_kvdo = module.params['uses_kmod_kvdo']
 
     b = Blivet()
     b.reset()
@@ -2276,6 +2513,7 @@ def run_module():
         # execute the scheduled actions, committing changes to disk
         callbacks.action_executed.add(record_action)
         callbacks.action_executed.add(ensure_udev_update)
+
         try:
             b.devicetree.actions.process(devices=b.devicetree.devices, dry_run=module.check_mode)
         except Exception as e:

@@ -7,11 +7,32 @@ wrapper around systemd and template Ansible Core modules.
 
 ## Requirements
 
-None
+*NOTE:* Support for user units is not available in EL7 or earlier.  This feature
+is only available in EL8 and later.
 
 ## Role Variables
 
 List of variables consumed by the role follows, note that none of them is mandatory.
+
+Each of the variables can either be a list of strings, or a list of `dicts`.
+
+The list of strings form assumes that the items to be managed are system units
+owned by `root`, and for files, assumes that the files should be `present`.
+
+The list of `dict` form looks like this:
+
+```yaml
+systemd_unit_files:
+  - item: some.service
+    user: my_user
+    state: [present|absent]
+```
+
+Use the `dict` form to manage user units, and to remove unit files.  If using
+user units, the role will manage lingering for those users.
+
+*NOTE:* Support for user units is not available in EL7 or earlier.  This feature
+is only available in EL8 and later.
 
 ### systemd_unit_files
 
@@ -64,7 +85,11 @@ List of unit files that shall be masked via systemd.
 
 List of unit files that shall be unmasked via systemd.
 
-Example of setting the variables:
+### systemd_transactional_update_reboot_ok
+
+This variable is used to handle reboots required by transactional updates. If a transactional update requires a reboot, the role will proceed with the reboot if systemd_transactional_update_reboot_ok is set to true. If set to false, the role will notify the user that a reboot is required, allowing for custom handling of the reboot requirement. If this variable is not set, the role will fail to ensure the reboot requirement is not overlooked.
+
+Example of setting the variables for the simple list of strings format:
 
 ```yaml
 systemd_unit_files:
@@ -81,12 +106,49 @@ systemd_enabled_units:
   - bar.service
 ```
 
+Example of setting the variables for the list of `dict` format:
+
+```yaml
+systemd_unit_files:
+  - item: foo.service
+    user: root
+    state: present
+  - item: bar.service
+    user: my_user
+    state: absent
+systemd_dropins:
+  - item: cups.service.conf.j2
+    user: root
+    state: present
+  - item: avahi-daemon.service.conf.j2
+    user: my_user
+    state: absent
+systemd_started_units:
+  - item: foo.service
+    user: root
+  - item: bar.service
+    user: my_user
+systemd_enabled_units:
+  - item: foo.service
+    user: root
+  - item: bar.service
+    user: my_user
+```
+
 ## Variables Exported by the Role
 
 ### `systemd_units`
 
-Variable shall contain a list of dictionaries where each entry describes state of one systemd unit
-present on the managed host.
+The variable is a `dict`.  Each key is the name of a systemd unit.  Each value
+is a dict with fields that describe the state of that systemd unit present on
+the managed host for the system scope.
+
+### `systemd_units_user`
+
+Variable shall contain a dict.  Each key is the name of a user given in one of
+the lists passed to the role, and `root` (even if `root` is not given).  Each
+value is a dict of systemd units for that user, or system units for `root`, in
+the format of `systemd_units` above.
 
 ## Example Playbook
 
@@ -97,7 +159,10 @@ present on the managed host.
     systemd_unit_file_templates:
       - foo.service.j2
     systemd_started_units:
-      - foo.service
+      - item: foo.service
+        user: root
+      - item: bar.service
+        user: my_user
     systemd_enabled_units:
       - foo.service
   roles:
@@ -115,3 +180,4 @@ MIT
 ## Author
 
 Michal Sekletar <msekleta@redhat.com>
+Rich Megginson <rmeggins@redhat.com>

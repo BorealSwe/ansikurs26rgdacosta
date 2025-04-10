@@ -11,9 +11,11 @@ ha_cluster_cluster_present: true
 
 ha_cluster_start_on_boot: true
 
+ha_cluster_install_cloud_agents: false
 ha_cluster_extra_packages: []
-
-ha_cluster_fence_agent_packages: "{{ ['fence-agents-all'] + (['fence-virt'] if ansible_architecture == 'x86_64' else []) }}"
+# Default fence agent packages are defined in respective os_family var files
+ha_cluster_fence_agent_packages: "{{ __ha_cluster_fence_agent_packages_default }}"
+ha_cluster_use_latest_packages: false
 
 ha_cluster_hacluster_password: ""
 ha_cluster_regenerate_keys: false
@@ -41,6 +43,8 @@ ha_cluster_pcs_permission_list:
       - read
       - write
 
+ha_cluster_acls: {}
+ha_cluster_alerts: []
 ha_cluster_cluster_properties: []
 ha_cluster_node_options: []
 ha_cluster_resource_defaults: {}
@@ -70,3 +74,5 @@ ha_cluster_qnetd:
   present: false
   regenerate_keys: false
   start_on_boot: true
+
+ha_cluster_export_configuration: false

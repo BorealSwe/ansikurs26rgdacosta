@@ -22,3 +22,5 @@ exclude_paths:
   - roles/kernel_settings/examples/roles/
 mock_roles:
   - rhel-system-roles.kernel_settings
+supported_ansible_also:
+  - "2.14.0"

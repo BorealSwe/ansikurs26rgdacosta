@@ -1,6 +1,86 @@
 Changelog
 =========
 
+[1.3.10] - 2025-02-13
+--------------------
+
+### Other Changes
+
+- test: use ipaserver role from collection if it exists (#256)
+- ci: Check spelling with codespell (#257)
+- ci: enable ansible verbosity (#258)
+- ci: turn off ansible verbosity (#259)
+
+[1.3.9] - 2025-01-31
+--------------------
+
+### Other Changes
+
+- ci: Add SLES vars (#248)
+- ci: ansible-plugin-scan is disabled for now (#249)
+- ci: bump ansible-lint to v25; provide collection requirements for ansible-lint (#252)
+- ci: fix python tests (#253)
+- ci: Add vars for SLES_SAP (#254)
+
+[1.3.8] - 2024-12-04
+--------------------
+
+### Bug Fixes
+
+- fix: Workaround getcert issue when cert key-file is missing (#243)
+
+### Other Changes
+
+- ci: bump codecov/codecov-action from 4 to 5 (#244)
+- ci: Use Fedora 41, drop Fedora 39 (#245)
+- ci: Use Fedora 41, drop Fedora 39 - part two (#246)
+
+[1.3.7] - 2024-10-30
+--------------------
+
+### Other Changes
+
+- ci: Add tft plan and workflow (#231)
+- ci: Update fmf plan to add a separate job to prepare managed nodes (#233)
+- ci: bump sclorg/testing-farm-as-github-action from 2 to 3 (#234)
+- ci: Add workflow for ci_test bad, use remote fmf plan (#235)
+- ci: Fix missing slash in ARTIFACTS_URL (#236)
+- ci: Add tags to TF workflow, allow more [citest bad] formats (#237)
+- ci: ansible-test action now requires ansible-core version (#238)
+- ci: add YAML header to github action workflow files (#239)
+- refactor: Use vars/RedHat_N.yml symlink for CentOS, Rocky, Alma wherever possible (#241)
+
+[1.3.6] - 2024-07-02
+--------------------
+
+### Bug Fixes
+
+- fix: add support for EL10 (#229)
+
+### Other Changes
+
+- ci: ansible-lint action now requires absolute directory (#228)
+
+[1.3.5] - 2024-06-11
+--------------------
+
+### Other Changes
+
+- ci: use tox-lsr 3.3.0 which uses ansible-test 2.17 (#223)
+- ci: tox-lsr 3.4.0 - fix py27 tests; move other checks to py310 (#225)
+- ci: Add supported_ansible_also to .ansible-lint (#226)
+
+[1.3.4] - 2024-04-04
+--------------------
+
+### Other Changes
+
+- ci: bump codecov/codecov-action from 3 to 4 (#217)
+- ci: fix python unit test - copy pytest config to tests/unit (#218)
+- ci: bump ansible/ansible-lint from 6 to 24 (#219)
+- ci: bump mathieudutour/github-tag-action from 6.1 to 6.2 (#220)
+- chore: Add spetrosi as a code owner (#221)
+
 [1.3.3] - 2024-01-16
 --------------------
 
@@ -70,7 +150,6 @@ Changelog
   - Remove badges from README.md prior to converting to HTML
   
   Signed-off-by: Sergei Petrosian <spetrosi@redhat.com>
-
 
 [1.2.1] - 2023-07-19
 --------------------
