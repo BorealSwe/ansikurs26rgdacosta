@@ -1,0 +1,39 @@
+- name: Ensure systems are registered with satellite
+  hosts: "{{ my_host | mandatory('You must indicate the hosts to target with the variable my_host') }}"
+  become: true
+  gather_facts: true
+
+  vars:
+
+    my_org: zero-effort
+    my_katello_rpm: https://satellite.zero-effort.net/pub/katello-ca-consumer-latest.noarch.rpm
+
+  tasks:
+
+    - name: Ensure katello-ca-consumer-latest rpm is installed 
+      ansible.builtin.dnf:
+        name: "{{ my_katello_rpm }}" 
+        state: present
+        validate_certs: false
+        disable_gpg_check: true
+
+    - name: Set fact for RHEL 7 Satellite activation key
+      when: ansible_distribution == "RedHat" and ansible_distribution_major_version == "7"
+      ansible.builtin.set_fact:
+        my_key: zero-effort-7
+
+    - name: Set fact for RHEL 8 Satellite activation key
+      when: ansible_distribution == "RedHat" and ansible_distribution_major_version == "8"
+      ansible.builtin.set_fact:
+        my_key: zero-effort-8
+
+    - name: Set fact for RHEL 9 Satellite activation key
+      when: ansible_distribution == "RedHat" and ansible_distribution_major_version == "9"
+      ansible.builtin.set_fact:
+        my_key: zero-effort-9
+
+    - name: Ensure system is registered with Satellite
+      redhat_subscription:
+        activationkey: "{{ my_key }}"
+        org_id: "{{ my_org }}"
+    
