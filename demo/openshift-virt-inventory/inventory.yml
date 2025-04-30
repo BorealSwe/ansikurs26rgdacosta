@@ -1,0 +1,10 @@
+plugin: kubernetes.core.k8s
+api_key: "{{ lookup('env', 'K8S_AUTH_API_KEY') }}"
+host: https://api.ocp4.zero-effort.net:6443
+verify_ssl: false
+kind: VirtualMachine
+group_by:
+  - namespace
+compose:
+  ansible_host: status.ipAddress
+
