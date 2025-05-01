@@ -1,4 +1,0 @@
----
-controller:
-  host: controller.lab.example.com
-  username_password: 'admin:redhat'

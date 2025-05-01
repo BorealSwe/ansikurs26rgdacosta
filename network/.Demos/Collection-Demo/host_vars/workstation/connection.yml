@@ -1,3 +1,0 @@
----
-ansible_user: devops
-ansible_become: true
