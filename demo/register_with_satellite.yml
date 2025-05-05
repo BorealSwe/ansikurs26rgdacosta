@@ -13,7 +13,7 @@
         disable_gpg_check: true
 
     - name: Ensure system is registered with Satellite
-      redhat_subscription:
+      community.general.redhat_subscription:
         activationkey: "{{ my_key }}"
         org_id: "{{ my_org }}"
     
