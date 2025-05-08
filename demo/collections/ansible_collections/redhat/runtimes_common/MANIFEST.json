@@ -1,0 +1,41 @@
+{
+ "collection_info": {
+  "namespace": "redhat",
+  "name": "runtimes_common",
+  "version": "1.2.2",
+  "authors": [
+   "Andrew Block <ablock@redhat.com>",
+   "Guido Grazioli <ggraziol@redhat.com>"
+  ],
+  "readme": "README.md",
+  "tags": [
+   "utilities",
+   "products",
+   "download",
+   "search",
+   "tools",
+   "runtimes",
+   "middleware",
+   "a4mw"
+  ],
+  "description": "Common utilities to support Ansible Middleware automation.",
+  "license": [],
+  "license_file": "LICENSE",
+  "dependencies": {
+   "redhat.rhel_system_roles": "*",
+   "ansible.posix": ">=1.4.0"
+  },
+  "repository": "https://github.com/ansible-middleware/common",
+  "documentation": "https://ansible-middleware.github.io/common",
+  "homepage": "https://github.com/ansible-middleware/common",
+  "issues": "https://github.com/ansible-middleware/common/issues"
+ },
+ "file_manifest_file": {
+  "name": "FILES.json",
+  "ftype": "file",
+  "chksum_type": "sha256",
+  "chksum_sha256": "b1a59b9517a430d8ee6caad2fc70be335b97b3224973935f31dbfc13c60c5b41",
+  "format": 1
+ },
+ "format": 1
+}

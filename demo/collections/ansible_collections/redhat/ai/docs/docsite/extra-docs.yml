@@ -1,0 +1,11 @@
+---
+sections:
+  - title: Changelog
+    toctree:
+      - CHANGELOG
+  - title: Red Hat AI Guide
+    toctree:
+      - collection_guide
+  - title: Collection Testing
+    toctree:
+      - testing_guide

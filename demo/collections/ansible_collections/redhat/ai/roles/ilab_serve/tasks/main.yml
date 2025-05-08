@@ -1,0 +1,49 @@
+---
+- name: Create .config/systemd/user directory
+  ansible.builtin.file:
+    state: directory
+    name: "{{  __ilab_serve_item }}"
+    mode: "0700"
+  loop:
+    - "{{ ansible_env.HOME }}/.config"
+    - "{{ ansible_env.HOME }}/.config/systemd"
+    - "{{ ansible_env.HOME }}/.config/systemd/user"
+  loop_control:
+    loop_var: __ilab_serve_item
+
+- name: Create systemd service
+  ansible.builtin.template:
+    src: ilab_serve.service.j2
+    dest: "{{ ansible_env.HOME }}/.config/systemd/user/ilab_serve.service"
+    mode: "0644"
+  register: __ilab_serve_service_result
+
+- name: Reload systemd  # noqa: no-handler
+  ansible.builtin.systemd_service:
+    scope: user
+    daemon_reload: true
+  when: __ilab_serve_service_result is changed
+
+- name: Restart ilab_serve
+  ansible.builtin.systemd_service:
+    scope: user
+    name: ilab_serve
+    state: restarted
+  when: |
+    (
+      __ilab_serve_service_result is changed
+      or
+      ilab_serve_restart_requested
+    )
+    and ilab_serve_state == "started"
+
+- name: Start or stop ilab_serve
+  ansible.builtin.systemd_service:
+    scope: user
+    name: ilab_serve
+    state: "{{ ilab_serve_state }}"
+    enabled: "{{ ilab_serve_enabled }}"
+
+- name: Compute return values
+  ansible.builtin.set_fact:
+    ilab_serve_service_name: ilab_serve

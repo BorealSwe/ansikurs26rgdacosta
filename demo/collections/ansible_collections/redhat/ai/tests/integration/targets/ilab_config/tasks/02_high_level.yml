@@ -1,0 +1,132 @@
+---
+# -------------------------------------------------------------------
+- name: Set vars needed for test
+  ansible.builtin.set_fact:
+    cfg_path: "{{ ansible_env.HOME }}/.config/instructlab/config.yaml"
+    rhelai_api_token: ci-token
+    rhelai_gpu_count: 3
+
+- name: Set vars needed for test - part 2
+  ansible.builtin.set_fact:
+    rhelai_gpu_count_str: "{{ rhelai_gpu_count | string }}"
+
+- name: Prepare needed instructlab files
+  ansible.builtin.copy:
+    src: ../files/config-minimal.yaml  # noqa: no-relative-paths
+    dest: "{{ ansible_env.HOME }}/.config/instructlab/config.yaml"
+    mode: "0644"
+
+# -------------------------------------------------------------------
+# Check initial config content
+- &get_cfg
+  name: Block
+  block:
+    - name: Get config file content
+      ansible.builtin.slurp:
+        src: "{{ cfg_path }}"
+      register: slurp_result
+
+    - name: Load config file content
+      ansible.builtin.set_fact:
+        cfg: '{{ slurp_result.content | b64decode | from_yaml }}'
+
+- &assert_cfg_initial
+  name: Check config is initial
+  ansible.builtin.assert:
+    that:
+      - cfg.serve.host_port == "127.0.0.1:8000"
+      - cfg.serve.model_path == "/var/home/ec2-user/.cache/instructlab/models/granite-8b-lab-v1"
+      - cfg.serve.vllm.vllm_args == ["--tensor-parallel-size", "4"]
+      - cfg.serve.backend == "vllm"
+      - cfg.serve.vllm.gpus == None
+
+# -------------------------------------------------------------------
+# Set config - check mode
+- name: Set config - check-mode
+  redhat.ai.ilab_config:
+    host_port: "0.0.0.0:8000"
+    token: "{{ rhelai_api_token }}"
+    backend: vllm
+    model_path: "{{ ansible_env.HOME }}/.cache/instructlab/models/granite-8b-starter-v1"
+    gpu_count: "{{ rhelai_gpu_count }}"
+  check_mode: true
+  register: config_result
+- *get_cfg
+
+- &assert_cfg_result_changed
+  name: Assert config_result
+  ansible.builtin.assert:
+    that:
+      - config_result is success
+      - config_result is changed
+      - config_result.config_file == "/var/home/ec2-user/.config/instructlab/config.yaml"
+      - config_result.diff.before["serve"]["host_port"] == "127.0.0.1:8000"
+      - config_result.diff.after["serve"]["host_port"] == "0.0.0.0:8000"
+      - config_result.diff.before["serve"]["model_path"] == "/var/home/ec2-user/.cache/instructlab/models/granite-8b-lab-v1"
+      - config_result.diff.after["serve"]["model_path"] == "/var/home/ec2-user/.cache/instructlab/models/granite-8b-starter-v1"
+      - config_result.diff.before["serve"]["vllm"]["vllm_args"] == ["--tensor-parallel-size", "4" ]
+      - config_result.diff.after["serve"]["vllm"]["vllm_args"] == ["--tensor-parallel-size", rhelai_gpu_count_str, "--api-key", "VALUE_SPECIFIED_IN_NO_LOG_PARAMETER"]
+      - config_result.diff.before["serve"]["vllm"]["gpus"] == None
+      - config_result.diff.after["serve"]["vllm"]["gpus"] == rhelai_gpu_count
+- *assert_cfg_initial
+
+# -------------------------------------------------------------------
+# Set config
+- name: Set config
+  redhat.ai.ilab_config:
+    host_port: "0.0.0.0:8000"
+    token: "{{ rhelai_api_token }}"
+    backend: vllm
+    model_path: "{{ ansible_env.HOME }}/.cache/instructlab/models/granite-8b-starter-v1"
+    gpu_count: "{{ rhelai_gpu_count }}"
+  register: config_result
+- *get_cfg
+
+- *assert_cfg_result_changed
+- &assert_cfg_updated
+  name: Check config is updated
+  ansible.builtin.assert:
+    that:
+      - cfg.serve.host_port == "0.0.0.0:8000"
+      - cfg.serve.model_path == "/var/home/ec2-user/.cache/instructlab/models/granite-8b-starter-v1"
+      - cfg.serve.vllm.vllm_args == ["--tensor-parallel-size", rhelai_gpu_count_str, "--api-key", rhelai_api_token]
+      - cfg.serve.backend == "vllm"
+      - cfg.serve.vllm.gpus == rhelai_gpu_count
+
+# -------------------------------------------------------------------
+# Set config - check mode, idempotent
+- name: Set config - check-mode idempotent
+  redhat.ai.ilab_config:
+    host_port: "0.0.0.0:8000"
+    token: "{{ rhelai_api_token }}"
+    backend: vllm
+    model_path: "{{ ansible_env.HOME }}/.cache/instructlab/models/granite-8b-starter-v1"
+    gpu_count: "{{ rhelai_gpu_count }}"
+  check_mode: true
+  register: config_result
+- *get_cfg
+
+- &assert_cfg_result_unchanged
+  name: Assert config_result
+  ansible.builtin.assert:
+    that:
+      - config_result is success
+      - config_result is not changed
+      - config_result.config_file == "/var/home/ec2-user/.config/instructlab/config.yaml"
+      - config_result.diff == {}
+- *assert_cfg_updated
+
+# -------------------------------------------------------------------
+# Set config, idempotent
+- name: Set config - idempotent
+  redhat.ai.ilab_config:
+    host_port: "0.0.0.0:8000"
+    token: "{{ rhelai_api_token }}"
+    backend: vllm
+    model_path: "{{ ansible_env.HOME }}/.cache/instructlab/models/granite-8b-starter-v1"
+    gpu_count: "{{ rhelai_gpu_count }}"
+  register: config_result
+- *get_cfg
+
+- *assert_cfg_result_unchanged
+- *assert_cfg_updated

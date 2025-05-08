@@ -1,0 +1,57 @@
+---
+# Run "systemctl start --user ilab_serve"
+# About 1 minute later is OS listening on port 8000
+
+# -------------------------------------------------------------------
+# Check port 8000 is used
+- name: Block
+  block:
+    - name: Gather facts listen ports
+      community.general.listen_ports_facts:
+
+    - name: Check port 8000 is used
+      ansible.builtin.assert:
+        that:
+          - ansible_facts.tcp_listen | selectattr('port', 'eq', 8000) | length == 1
+
+# -------------------------------------------------------------------
+- name: Send a simple prompt
+  redhat.ai.completion:
+    base_url: "http://localhost:8000"
+    validate_certs: false
+    token: "mytoken"
+    prompt: "\n\n### Instructions:\nCapital of India?\n\n### Response:\n"
+    model_path: /var/home/ec2-user/.cache/instructlab/models/granite-8b-starter-v1
+  # delegate_to: localhost
+  register: simple_result
+
+- name: Assert simple prompt result
+  ansible.builtin.assert:
+    that:
+      - simple_result is not changed
+      - simple_result.choice_0_text == "New Delhi"
+      - simple_result.raw_response.choices | length == 1
+      - simple_result.raw_response.choices.0.text == "New Delhi"
+
+# -------------------------------------------------------------------
+- name: Send a complex prompt
+  redhat.ai.completion:
+    base_url: "http://localhost:8000"
+    validate_certs: false
+    token: "mytoken"
+    raw_input:
+      model: /var/home/ec2-user/.cache/instructlab/models/granite-8b-starter-v1
+      prompt: "\n\n### Instructions:\nCapital of India?\n\n### Response:\n"
+      stop:
+        - "\n"
+        - "###"
+  # delegate_to: localhost
+  register: complex_result
+
+- name: Assert simple prompt result
+  ansible.builtin.assert:
+    that:
+      - complex_result is not changed
+      - complex_result.choice_0_text == "New Delhi"
+      - complex_result.raw_response.choices | length == 1
+      - complex_result.raw_response.choices.0.text == "New Delhi"

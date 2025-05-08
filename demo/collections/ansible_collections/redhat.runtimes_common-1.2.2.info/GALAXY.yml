@@ -1,0 +1,45 @@
+download_url: https://console.redhat.com/api/automation-hub/v3/plugin/ansible/content/published/collections/artifacts/redhat-runtimes_common-1.2.2.tar.gz
+format_version: 1.0.0
+name: runtimes_common
+namespace: redhat
+server: https://console.redhat.com/api/automation-hub/content/published/
+signatures:
+- pubkey_fingerprint: 39B5D759361A97464C564A8FE1A4BD708A828AAD
+  pulp_created: '2024-09-23T11:20:32.609365Z'
+  signature: '-----BEGIN PGP SIGNATURE-----
+
+    Version: GnuPG v1
+
+
+    iQIcBAABCAAGBQJm8U7uAAoJEOGkvXCKgoqtp7AQAJI94lNxBE25EQDNATtRhjXM
+
+    w5SAthYpJKQjr5qfduZdKn4DWxSi+YkedWxDAdp4NXa5Y1bN/rlM3aZW/uxuMx0Q
+
+    22V05rYqwD96i65KrAi0zcJ5tCxYT1Qw2PXiTDwLuD8iYoye1DXr9VfgSFDijwze
+
+    loITios9+AN523aTh1gohk/n7PqiZaYXT9iHCeJhVHjvsE+VeAtdDvafhNY0lPwV
+
+    hrDQ6TGZS1m7AfPA8jDFqbNs9r+FHXN8wfQx9vfyruVe1/uTZSqkHO5bO/aPwQLN
+
+    5qOyYWTSbvQb7rZszmea0/nzdswWRek+ROHtthpa9Lb5yq0R4cZL1ZbdeUDltKX+
+
+    H59Yv0AKtVsyoUVW4NV/bjgqfaDYt+aQUAazEdCiCYxMxsvNmtR013GdZICFrjQJ
+
+    vNiYIOw1oDVUbzmLvmnQ/N6NEBiqpdr4VPNeHQGw/m9DN99dEp0Q2hU3VxoVfwOa
+
+    micrg8G7fvOQa6r5mlwDNI0+kR0kOiyc7hkPpiNyL5/mQqjigXseuriiYMDGstEp
+
+    rZAjsUMZmUWHEwNLf+gZIBahM2TTS3ogD8EH23TK249UrQdVVmn8RZviSn20Agys
+
+    4DWVgvKstRCFXZH7LB0bu6M6W+asn7htzSgOEqtIFWZz9IDbQQ4wYLdGFJS25wZd
+
+    7tbhr78GqPMDzJvZAGCl
+
+    =jkZB
+
+    -----END PGP SIGNATURE-----
+
+'
+  signing_service: null
+version: 1.2.2
+version_url: /api/automation-hub/content/published/v3/plugin/ansible/content/published/collections/index/redhat/runtimes_common/versions/1.2.2/

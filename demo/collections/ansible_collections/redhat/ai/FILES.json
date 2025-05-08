@@ -1,0 +1,992 @@
+{
+ "files": [
+  {
+   "name": ".",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "CODE_OF_CONDUCT.md",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "14ec928234a7ed52bf8b458d31e4862335111e477e4dbe7fb543686c24115140",
+   "format": 1
+  },
+  {
+   "name": "codecov.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "fbec3df5c26e40865b9acdd7a2f8b6d42972a6f9e1fa422cd25416f20dbf0586",
+   "format": 1
+  },
+  {
+   "name": ".DS_Store",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "3e68d4fececce41ab7781e849f5c34bb1e42dc5da3bb81db52dfb5d0a11d1611",
+   "format": 1
+  },
+  {
+   "name": "LICENSE",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986",
+   "format": 1
+  },
+  {
+   "name": "requirements.txt",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "34c916bd80d8af9f8e9eb0aa8dd0a47c76cff5d16a9dc613214acac00eb6f1d1",
+   "format": 1
+  },
+  {
+   "name": "plugins",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "plugins/module_utils",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "plugins/module_utils/errors.py",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "7a1ab990755737f181da031816acc61ea9b7f7e7e9c919559c1d2f3b15b852c7",
+   "format": 1
+  },
+  {
+   "name": "plugins/modules",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "plugins/modules/ilab_model_download.py",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "bcd8265d76e403a00ce26784d01a12ac30f09bba1c39a25945bb76a3350a8107",
+   "format": 1
+  },
+  {
+   "name": "plugins/modules/ilab_config.py",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "0fba12804bba050e8c90cccfb37b62085db32999eda42e78774331ccab98ba1c",
+   "format": 1
+  },
+  {
+   "name": "plugins/modules/completion.py",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "5c8d827ced27251a09af5031246ee707b3549e2992019e322e074ba68fa4b6bf",
+   "format": 1
+  },
+  {
+   "name": "plugins/modules/ilab_init.py",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "6f34cc75b73441aeb2648660cb654a45b103e0a58f3565b8f02c719418dd6af5",
+   "format": 1
+  },
+  {
+   "name": ".yamllint",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "fdaddb9d07402282ca536f582837358531a995756bde8813a5cddba5e904ed1c",
+   "format": 1
+  },
+  {
+   "name": "tests",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "tests/unit",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "tests/unit/.gitkeep",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "4a3e8aecd17a3392ba9a189241e8570e93a6eef3acf3ef747e5504c138eb6071",
+   "format": 1
+  },
+  {
+   "name": "tests/integration",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/ilab_model_download",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/ilab_model_download/tasks",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/ilab_model_download/tasks/main.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "250d5b8c6a7a239d338a2021550429b3fa8b30c673aca1eca5c9ed5f82e66673",
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/ilab_model_download/playbooks",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/ilab_model_download/playbooks/cleanup.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "4637238b48462de93790b5d537b0adf84d6da2fa12259a80d34cc338c3c78820",
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/ilab_model_download/playbooks/prepare.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "c839147a9fe2d361cf7dd61dcd8e57a1fbfefb5bdf36b4c1fb8bbe54cbdee0e3",
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/ilab_model_download/playbooks/run_main_tests.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "613abf99f53d13f4bf02d137aff20feca06b5cab0c0e29f4a36b6be3db390791",
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/ilab_model_download/playbooks/create_inventory_and_vars.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "ea244a5bf382b202a87e507dd65802d5a86242975a2b1d61a4db6a562490ef53",
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/ilab_model_download/runme.sh",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "f710d3d49694a603b9181f2678838cfe62fe3af8d78a5b3345104b733203b727",
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/ilab_model_download/templates",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/ilab_model_download/templates/inventory_ilab.yml.j2",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "31319039e59ca051f9cdb7352e322a52a7780f592c58dabbbdd1212d6d6e494b",
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/ilab_init",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/ilab_init/tasks",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/ilab_init/tasks/main.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "feb7b763f8b151b8aa16e54eb44e60b42645efed476308a67d2c8360240f2c21",
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/ilab_init/playbooks",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/ilab_init/playbooks/cleanup.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "3deb0c2f64125b3c384b571737b72bbcc1225a7a92cbe1ab8cffca2523d865b4",
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/ilab_init/playbooks/run_main_tests.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "613abf99f53d13f4bf02d137aff20feca06b5cab0c0e29f4a36b6be3db390791",
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/ilab_init/playbooks/create_inventory_and_vars.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "ea244a5bf382b202a87e507dd65802d5a86242975a2b1d61a4db6a562490ef53",
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/ilab_init/runme.sh",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "2421bb51fa6f11372cf7775ff43128d039ebca1e32db7ec4b0e8707a1bb001a3",
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/ilab_init/templates",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/ilab_init/templates/inventory_ilab.yml.j2",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "31319039e59ca051f9cdb7352e322a52a7780f592c58dabbbdd1212d6d6e494b",
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/completion",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/completion/tasks",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/completion/tasks/main.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "21761e1b34088cb09018b7821a10e8bfab6606e7a7131fca58b28245d962a846",
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/completion/playbooks",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/completion/playbooks/cleanup.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "cf1d9cb6c7f11c18ee1295ae9d27ee3186ed4f4af668ff23e5b349afae28eef4",
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/completion/playbooks/prepare.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "6300bedce9792954876d9322bfc89d04cda2efcc3e5afdc8208f8b9702fdc178",
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/completion/playbooks/run_main_tests.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "613abf99f53d13f4bf02d137aff20feca06b5cab0c0e29f4a36b6be3db390791",
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/completion/playbooks/create_inventory_and_vars.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "ea244a5bf382b202a87e507dd65802d5a86242975a2b1d61a4db6a562490ef53",
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/completion/runme.sh",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "1ed3829a9f41079fc5f439f8097575c83a55cc1d95aca7f14132c9696bf676d6",
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/completion/files",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/completion/files/config.yaml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "0b94d64132aaf2e1db1a49ebc6ffd201154cab589e60073d6e23dc03b1ffdca3",
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/completion/files/ilab_serve.service",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "02f0d1f0b58df74930f16c5357cd8767d681835ac498b16b5f117ef645f5dbe7",
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/completion/templates",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/completion/templates/inventory_ilab.yml.j2",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "31319039e59ca051f9cdb7352e322a52a7780f592c58dabbbdd1212d6d6e494b",
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/ilab_config",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/ilab_config/tasks",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/ilab_config/tasks/01_low_level.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "52b9cc371bfb3eb1e36059f49dd94720762c308e19637ba4b35574630a403116",
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/ilab_config/tasks/02_high_level.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "3d197aa4af81d2208c8fe018298cc9484a1c099cae226ba10d015926faad5b81",
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/ilab_config/playbooks",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/ilab_config/playbooks/cleanup.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "64641c843591a6c04aa77f67b3ce0f34fc84340b376caadc66cfff00a3e7eeb1",
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/ilab_config/playbooks/run_main_tests.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "613abf99f53d13f4bf02d137aff20feca06b5cab0c0e29f4a36b6be3db390791",
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/ilab_config/playbooks/create_inventory_and_vars.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "ea244a5bf382b202a87e507dd65802d5a86242975a2b1d61a4db6a562490ef53",
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/ilab_config/runme.sh",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "2421bb51fa6f11372cf7775ff43128d039ebca1e32db7ec4b0e8707a1bb001a3",
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/ilab_config/files",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/ilab_config/files/config-minimal.yaml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "9a084551dd86454f5208634fa8464a45640a8d256c51657cd924ae27d17d7bc3",
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/ilab_config/files/config-modified.yaml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "1a7c0de2364b3a3521e3fa3f4dd0313e5382ffeccd0abe55a2193935466c3901",
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/ilab_config/templates",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/ilab_config/templates/inventory_ilab.yml.j2",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "31319039e59ca051f9cdb7352e322a52a7780f592c58dabbbdd1212d6d6e494b",
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/ilab_serve",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/ilab_serve/tasks",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/ilab_serve/tasks/main.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "ae411279c317336b2dd40d31014199ad8a7a6f888551785353111022903d6bcd",
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/ilab_serve/playbooks",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/ilab_serve/playbooks/cleanup.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "cf1d9cb6c7f11c18ee1295ae9d27ee3186ed4f4af668ff23e5b349afae28eef4",
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/ilab_serve/playbooks/prepare.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "5c58c1a1c7f898f9e9ed8fa5bfacdb896f87fe0ba0363da8904f2843b0e79ba0",
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/ilab_serve/playbooks/run_main_tests.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "613abf99f53d13f4bf02d137aff20feca06b5cab0c0e29f4a36b6be3db390791",
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/ilab_serve/playbooks/create_inventory_and_vars.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "ea244a5bf382b202a87e507dd65802d5a86242975a2b1d61a4db6a562490ef53",
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/ilab_serve/runme.sh",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "1ed3829a9f41079fc5f439f8097575c83a55cc1d95aca7f14132c9696bf676d6",
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/ilab_serve/files",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/ilab_serve/files/config.yaml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "0b94d64132aaf2e1db1a49ebc6ffd201154cab589e60073d6e23dc03b1ffdca3",
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/ilab_serve/templates",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "tests/integration/targets/ilab_serve/templates/inventory_ilab.yml.j2",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "31319039e59ca051f9cdb7352e322a52a7780f592c58dabbbdd1212d6d6e494b",
+   "format": 1
+  },
+  {
+   "name": "tests/integration/prepare_integration_config_yml.sh",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "6b84bc602a2c314cf77154224607b6b38ee8029e1e5acfea8656e360613e2aac",
+   "format": 1
+  },
+  {
+   "name": "tests/integration/integration_config.yml.tpl",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "cfca5e34c2564cc69ff5fa3b5420c81736ba9ac7dd3ec84c1c08578680c1dcb8",
+   "format": 1
+  },
+  {
+   "name": "tests/integration/.gitignore",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "6ddf19e2a07f191bae68c76371df9e2aa41543516c1bf089c08e48af3a47f1f2",
+   "format": 1
+  },
+  {
+   "name": "tests/integration/inventory",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "eff7364c4efbf20d2aa470acfb722eb6c38ba013df38572dd1264c55e779988e",
+   "format": 1
+  },
+  {
+   "name": "tests/integration/requirements.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "310d32ad840f5412289d6d684d8602da4b9500a152aef1239c178b364728c75e",
+   "format": 1
+  },
+  {
+   "name": "tests/config.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "858e7bdcfc393723bcbd1f8f99693476d745ac2048e11dbb06a81a1832e125b6",
+   "format": 1
+  },
+  {
+   "name": "meta",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "meta/runtime.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "43da2f3193293a9e67107f6e8562d7c95c067a313f718d645e8630094e60296b",
+   "format": 1
+  },
+  {
+   "name": "roles",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "roles/ilab_serve",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "roles/ilab_serve/tasks",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "roles/ilab_serve/tasks/main.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "3b14998a5d2f25ff76fe148966ab0b57e591693d41943af3bbb9dc3ef84dd44f",
+   "format": 1
+  },
+  {
+   "name": "roles/ilab_serve/meta",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "roles/ilab_serve/meta/argument_specs.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "df952b41e2818f2c4083fde62fb0ca010f597e38bb6f9036645b0fa1b97f2d43",
+   "format": 1
+  },
+  {
+   "name": "roles/ilab_serve/meta/main.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "6405f0c9945db6b7eb805c536166400138c0c5066b8a07998e40b1da493fc57a",
+   "format": 1
+  },
+  {
+   "name": "roles/ilab_serve/README.md",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "8a008216525b5e6ca624c24819114b83fe28f5e4ba4e9f6de71b316ff1573374",
+   "format": 1
+  },
+  {
+   "name": "roles/ilab_serve/defaults",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "roles/ilab_serve/defaults/main.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "afcc51fa4d49a9b9638ec877bf561fa6a69daffa3308ff04ef2c440bea36b879",
+   "format": 1
+  },
+  {
+   "name": "roles/ilab_serve/templates",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "roles/ilab_serve/templates/ilab_serve.service.j2",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "02f0d1f0b58df74930f16c5357cd8767d681835ac498b16b5f117ef645f5dbe7",
+   "format": 1
+  },
+  {
+   "name": "playbooks",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "playbooks/ilab.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "cd97ee574dcc364c077f3f49dacc32cc60298376050ec3d77b57ef34ba7dd823",
+   "format": 1
+  },
+  {
+   "name": "playbooks/README.md",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "abfe23702e85738dcd22cfe6c4299a83d3fbfdd5d8ebb7f92a84ca8ed13a847b",
+   "format": 1
+  },
+  {
+   "name": "docs",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "docs/redhat.ai.ilab_config_module.rst",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "a30723f8fe3e4342ce8e90e3f20e9fe3c8760986dc8778fc541b49eceb8f6081",
+   "format": 1
+  },
+  {
+   "name": "docs/redhat.ai.ilab_model_download_module.rst",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "60210708870682f2f847dfbe455aa35bca4fa0d6cf68ffbebb634df50e56bd44",
+   "format": 1
+  },
+  {
+   "name": "docs/redhat.ai.ilab_init_module.rst",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "d8731debd92ca569e300f41fe334c1eb3aaed25319de376ca603f74f89fd51bd",
+   "format": 1
+  },
+  {
+   "name": "docs/redhat.ai.completion_module.rst",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "d9372adbf2846f3eb23ca63792836f0a3f55222b1a36098f7531333d71dd0a8c",
+   "format": 1
+  },
+  {
+   "name": "docs/docsite",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "docs/docsite/links.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "b54a29ea44a56032d5ae553be1d840edf8b2375d78c3e921539c50e248ecbc83",
+   "format": 1
+  },
+  {
+   "name": "docs/docsite/extra-docs.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "721cd15e3b57892ed6d5af8b4b15015ff95594f613fcdf0b8097c73adf7cf5f5",
+   "format": 1
+  },
+  {
+   "name": "docs/docsite/rst",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "docs/docsite/rst/testing_guide.rst",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "aad01d70f9fdfed69b9fb2deda530e6e534fad810490276dd080d30d004c8703",
+   "format": 1
+  },
+  {
+   "name": "docs/docsite/rst/collection_guide.rst",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "4aa2340587803746ac291b7f93a63d19faee9c5eb81c4ffe47b848218bb7c860",
+   "format": 1
+  },
+  {
+   "name": "docs/docsite/rst/CHANGELOG.rst",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "7c6e86a2a64eeece67f806307e183ae189ebd3c96f66b594237118461f07aaa8",
+   "format": 1
+  },
+  {
+   "name": "MAINTAINERS",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+   "format": 1
+  },
+  {
+   "name": "changelogs",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "changelogs/fragments",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "changelogs/fragments/.keep",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+   "format": 1
+  },
+  {
+   "name": "changelogs/config.yaml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "f042bd7cfc68c27e2ed468638a5b934890e2f83c84a011ad51297e571286aa72",
+   "format": 1
+  },
+  {
+   "name": "changelogs/changelog.yaml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "c4f1374d03a8e5412113b10c7d55fa01bca1914f56af6c7d78e33da983da5e93",
+   "format": 1
+  },
+  {
+   "name": "README.md",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "23401851f6d08424ff929677a302d62398e17a8929a4a22193ccdd8093570ff0",
+   "format": 1
+  },
+  {
+   "name": "CONTRIBUTING.md",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "5cd1484b61e0b841de061b6a4a3f50ccef73bd9e9cc160a55c428b070f7dcb16",
+   "format": 1
+  },
+  {
+   "name": ".github",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": ".github/workflows",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": ".github/workflows/linter.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "b7fef25abeccc9abe24f0ec443f1a460cb925518ed3cde17b5c5e99e1f1d1c55",
+   "format": 1
+  },
+  {
+   "name": ".github/workflows/ansible-test.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "7ed37415c1281ddb8164da01934d68dcc2d6dd2e414093c13d348843c0b44c9d",
+   "format": 1
+  },
+  {
+   "name": ".github/workflows/docs-pr.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "551e997e467ceeba3ce5543686dd740fa79bd0b57a9514ca0a4a4e1666dbe2a8",
+   "format": 1
+  },
+  {
+   "name": ".github/workflows/ISSUE_TEMPLATE",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": ".github/workflows/ISSUE_TEMPLATE/feature_request.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "43478f8e5a10641935d843f8f407b0af0e922348330c62cd609eecd68a8efa39",
+   "format": 1
+  },
+  {
+   "name": ".github/workflows/ISSUE_TEMPLATE/bug_report.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "9a4ee984950860bb78552467d7f6e7e272a8501348df65d5ea52bb26ebea8237",
+   "format": 1
+  },
+  {
+   "name": ".github/workflows/ISSUE_TEMPLATE/documentation_report.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "f3370b67b58238e5ec1d8ef9a02bafd313125add8b2f3f2e5bc9ef7e27e743c5",
+   "format": 1
+  },
+  {
+   "name": ".github/workflows/ISSUE_TEMPLATE/config.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "715ed0dcc2a6dca91edcad17721c3f5d72aad351c391493652a5a7511e2abc2c",
+   "format": 1
+  },
+  {
+   "name": ".github/workflows/ISSUE_TEMPLATE/ci_report.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "6b32b2c1ea3dd4caf68c0662007c261d50179a591ba12ae2912bea8f084c1403",
+   "format": 1
+  },
+  {
+   "name": ".github/workflows/docs-push.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "2a48955ae96281c760174c50d78018439c42ce990bb7931d0347d3e048e1ca22",
+   "format": 1
+  },
+  {
+   "name": ".github/workflows/extra-docs-linting.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "c6e949c0e72347d5fbde01521de8b4cea966082a088f201489fda237daadef92",
+   "format": 1
+  },
+  {
+   "name": ".github/settings.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "32fde323d718a7120ba93c64599123f1bdb95778ea8a75b94c04e6594a8d31e7",
+   "format": 1
+  },
+  {
+   "name": "tox.ini",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "07938e3e12bc8bfcc33bb7d7fa4efd6eb4e920497db29fbcfab6ed232201b077",
+   "format": 1
+  },
+  {
+   "name": "CHANGELOG.rst",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "7c6e86a2a64eeece67f806307e183ae189ebd3c96f66b594237118461f07aaa8",
+   "format": 1
+  }
+ ],
+ "format": 1
+}

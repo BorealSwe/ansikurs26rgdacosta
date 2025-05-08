@@ -1,0 +1,36 @@
+---
+- name: "Ensure required parameter(s) are defined."
+  ansible.builtin.assert:
+    that:
+      - amq_streams_common_home is defined
+    quiet: true
+
+- name: "Ensure user and group exists (if provided)."
+  ansible.builtin.include_role:
+    name: amq_streams_common
+    tasks_from: prereqs.yml
+  vars:
+    prereqs_user: "{{ amq_streams_connect_user }}"
+    prereqs_group: "{{ amq_streams_connect_group }}"
+
+- name: "Ensure OS has been properly tuned (RHEL specific)."
+  ansible.builtin.include_role:
+    name: amq_streams_common
+    tasks_from: os_tuning.yml
+  vars:
+    sysctl_vm_max_map_count: "{{ amq_streams_connect_sysctl_vm_max_map_count }}"
+    ulimit_user: "{{ amq_streams_connect_user }}"
+    ulimit_limit: "{{ amq_streams_connect_ulimit_max_value }}"
+  when:
+    - ansible_distribution == "RedHat"
+
+- name: "Ensure connectors for AMQ Connect are deployed."
+  ansible.builtin.include_tasks: "{{ connector.path }}"
+  loop: "{{ connectors }}"
+  loop_control:
+    loop_var: connector
+  when:
+    - connectors is defined and connectors | length > 0
+
+- name: "Deploy Kafka Connect as a systemd service."
+  ansible.builtin.include_tasks: service.yml

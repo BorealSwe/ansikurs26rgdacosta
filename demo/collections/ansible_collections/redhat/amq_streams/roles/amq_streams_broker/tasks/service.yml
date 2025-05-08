@@ -1,0 +1,51 @@
+---
+- name: "Configure firewalld for Broker (if enable)."
+  ansible.builtin.include_role:
+    name: amq_streams_common
+    tasks_from: firewalld.yml
+  vars:
+    service_port: "{{ amq_streams_broker_bootstrap_server_port }}"
+  when:
+    - amq_streams_firewalld_enabled is defined and amq_streams_firewalld_enabled
+    - amq_streams_broker_bootstrap_server_port is defined
+
+- name: "Configure firewalld for SSL Broker (if enable)."
+  ansible.builtin.include_role:
+    name: amq_streams_common
+    tasks_from: firewalld.yml
+  vars:
+    service_port: "{{ amq_streams_broker_listener_tls_port }}"
+  when:
+    - amq_streams_firewalld_enabled is defined and amq_streams_firewalld_enabled
+    - amq_streams_broker_tls_enabled is defined and amq_streams_broker_tls_enabled
+    - amq_streams_broker_listener_tls_port is defined
+
+- name: "Start Broker as a systemd service."
+  ansible.builtin.include_role:
+    name: amq_streams_common
+    tasks_from: systemd.yml
+  vars:
+    server_name: "{{ amq_streams_broker.service_name }}"
+    server_start: "{{ amq_streams_broker.server_start }}"
+    server_config: "{{ amq_streams_broker_config }}"
+    server_config_template: "{{ amq_streams_broker.config.template }}"
+    server_id: "{{ amq_streams_broker_broker_id | default('0') }}"
+    server_user: "{{ amq_streams_broker_user | default(omit) }}"
+    server_group: "{{ amq_streams_broker_group | default(omit) }}"
+    server_log_dir: "{{ amq_streams_broker_logs_dir | default(omit) }}"
+    service_systemd_env_file_template: "{{ amq_streams_broker_service_config_template }}"
+    service_systemd_env_file: "{{ amq_streams_broker_service_config_file }}"
+    server_java_opts: "{{ amq_streams_broker_java_opts | default('') }}"
+    server_log4j_opts: "{{ amq_streams_broker_java_log4j_opts | default('') }}"
+    server_java_heap_opts: "{{ amq_streams_broker_java_heap_opts | default('') }}"
+    server_java_performance_opts: "{{ amq_streams_broker_java_performance_opts | default('') }}"
+    server_java_gc_log_opts: "{{ amq_streams_broker_java_java_gc_log_opts | default('') }}"
+    server_java_jmx_opts: "{{ amq_streams_broker_java_jmx_opts | default('') }}"
+    server_start_sleep: "{{ amq_streams_broker_zookeeper_session_timeout_ms }}"
+    server_port: "{{ amq_streams_broker_listener_port }}"
+    skip_wait_for_server_port: "{{ amq_streams_broker_listener_port_skip_wait | default(False) }}"
+    delay_before_server_port_check: "{{ amq_streams_broker_listener_port_delay }}"
+    server_prometheus_enabled: "{{ amq_streams_broker_prometheus_enabled }}"
+    server_prometheus_config_file: "{{ amq_streams_broker_prometheus_config_file | default('') }}"
+    amq_streams_common_prometheus_port: "{{ amq_streams_broker_prometheus_port }}"
+    amq_streams_common_prometheus_bind_addr: "{{ amq_streams_broker_prometheus_bind_addr }}"

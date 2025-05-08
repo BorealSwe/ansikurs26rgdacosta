@@ -1,4 +1,4 @@
-ARG EE_BASE_IMAGE=hub.lab.example.com/ee-minimal-rhel8:latest
+ARG EE_BASE_IMAGE=hub.lab.example.com/ee-supported-rhel8:latest
 ARG EE_BUILDER_IMAGE=hub.lab.example.com/ansible-builder-rhel8:latest
 
 FROM $EE_BASE_IMAGE as galaxy

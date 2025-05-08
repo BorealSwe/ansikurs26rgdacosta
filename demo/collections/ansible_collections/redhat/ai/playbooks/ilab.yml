@@ -1,0 +1,85 @@
+---
+- name: Setup RHEL AI configuration
+  hosts: all
+  gather_facts: true
+  vars:
+    rhelai_host: "{{ hostvars[inventory_hostname].ansible_host }}"
+    rhelai_port: 8000
+    rhelai_gpu_count: 1
+  tasks:
+    - name: Create /etc/ilab
+      ansible.builtin.file:
+        name: /etc/ilab/
+        state: directory
+        mode: "0755"
+      become: true
+
+    - name: Opt-out from insights
+      ansible.builtin.copy:
+        dest: /etc/ilab/insights-opt-out
+        content: ""
+        mode: "0644"
+      become: true
+
+    - name: Create initial configuration
+      redhat.ai.ilab_init:
+
+    - name: Download model
+      redhat.ai.ilab_model_download:
+        name: granite-8b-starter-v1
+        release: latest
+        registry_url: docker://registry.redhat.io
+        registry_namespace: rhelai1
+        registry_username: "{{ my_registry_username }}"
+        registry_password: "{{ my_registry_password }}"
+
+    # - name: Configure InstructLab - replace complete config file
+    #   redhat.ai.ilab_config:
+    #     config_file: "{{ ansible_env.HOME }}/.config/instructlab/config.yaml.default"
+
+    - name: Configure InstructLab - change selected setting only
+      redhat.ai.ilab_config:
+        host_port: "0.0.0.0:{{ rhelai_port }}"
+        token: "{{ rhelai_api_token }}"
+        backend: vllm
+        model_path: "{{ ansible_env.HOME }}/.cache/instructlab/models/granite-8b-starter-v1"
+        gpu_count: "{{ rhelai_gpu_count }}"
+      register: ilab_config_result
+
+    - name: Start model service
+      ansible.builtin.include_role:
+        name: redhat.ai.ilab_serve
+      vars:
+        ilab_serve_state: started
+        ilab_serve_enabled: true
+        ilab_serve_restart_requested: "{{ ilab_config_result is changed }}"
+
+    - name: Wait on service start
+      ansible.builtin.wait_for:
+        host: "{{ rhelai_host }}"
+        port: "{{ rhelai_port }}"
+        state: started
+        sleep: 10
+        timeout: 300
+
+    - name: Ask model a question 1
+      redhat.ai.completion:
+        base_url: "http://{{ rhelai_host }}:{{ rhelai_port }}"
+        validate_certs: false
+        token: "{{ rhelai_api_token }}"
+        prompt: "\n\n### Instructions:\nCapital of India?\n\n### Response:\n"
+        model_path: "{{ ansible_env.HOME }}/.cache/instructlab/models/granite-8b-starter-v1"
+      delegate_to: localhost
+
+    - name: Ask model a question 2
+      redhat.ai.completion:
+        base_url: "http://{{ rhelai_host }}:{{ rhelai_port }}"
+        validate_certs: false
+        token: "{{ rhelai_api_token }}"
+        raw_input:
+          model: "{{ ansible_env.HOME }}/.cache/instructlab/models/granite-8b-starter-v1"
+          prompt: "\n\n### Instructions:\nCapital of India?\n\n### Response:\n"
+          stop:
+            - "\n"
+            - "###"
+      delegate_to: localhost

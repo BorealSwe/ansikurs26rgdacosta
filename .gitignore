@@ -8,3 +8,4 @@ roles/**
 collections/**
 !roles/requirements.yml
 !collections/requirements.yml
+demo/lookups/credentials/**

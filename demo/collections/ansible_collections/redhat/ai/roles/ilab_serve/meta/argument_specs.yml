@@ -1,0 +1,37 @@
+---
+argument_specs:
+  main:
+    short_description: Serve AI model
+    description:
+      - Role can start or stop serving the AI model.
+      - This is implemented by a systemd user service.
+      - Standard system utilities can be used to troubleshot.
+      - Name of systemd service is returned in C(ilab_serve_service_name) variable.
+    author:
+      - XLAB Steampunk <steampunk@xlab.si>
+    options:
+      ilab_serve_state:
+        type: str
+        required: false
+        default: started
+        choices:
+          - started
+          - stopped
+        description:
+          - Desired service state.
+          - This is effective immediatelly, and lasts until reboot.
+      ilab_serve_enabled:
+        type: bool
+        required: false
+        default: true
+        description:
+          - Desired service state.
+          - This is effective after reboot.
+      ilab_serve_restart_requested:
+        type: bool
+        required: false
+        default: false
+        description:
+          - Set this to true to request service restart for arbitrary reason.
+            For example if configuration file was changed.
+          - Precondition for restart is ``ilab_serve_state`` being true.

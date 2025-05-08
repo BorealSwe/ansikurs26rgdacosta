@@ -1,0 +1,57 @@
+---
+- name: Run prepare
+  hosts: ilabs
+
+  tasks:
+    # Check port 8000 is unused
+    - name: Block
+      block:
+        - name: Gather facts listen ports
+          community.general.listen_ports_facts:
+
+        - name: Check port 8000 is unused
+          ansible.builtin.assert:
+            that:
+              - ansible_facts.tcp_listen | selectattr('port', 'eq', 8000) | length == 0
+
+    - name: Create instructlab config
+      ansible.builtin.copy:
+        src: ../files/config.yaml  # noqa: no-relative-paths
+        dest: "{{ ansible_env.HOME }}/.config/instructlab/config.yaml"
+        mode: "0644"
+
+    - name: Download instructlab model
+      ansible.builtin.command:
+        cmd: ilab model download --repository docker://registry.redhat.io/rhelai1/granite-8b-starter-v1 --release latest
+        creates: "{{ ansible_env.HOME }}/.cache/instructlab/models/granite-8b-starter-v1"
+
+    - name: Create directory for systemd service
+      ansible.builtin.file:
+        state: directory
+        path: "{{ ansible_env.HOME }}/.config/systemd/user"
+        mode: "0755"
+
+    - name: Setup systemd service file
+      ansible.builtin.copy:
+        src: ../files/ilab_serve.service  # noqa: no-relative-paths
+        dest: "{{ ansible_env.HOME }}/.config/systemd/user/ilab_serve.service"
+        mode: "0644"
+
+    - name: Reload systemd  # noqa: no-handler
+      ansible.builtin.systemd_service:
+        scope: user
+        daemon_reload: true
+
+    - name: Restart ilab_serve service
+      ansible.builtin.systemd_service:
+        scope: user
+        name: ilab_serve
+        state: restarted
+
+    - name: Wait on service start
+      ansible.builtin.wait_for:
+        host: localhost
+        port: 8000
+        state: started
+        sleep: 10
+        timeout: 120

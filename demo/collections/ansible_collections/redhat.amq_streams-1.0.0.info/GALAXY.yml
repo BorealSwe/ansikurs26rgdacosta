@@ -1,0 +1,45 @@
+download_url: https://console.redhat.com/api/automation-hub/v3/plugin/ansible/content/published/collections/artifacts/redhat-amq_streams-1.0.0.tar.gz
+format_version: 1.0.0
+name: amq_streams
+namespace: redhat
+server: https://console.redhat.com/api/automation-hub/content/published/
+signatures:
+- pubkey_fingerprint: 39B5D759361A97464C564A8FE1A4BD708A828AAD
+  pulp_created: '2024-01-30T15:17:50.234221Z'
+  signature: '-----BEGIN PGP SIGNATURE-----
+
+    Version: GnuPG v1
+
+
+    iQIcBAABCAAGBQJluRMSAAoJEOGkvXCKgoqtkCAQAInUzNCPFDAxuFkyYRQdtSvc
+
+    t3ykGnfIK3iy6QNZ1QrW7EnkSPBV/WdNlUn/nKg8VCjdq+6upLfCkNvTkXDXbNFh
+
+    VI7IULOwyo7l5HWaeG7Y+aYGHlOdfWid/GUR5rKMht6eQ1JeSH0tII6hsvvw+dSG
+
+    R2j2k/1YhurOYKYFBBoQLVAt532xoQPrb7eLmi1fUCKmpcVOqzAsu3MMhE+4WnKS
+
+    X6NEQ2xpmKTulcbj2C5PCapIdBFYpAsGpk7/hxWlukFYCDrz1EBEL9QNy7f7fOQS
+
+    K3C2AWb5+XhD2uXhbQzhGsq9mhoCyK14HOwOICWeXBSXgI2kRR7/pWkWOhM4d765
+
+    e69UamNw8PbpJ1iZso8j3n7bTFOtFfiy3lqc+7OOm3TQ4VfdUnObhpFWf1puzS2d
+
+    AEtfYvjGUGPBDgIqX3IfxO2+1wdqQ6JpcbjdVpEsypC+Nb9pCrxI5FdX8khvN0BD
+
+    2Z184fwyMSaANSlVcL6K2aF8vYKv0zwhHVtYY7Y6d8hr5DR21yyHjasG41tttba7
+
+    IxQCUxfZxS3D186Xf0+SMAtzLgWWBcxS8i5sK5rXcYloJyxD4QKsb4zNU9gbLNKm
+
+    oxcS9syxUS9/B95vp29ekP1qF8FXOdixlwNmk/4kHJWNbavzMotIkJo765UkfSbx
+
+    GtvQFYXmpekT1r1Nz7QN
+
+    =h9oM
+
+    -----END PGP SIGNATURE-----
+
+'
+  signing_service: null
+version: 1.0.0
+version_url: /api/automation-hub/content/published/v3/plugin/ansible/content/published/collections/index/redhat/amq_streams/versions/1.0.0/

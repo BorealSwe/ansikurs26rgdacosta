@@ -1,0 +1,12 @@
+[Unit]
+Description=Red Hat AI InstructLab model serve service
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=ilab model serve
+Restart=on-failure
+StandardOutput=journal
+
+[Install]
+WantedBy=multi-user.target

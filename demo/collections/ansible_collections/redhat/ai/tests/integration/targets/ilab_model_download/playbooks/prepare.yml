@@ -1,0 +1,10 @@
+---
+- name: Run prepare
+  hosts: ilabs
+
+  tasks:
+    - name: Prepare needed instructlab files
+      ansible.builtin.shell:
+        cmd: |
+          ilab config init --non-interactive
+      changed_when: true

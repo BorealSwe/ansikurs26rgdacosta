@@ -1,0 +1,38 @@
+---
+amq_streams_common_product_version: 3.6.0
+amq_streams_common_rhn_product_version: 2.6.0
+amq_streams_common_rhn_home_dir: "kafka_2.13-{{ amq_streams_common_product_version }}.redhat-00005"
+amq_streams_common_rhn_product_path: /opt
+amq_streams_common_redhat_enabled: true
+amq_streams_common_rhn_product_category: 'jboss.amq.streams'
+amq_streams_common_scala_version: 2.13
+amq_streams_common_version: "{{ amq_streams_common_scala_version }}-{{ amq_streams_common_product_version }}"
+amq_streams_common_archive_file: "kafka_{{ amq_streams_common_version }}.tgz"
+amq_streams_common_rhn_product_archive_file_pattern: '^.*/amq-streams-[0-9.]*-bin.zip$'
+amq_streams_common_download_url: "https://archive.apache.org/dist/kafka/{{ amq_streams_common_product_version }}/kafka_{{ amq_streams_common_version }}.tgz"
+amq_streams_common_download_dir: "{{ lookup('env','PWD') | default('/opt') }}"
+#amq_streams_common_download_user: "{{ lookup('env','USER') | default('root') }}"
+#amq_streams_common_download_group: "{{ lookup('env','USER') | default('root') }}"
+amq_streams_common_install_dir: /opt
+amq_streams_common_offline_install: false
+amq_streams_common_path_to_archive_file: "{{ amq_streams_common_download_dir }}/{{ amq_streams_common_archive_file }}"
+amq_streams_common_download_node: localhost
+amq_streams_common_systctl_update_enabled: false
+amq_streams_common_prereqs_dependencies: ['unzip']
+amq_streams_common_openjdk_version: 17
+
+amq_streams_common_systemd_home: '/usr/lib/systemd/system'
+amq_streams_common_systemd_service_config_file_template: 'templates/service_systemd.j2'
+amq_streams_common_home: "{{ amq_streams_common_install_dir }}/kafka_{{ amq_streams_common_version }}/"
+
+amq_streams_common_firewalld_package_name:
+  - firewalld
+amq_streams_common_firewalld_enabled: false
+
+amq_streams_common_prometheus_install_rpm: True
+amq_streams_common_prometheus_package_name: 'prometheus-jmx-exporter'
+amq_streams_common_prometheus_path_to_jar: /usr/share/java/prometheus-jmx-exporter
+amq_streams_common_prometheus_jarname: jmx_prometheus_javaagent.jar
+amq_streams_common_prometheus_bind_addr: 0.0.0.0
+amq_streams_common_prometheus_port: 18080
+amq_streams_common_prometheus_metrics_config_home: /etc/

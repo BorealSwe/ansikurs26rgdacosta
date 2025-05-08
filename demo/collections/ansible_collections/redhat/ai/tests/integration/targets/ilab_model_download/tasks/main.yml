@@ -1,0 +1,102 @@
+---
+# -------------------------------------------------------------------
+# Check model is not present
+- &stat_both
+  name: Stat both models/ and oci/ subdirectory
+  block:
+    - name: Stat models subdirectory
+      ansible.builtin.stat:
+        path: "{{ ansible_env.HOME }}/.cache/instructlab/models/{{ model_name }}"
+      register: stat_models_result
+    - name: Stat oci subdirectory
+      ansible.builtin.stat:
+        path: "{{ ansible_env.HOME }}/.cache/instructlab/oci/{{ model_name }}"
+      register: stat_oci_result
+
+- &assert_model_absent
+  name: Assert model absent
+  ansible.builtin.assert:
+    that:
+      - stat_models_result.stat.exists is false
+      - stat_oci_result.stat.exists is false
+
+# -------------------------------------------------------------------
+# Download model - check mode
+- &download_model_check
+  name: Download model - check-mode
+  redhat.ai.ilab_model_download:
+    name: "{{ model_name }}"
+    release: latest
+    # registry_url: docker://registry.redhat.io
+    # registry_namespace: rhelai1
+    registry_username: "{{ registry_username }}"
+    registry_password: "{{ registry_password }}"
+  check_mode: true
+  register: download_result
+- *stat_both
+
+- &assert_download_result_changed
+  name: Assert download_result changed
+  ansible.builtin.assert:
+    that:
+      - download_result is changed
+      - download_result.stdout_lines[0] == "Downloading model from OCI registry:"
+      # https://github.com/ansible-collections/redhat.ai/actions/runs/14479348081/job/40612683720?pr=8#step:3:3419
+      # Why error "Conditional expressions must be strings."?
+      # - download_result.stdout_lines[1] == "    Model: docker://registry.redhat.io/rhelai1/granite-8b-starter-v1@latest"
+      # - download_result.stdout_lines[2] == "    Destination: /var/home/ec2-user/.cache/instructlab/models"
+      # "Downloading model from OCI registry:\n    Model: docker://registry.redhat.io/rhelai1/granite-8b-starter-v1@latest\n    Destination: /var/home/ec2-user/.cache/instructlab/models"
+- &assert_download_result_all
+  name: Assert download_result
+  ansible.builtin.assert:
+    that:
+      - download_result is success
+      - download_result.model_directory == "/var/home/ec2-user/.cache/instructlab/models/granite-8b-starter-v1"
+      - download_result.image_created == "2025-01-31T18:29:59Z"
+- *assert_model_absent
+
+# -------------------------------------------------------------------
+# Download model
+- &download_model
+  name: Download model
+  redhat.ai.ilab_model_download:
+    name: "{{ model_name }}"
+    release: latest
+    # registry_url: docker://registry.redhat.io
+    # registry_namespace: rhelai1
+    registry_username: "{{ registry_username }}"
+    registry_password: "{{ registry_password }}"
+  register: download_result
+- *stat_both
+
+- *assert_download_result_changed
+- *assert_download_result_all
+- &assert_model_present
+  name: Assert model present
+  ansible.builtin.assert:
+    that:
+      - stat_models_result.stat.exists is true
+      - stat_oci_result.stat.exists is true
+
+# -------------------------------------------------------------------
+# Download model - check mode, idempotent
+- *download_model_check
+- *stat_both
+
+- &assert_download_result_not_changed
+  name: Assert download_result not changed
+  ansible.builtin.assert:
+    that:
+      - download_result is not changed
+      - download_result.stdout_lines[0] == "Model already downloaded"
+- *assert_download_result_all
+- *assert_model_present
+
+# -------------------------------------------------------------------
+# Download model - idempotent
+- *download_model
+- *stat_both
+
+- *assert_download_result_not_changed
+- *assert_download_result_all
+- *assert_model_present

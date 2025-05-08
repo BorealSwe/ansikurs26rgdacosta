@@ -1,0 +1,123 @@
+---
+amq_streams_broker_create_topic_script: "{{ amq_streams_common_home }}/bin/kafka-topics.sh"
+amq_streams_broker_kafka_config_script: "{{ amq_streams_common_home }}/bin/kafka-configs.sh"
+amq_streams_broker_kafka_acl_script: "{{ amq_streams_common_home }}/bin/kafka-acls.sh"
+amq_streams_broker_enabled: true
+amq_streams_broker_server_start: "{{ amq_streams_common_home }}/bin/kafka-server-start.sh"
+amq_streams_broker_config: "/etc/amq_streams_broker.properties"
+amq_streams_broker_service_name: 'amq_streams_broker'
+amq_streams_broker_user: 'amq_streams_broker'
+amq_streams_broker_listener_port: 9092
+amq_streams_broker_listener_internal_port: 9091
+amq_streams_broker_listener_tls_port: 9093
+amq_streams_broker_listener_port_delay: 0
+amq_streams_broker_listener_port_skip_wait: False
+amq_streams_broker_group: 'amq_streams'
+amq_streams_broker_service_config_template: 'templates/service.conf.j2'
+amq_streams_broker_service_config_file: '/etc/broker.conf'
+amq_streams_broker_data_dir: "/var/lib/{{ amq_streams_broker_service_name }}"
+amq_streams_broker_logs_dir: "/var/log/{{ amq_streams_broker_service_name }}/"
+amq_streams_broker_num_network_threads: 3
+amq_streams_broker_num_io_threads: 8
+amq_streams_broker_buffer_send_bytes: 102400
+amq_streams_broker_buffer_bytes: 102400
+amq_streams_broker_socket_request_max_bytes: 104857600
+amq_streams_broker_num_partitions: 1
+amq_streams_broker_num_recovery_threads_per_data_dir: 1
+amq_streams_broker_sysctl_vm_max_map_count: 65530
+amq_streams_broker_ulimit_max_value: 1024
+amq_streams_broker_offsets_topic_replication_factor: 1
+amq_streams_broker_transaction_state_log_replication_factor: 1
+amq_streams_broker_transaction_state_log_min_isr: 1
+amq_streams_broker_log_retention_hours: 168
+amq_streams_broker_log_retention_check_interval_ms: 300000
+amq_streams_broker_zookeeper_connection_timeout_ms: 30000
+amq_streams_broker_zookeeper_session_timeout_ms: 18000
+amq_streams_broker_group_initial_rebalance_delay_ms: 0
+amq_streams_broker_properties_template: templates/server.properties.j2
+amq_streams_broker_java_heap_opts: '-Xmx1G -Xms1G'
+
+amq_streams_broker_bootstrap_server_host: localhost
+amq_streams_broker_bootstrap_server_port: 9092
+
+amq_streams_firewalld_package_name:
+  - firewalld
+amq_streams_firewalld_enabled: false
+
+amq_streams_broker_instance_count_enabled: true
+amq_streams_broker_inventory_group_name: 'brokers'
+amq_streams_broker_instance_count: "{{ groups[amq_streams_broker_inventory_group_name] | length }}"
+
+amq_streams_deployment_balance_check_enabled: true
+
+amq_streams_broker_zookeeper_host_default_value: "{{ groups['zookeepers'][0] | default('localhost') }}"
+amq_streams_broker_zookeeper_port_default_value: 2181
+amq_streams_broker_zookeeper_wait: False
+
+# Broker-Zookeeper Authentication with SASL
+amq_streams_zookeeper_auth_enabled: false
+amq_streams_broker_zookeeper_auth_config: /etc/broker-jaas.conf
+amq_streams_broker_zookeeper_auth_config_template: templates/broker-jaas.conf.j2
+
+# Broker Listeners
+amq_streams_broker_listeners:
+  - PLAINTEXT://:{{ amq_streams_broker_listener_port }} # Insecure
+  #- REPLICATION://:{{ amq_streams_broker_listener_internal_port }} # Inter-broker communication
+  #- AUTHENTICATED://:{{ amq_streams_broker_listener_port }} # Authenticated
+  #- SSL://:{{ amq_streams_broker_listener_tls_port }} # TLS enabled
+
+#amq_streams_broker_advertised_listeners
+#  - PLAINTEXT://:{{ amq_streams_broker_listener_port }} # Insecure
+
+# Broker Authentication
+amq_streams_broker_auth_enabled: false
+amq_streams_broker_auth_scram_enabled: false
+amq_streams_connect_broker_auth_username: broker
+amq_streams_connect_broker_auth_password: PLEASE_CHANGEME_IAMNOTGOOD_FOR_PRODUCTION
+
+amq_streams_broker_auth_listeners:
+  - PLAINTEXT:PLAINTEXT
+  #- REPLICATION:PLAINTEXT
+  #- AUTHENTICATED:SASL_PLAINTEXT
+  #- SSL:SSL
+  #- SSL:SASL_SSL
+
+amq_streams_broker_auth_sasl_mechanisms:
+  - PLAIN
+  #- SCRAM-SHA-512
+
+amq_streams_broker_tls_enabled: false
+# Keystore and truststore for Brokers
+amq_streams_broker_tls_keystore_dir: /tmp
+amq_streams_broker_tls_keystore: server.keystore.jks
+amq_streams_broker_tls_keystore_location: /opt
+amq_streams_broker_tls_keystore_password: PLEASE_CHANGEME_IAMNOTGOOD_FOR_PRODUCTION
+amq_streams_broker_tls_truststore_dir: /tmp
+amq_streams_broker_tls_truststore: server.truststore.jks
+amq_streams_broker_tls_truststore_location: /opt
+amq_streams_broker_tls_truststore_password: PLEASE_CHANGEME_IAMNOTGOOD_FOR_PRODUCTION
+# Truststore for Clients
+amq_streams_broker_tls_truststore_client_dir: /tmp
+amq_streams_broker_tls_truststore_client: client.truststore.jks
+amq_streams_broker_tls_truststore_client_location: /opt
+amq_streams_broker_tls_truststore_client_password: PLEASE_CHANGEME_IAMNOTGOOD_FOR_PRODUCTION
+amq_streams_broker_admin_cli_log4j_opts: "  "
+amq_streams_broker_admin_cli_log_dir: "   "
+amq_streams_broker_admin_cli_jmx_opts: "   "
+
+amq_streams_broker_server_log_validation_min_size: 20
+
+amq_streams_broker_inventory_group: "{{ groups['brokers'] | default([]) }}"
+amq_streams_zookeeper_inventory_group: "{{ groups['zookeepers'] | default([]) }}"
+
+amq_streams_broker_admin_cli_config_template: 'templates/admin-cli.properties.j2'
+amq_streams_broker_admin_cli_config_file: '/tmp/admin-cli.properties'
+amq_streams_broker_admin_mechanism: PLAIN
+amq_streams_broker_admin_username: PLEASE_IDENTIFY_THE_ADMIN_USER
+amq_streams_broker_admin_password: PLEASE_CHANGEME_IAMNOTGOOD_FOR_PRODUCTION
+
+amq_streams_broker_prometheus_enabled: False
+amq_streams_broker_prometheus_port: 18080
+amq_streams_broker_prometheus_bind_addr: '0.0.0.0'
+amq_streams_broker_prometheus_config_file: broker-config.yaml
+amq_streams_broker_prometheus_config_file_template: prometheus/broker-config.yaml.j2

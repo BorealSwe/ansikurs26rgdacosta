@@ -1,0 +1,45 @@
+download_url: https://console.redhat.com/api/automation-hub/v3/plugin/ansible/content/published/collections/artifacts/redhat-ai-1.0.0.tar.gz
+format_version: 1.0.0
+name: ai
+namespace: redhat
+server: https://console.redhat.com/api/automation-hub/content/published/
+signatures:
+- pubkey_fingerprint: 39B5D759361A97464C564A8FE1A4BD708A828AAD
+  pulp_created: '2025-04-23T15:34:15.368280Z'
+  signature: '-----BEGIN PGP SIGNATURE-----
+
+    Version: GnuPG v1
+
+
+    iQIcBAABCAAGBQJoCQhrAAoJEOGkvXCKgoqtnZgP/3NJhiJWWHqhx6fvIV3OwKN4
+
+    GfGdGdJXCBNyzFus4Via1PuafKP26oxXsxgC3sR+FGMi2XKm28KbU21FeBcuMPxg
+
+    06JO146TsE7Y8U4DYRJad8HnCE5IQVZEc+GB9rv6qD3xM8cK65JmrRT5PO+QmEnx
+
+    9wevm21dLPADZUQ6TghpqZtMsNuuG3jFUQMjX8xWralBuTA0pN6c8PQL5q9Bq1er
+
+    dhG9652cn2PyZfoQWGJkOFpnElhM/zAS+IdV9pQl+jL1MBuXxRuOw30IzMIOD8TA
+
+    u6aSTcMJKZ8aVcVNC207cuw5LUIDLx3fLtIi0ZDzm2roplUg7Q0WAVJIqEXl64oB
+
+    pZd7yXuHwbl6BIOZW+f1Nc1EjLy4nDeJ5CRVMj/OSpH6y1eHtZtQfZo/A663fssH
+
+    hR8x7QFrEbB1Pn3WdYrW85lBUxXu8w0IlSpKlvM1xLL8urPOyNXr00Ip6F0bZIdO
+
+    +9q2x0hEGesWH9xkl1KCH0Zl80XVrPCI2WPK+SOaLEyeEkmniNbmjTF9fqv2OQ+Q
+
+    FM9ME8n6gs7rkcxHwgpoj5YTPuUThBmgCvuqtcqo9F50vr2CUb35llD5W3l9/LLh
+
+    M7EtNw/acRVxLBiTAc0v+WLdo49akkw88q9EUt9dYuuDJ3BXeUNr9mvRwe/lq5H/
+
+    q9WMYz5a25kAFy+gW0cD
+
+    =RlWS
+
+    -----END PGP SIGNATURE-----
+
+'
+  signing_service: null
+version: 1.0.0
+version_url: /api/automation-hub/content/published/v3/plugin/ansible/content/published/collections/index/redhat/ai/versions/1.0.0/

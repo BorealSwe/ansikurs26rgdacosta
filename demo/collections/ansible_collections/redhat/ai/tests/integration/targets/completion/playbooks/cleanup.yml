@@ -1,0 +1,35 @@
+---
+- name: Run cleanup
+  hosts: ilabs
+
+  tasks:
+    - name: Stop and disable ilab_serve service
+      ansible.builtin.systemd_service:
+        name: ilab_serve
+        scope: user
+        state: stopped
+        enabled: false
+      failed_when: false  # service might not be created
+
+    - name: Remove ilab_serve service file
+      ansible.builtin.file:
+        path: "{{ ansible_env.HOME }}/.config/systemd/user/ilab_serve.service"
+        state: absent
+
+    - name: Reload systemd
+      ansible.builtin.systemd_service:
+        daemon_reload: true
+        scope: user
+
+    # - name: Remove ilab model {{ model_name }}
+    #   ansible.builtin.file:
+    #     path: "{{ ansible_env.HOME }}/.cache/instructlab/{{ item }}/{{ model_name }}"
+    #     state: absent
+    #   loop:
+    #     - models
+    #     - oci
+
+    - name: Remove ilab config file
+      ansible.builtin.file:
+        path: "{{ ansible_env.HOME }}/.config/instructlab/config.yaml"
+        state: absent

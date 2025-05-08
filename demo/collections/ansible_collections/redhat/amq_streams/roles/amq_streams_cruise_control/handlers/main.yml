@@ -1,0 +1,15 @@
+---
+- name: "Restart {{ amq_streams_cruise_control_service_name }}"
+  ansible.builtin.service:
+    name: "{{ amq_streams_cruise_control_service_name }}"
+    state: restarted
+  become: yes
+
+- name: "Stop {{ amq_streams_cruise_control_service_name }}"
+  ansible.builtin.service:
+    name: "{{ amq_streams_cruise_control_service_name }}"
+    state: stopped
+  become: yes
+
+- name: "Refresh capacity.json"
+  ansible.builtin.include_tasks: capacity.yml

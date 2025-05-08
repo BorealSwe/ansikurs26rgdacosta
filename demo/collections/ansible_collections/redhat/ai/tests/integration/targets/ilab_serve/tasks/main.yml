@@ -1,0 +1,88 @@
+---
+# Run "systemctl start --user ilab_serve"
+# About 1 minute later is OS listening on port 8000
+
+# -------------------------------------------------------------------
+# Check port 8000 is not used
+- &assert_svc_not_running
+  name: Block
+  block:
+    - name: Gather facts listen ports
+      community.general.listen_ports_facts:
+
+    - name: Check port 8000 is unused
+      ansible.builtin.assert:
+        that:
+          - ansible_facts.tcp_listen | selectattr('port', 'eq', 8000) | length == 0
+
+# -------------------------------------------------------------------
+# Start ilab_serve
+- name: Start model service
+  ansible.builtin.include_role:
+    name: redhat.ai.ilab_serve
+  vars:
+    ilab_serve_state: started
+    ilab_serve_enabled: true
+
+- name: Wait for port 8000 to be up
+  ansible.builtin.wait_for:
+    host: localhost
+    port: 8000
+    state: started
+    sleep: 10
+    timeout: 120
+
+- &assert_svc_running
+  name: Block
+  block:
+    - name: Gather facts listen ports
+      community.general.listen_ports_facts:
+
+    - name: Check port 8000 is used
+      ansible.builtin.assert:
+        that:
+          - ansible_facts.tcp_listen | selectattr('port', 'eq', 8000) | selectattr('address', 'eq', '0.0.0.0') | length == 1
+
+- name: Issue a test prompt
+  ansible.builtin.uri:
+    url: http://localhost:8000/v1/completions
+    method: POST
+    headers:
+      Authorization: Bearer mytoken
+    body: |
+      {
+        "model": "/var/home/ec2-user/.cache/instructlab/models/granite-8b-starter-v1",
+        "prompt": "\n\n### Instructions:\nCapital of India?\n\n### Response:\n",
+        "stop": [
+          "\n",
+          "###"
+        ]
+      }
+    status_code: 200
+    body_format: json
+  register: prompt_result
+
+- name: Assert test prompt
+  ansible.builtin.assert:
+    that:
+      - prompt_result.json.choices | length == 1
+      - prompt_result.json.choices.0.text == "New Delhi"
+
+# -------------------------------------------------------------------
+# Stop ilab_serve
+- name: Stop model service
+  ansible.builtin.include_role:
+    name: redhat.ai.ilab_serve
+  vars:
+    ilab_serve_state: stopped
+    ilab_serve_enabled: false
+
+- name: Wait for port 8000 to be down
+  ansible.builtin.wait_for:
+    host: localhost
+    port: 8000
+    state: stopped
+    sleep: 10
+    timeout: 30
+
+- *assert_svc_not_running

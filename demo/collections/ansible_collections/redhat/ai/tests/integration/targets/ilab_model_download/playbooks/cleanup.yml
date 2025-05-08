@@ -1,0 +1,17 @@
+---
+- name: Run cleanup
+  hosts: ilabs
+
+  tasks:
+    - name: Remove ilab model {{ model_name }}
+      ansible.builtin.file:
+        path: "{{ ansible_env.HOME }}/.cache/instructlab/{{ item }}/{{ model_name }}"
+        state: absent
+      loop:
+        - models
+        - oci
+
+    - name: Remove ilab config file
+      ansible.builtin.file:
+        path: "{{ ansible_env.HOME }}/.config/instructlab/config.yaml"
+        state: absent

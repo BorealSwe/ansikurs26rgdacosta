@@ -1,0 +1,45 @@
+download_url: https://console.redhat.com/api/automation-hub/v3/plugin/ansible/content/published/collections/artifacts/microsoft-ad-1.9.0.tar.gz
+format_version: 1.0.0
+name: ad
+namespace: microsoft
+server: https://console.redhat.com/api/automation-hub/content/published/
+signatures:
+- pubkey_fingerprint: 39B5D759361A97464C564A8FE1A4BD708A828AAD
+  pulp_created: '2025-04-29T07:21:54.388074Z'
+  signature: '-----BEGIN PGP SIGNATURE-----
+
+    Version: GnuPG v1
+
+
+    iQIcBAABCAAGBQJoEH4GAAoJEOGkvXCKgoqtcMwP/04VDAubUul258Ih9F7l0OJS
+
+    bzNGDqgsD5WIJgLs5SFFN4rWnht9rkOi48VBrUsIv9LBhweLSfqNMiNWDa6sfhf5
+
+    C+aCSExYjAdk4QPmVO8CCPmCa6g7ybWEPJ1EFSuKhSEEuMwOR8p0Gc0uRFn+lgrT
+
+    Bve6j8Dg2izac+1pgzUtJp8te1fh1RZ59NfTfol1iPsa979Y7vYZRjP36mTltorK
+
+    lWK/Yt4tfj8SD882chtOYOdbwkRBf1JEvQ1TzNDiRzGCrpNpwgolPoiIU39/liH3
+
+    MEA1PagITXgZvYJVDCC+A7wrmWLyjoXDg4wKHrnQNDGepVn81uUiBbhlk3tPrxh3
+
+    yH8k065CwONlGnXhYMHHKoEvXIK/HJhS5an/VBhFHgWzfUzkY3aXWPS9Kt1isq9g
+
+    YV5Ki2ZUVO1pwBnLXz6BGbGfN6zEQIdF5EZsQeCqL4i74w98uGujV0e/s+dfhQ5m
+
+    152Oam9Vhf5CcFOmunck8/vLFyxRm7W14HilmuQ9GXsubZfK27Qt2kqp1xR9sB8P
+
+    iRoPnDO/Xj/tDNGUHCdgrL7Ew5cKE77nubXw8qcVBLZp6oWUzGJXUFRcsBm6Z0Ye
+
+    UXzu7rz7tQtTFSbBpqkLvLQwJDp91BiAjDfTKb+2PYXa6zukhafw0XBEPFukZCu3
+
+    wbPPUbUlTA51VHBkJYeu
+
+    =QY9f
+
+    -----END PGP SIGNATURE-----
+
+'
+  signing_service: null
+version: 1.9.0
+version_url: /api/automation-hub/content/published/v3/plugin/ansible/content/published/collections/index/microsoft/ad/versions/1.9.0/

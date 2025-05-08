@@ -1,0 +1,15 @@
+---
+- name: Run prepare
+  hosts: ilabs
+
+  tasks:
+    - name: Create instructlab config
+      ansible.builtin.copy:
+        src: ../files/config.yaml  # noqa: no-relative-paths
+        dest: "{{ ansible_env.HOME }}/.config/instructlab/config.yaml"
+        mode: "0644"
+
+    - name: Download instructlab model
+      ansible.builtin.command:
+        cmd: ilab model download --repository docker://registry.redhat.io/rhelai1/granite-8b-starter-v1 --release latest
+        creates: "{{ ansible_env.HOME }}/.cache/instructlab/models/granite-8b-starter-v1"

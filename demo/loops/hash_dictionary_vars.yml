@@ -23,5 +23,4 @@ myusers:
      password: flimflom
 
    ricardo:
-     groups: wheel
      password: flimflom

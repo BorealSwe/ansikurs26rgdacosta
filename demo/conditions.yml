@@ -1,15 +1,16 @@
 - name: Conditionals demonstration
   hosts: servera
   gather_facts: true
-  become: true
 
   tasks:
 
     - name: Verify that we are using a Red Hat based OS
       when: "'RedHat' in ansible_facts['distribution']"
+      become: true
       block:
 
         - name: Ensure message is displayed
+          become: false
           ansible.builtin.debug:
             msg: We have matched RedHat to your distribution
 
@@ -26,10 +27,12 @@
 
 
     - name: Tasks for SUSE
+      become: true
       when: "'SUSE' in ansible_facts['distribution']"
       block:
 
         - name: Ensure message is displayed
+          become: false
           ansible.builtin.debug:
             msg: We have matched SUSE to your distribution
 

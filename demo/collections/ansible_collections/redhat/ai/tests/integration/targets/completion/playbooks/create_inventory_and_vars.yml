@@ -1,0 +1,27 @@
+---
+- name: Prepare inventory files for test run
+  hosts: 127.0.0.1
+  connection: local
+  gather_facts: true
+
+  vars:
+    inventory_template: ../templates/{{ template | default('inventory_ilab.yml.j2') }}
+
+  tasks:
+    - name: Write inventory config file
+      ansible.builtin.copy:
+        dest: inventory_ilab.yml
+        content: "{{ lookup('template', inventory_template) }}"
+        mode: "0644"
+
+    - name: Create HOME/.ssh/ directory
+      ansible.builtin.file:
+        path: "{{ ansible_env.HOME }}/.ssh"
+        state: directory
+        mode: "0700"
+
+    - name: Create HOME/.ssh/ilab-ssh-key file
+      ansible.builtin.copy:
+        dest: "{{ ansible_env.HOME }}/.ssh/{{ ilab_ssh_private_key_filename }}"
+        content: "{{ ilab_ssh_private_key_content }}"
+        mode: "0600"

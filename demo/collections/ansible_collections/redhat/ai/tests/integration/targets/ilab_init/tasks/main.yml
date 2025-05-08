@@ -1,0 +1,109 @@
+---
+# -------------------------------------------------------------------
+# Create config check-mode
+- name: Create initial ilab config - check-mode
+  redhat.ai.ilab_init:
+  check_mode: true
+  register: init_result
+
+- name: Assert check-mode
+  ansible.builtin.assert:
+    that:
+      - init_result is changed
+      - "'Generating config file (ansible check-mode)' == init_result.stdout"
+
+# -------------------------------------------------------------------
+# Create config
+- name: Create initial ilab config
+  redhat.ai.ilab_init:
+  register: init_result
+
+- &stat_ilab_config
+  name: Stat ilab config
+  ansible.builtin.stat:
+    path: "{{ ansible_env.HOME }}/.config/instructlab/config.yaml"
+  register: stat_result
+
+- name: Store last ilab config modification time
+  ansible.builtin.set_fact:
+    ilab_config_mtime: "{{ stat_result.stat.mtime }}"
+
+- name: Assert 1
+  ansible.builtin.assert:
+    that:
+      - init_result is changed
+      - "'Generating config file' in init_result.stdout"
+
+- &assert2
+  name: Assert 2
+  ansible.builtin.assert:
+    that:
+      - init_result is success
+      - stat_result.stat.exists
+      - stat_result.stat.isreg
+
+# -------------------------------------------------------------------
+# Create config check-mode - idempotence
+- name: Create initial ilab config - idempotence check-mode
+  redhat.ai.ilab_init:
+  check_mode: true
+  register: init_result
+
+- *stat_ilab_config
+
+- name: Assert check-mode
+  ansible.builtin.assert:
+    that:
+      - init_result is not changed
+      - ilab_config_mtime | float == stat_result.stat.mtime
+      - "'Config file already exists' in init_result.stdout"
+
+# -------------------------------------------------------------------
+# Create config - idempotence
+- name: Create initial ilab config - idempotence
+  redhat.ai.ilab_init:
+  register: init_result
+
+- *stat_ilab_config
+
+- name: Assert 1
+  ansible.builtin.assert:
+    that:
+      - init_result is not changed
+      - ilab_config_mtime | float == stat_result.stat.mtime
+
+- *assert2
+
+# -------------------------------------------------------------------
+# Create config - with force, check-mode
+- name: Create initial ilab config - force recreate
+  redhat.ai.ilab_init:
+    force: true
+  check_mode: true
+  register: init_result
+
+- *stat_ilab_config
+
+- name: Assert check-mode
+  ansible.builtin.assert:
+    that:
+      - init_result is changed
+      - "'Generating config file (ansible check-mode)' == init_result.stdout"
+      - ilab_config_mtime | float == stat_result.stat.mtime
+
+# -------------------------------------------------------------------
+# Create config - with force
+- name: Create initial ilab config - force recreate
+  redhat.ai.ilab_init:
+    force: true
+  register: init_result
+
+- *stat_ilab_config
+
+- name: Assert 1
+  ansible.builtin.assert:
+    that:
+      - init_result is changed
+      - ilab_config_mtime | float < stat_result.stat.mtime
+
+- *assert2

@@ -1,0 +1,9 @@
+---
+- name: Run all tests
+  hosts: ilabs
+
+  tasks:
+    - name: Remove existing ilab config file if present
+      ansible.builtin.file:
+        path: "{{ ansible_env.HOME }}/.config/instructlab/config.yaml"
+        state: absent

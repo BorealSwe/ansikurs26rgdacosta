@@ -1,0 +1,30 @@
+ancestor: null
+releases:
+  1.0.0:
+    changes: {}
+    fragments:
+    - content.yml
+    modules:
+    - description: Interact with deployed AI model.
+      name: completion
+      namespace: ''
+    - description: Edit existing InstructLab configuration.
+      name: ilab_config
+      namespace: ''
+    - description: Create initial InstructLab configuration.
+      name: ilab_init
+      namespace: ''
+    - description: Download InstructLab AI model.
+      name: ilab_model_download
+      namespace: ''
+    objects:
+      playbook:
+      - description: A playbook to configures a VM with Red Hat AI preinstalled to
+          server a specified AI model.
+        name: ilab
+        namespace: null
+      role:
+      - description: A role to setup systemd service for serving AI model.
+        name: ilab_serve
+        namespace: null
+    release_date: '2025-04-23'

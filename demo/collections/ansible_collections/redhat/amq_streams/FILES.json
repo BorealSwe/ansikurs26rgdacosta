@@ -1,0 +1,1034 @@
+{
+ "files": [
+  {
+   "name": ".",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "docs",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "docs/CHANGELOG.rst",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "d8ae0116f28d3a3f09b0a2b4b53c98725542a63d6d7caddc5b2fc548a51af494",
+   "format": 1
+  },
+  {
+   "name": "docs/developing.md",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "d5bf0ff2c9dc61ab0c18595d585f254ccfab1c45d4fe3f767ab02da4258a964a",
+   "format": 1
+  },
+  {
+   "name": "docs/index.rst",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "3abd50f475fb7772caf03432b50e119bab50bc0bdb15db6b469bf395e1fac466",
+   "format": 1
+  },
+  {
+   "name": "docs/releasing.md",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "15a2a96c5aefa0bdc9e3fda3ff2c5eb711b52d4b50ecd13d79fd5a953ca2f204",
+   "format": 1
+  },
+  {
+   "name": "docs/requirements.txt",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "bf2cda2a96fe5962e8d510d18779fe5061fd943357436a0b7d4beb4c28c55081",
+   "format": 1
+  },
+  {
+   "name": "docs/testing.md",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "757c771976cbe7c2e8927ad0d0eed72d2d9df52e3c066d7aee3ed89c44eedf64",
+   "format": 1
+  },
+  {
+   "name": "docs/usage.md",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "743bf270e021f1869c746bf05ad8a5a443bd732f5130c257b94bb87bdd713bba",
+   "format": 1
+  },
+  {
+   "name": "meta",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "meta/runtime.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "2af7f216ad53afd39bb0c11d4db64e18bc31056b50827d6791e9631978ac9048",
+   "format": 1
+  },
+  {
+   "name": "playbooks",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "playbooks/roles",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "playbooks/playbook.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "a2e094c6f41c4ab4afa85ae5ef4bf765cf107d10b7e49aa0621f0f2de1db121e",
+   "format": 1
+  },
+  {
+   "name": "playbooks/validate.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "387384d2fe1c7d90106589fdbe6a706e7feaff5d05983a13c3484fed70a00fd4",
+   "format": 1
+  },
+  {
+   "name": "roles",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_broker",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_broker/defaults",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_broker/defaults/main.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "37b6311d3c7f98fe0833fe5827889aff13893b127eaba890ef80065e7e02a459",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_broker/handlers",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_broker/handlers/main.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "ec8f78991a671a59ece09252d9dc5c7e69bae1d404ec5d942425b56fae0da3e5",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_broker/meta",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_broker/meta/argument_specs.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "3b9a92fdc7810566ef8e39ed649c388a54a723351dbad5cec97b3ab787347bd3",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_broker/meta/main.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "5aafc29e6ea1607fee350b5ab7f01f2bcf8d85a5ff5ed29777210eb4558929f9",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_broker/tasks",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_broker/tasks/acl",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_broker/tasks/acl/allow_deny_principal.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "7914d764aa7e9a8d0f14f1f3c19b592a6c552d41cc716232cfe5f6f7945a640c",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_broker/tasks/cli",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_broker/tasks/cli/bootstrap.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "7c796651b5325534082876a31676d49d0e012790d76a522332a446a5f6d04837",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_broker/tasks/topic",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_broker/tasks/topic/create.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "c3408cfb511846254dd07aef5330a3c239a242bf747038fb385185b8de0de07b",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_broker/tasks/topic/delete.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "8dfb4d47fdd6f2279616e6f44371e5b0545c51c7c083799f4747320bcc7b93ee",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_broker/tasks/topic/describe.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "bbb9c0259d8a039cdf1a82a577f15dbf81117d1304545df6dda8ec83d44aa299",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_broker/tasks/user-scram",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_broker/tasks/user-scram/create.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "8aa9d461b09ef2970569f22e855fea50a1fe202bb86108b73310fe5a79814fed",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_broker/tasks/user-scram/delete.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "c9b505563fc0bdf6ab132a762ec5ed16087d1a6e827eedf8d3115f29a012bae5",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_broker/tasks/user-scram/describe.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "a9cdda54c3c446aa14f597f373527a7d700b903ab4eff49faf2c442f5920ead1",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_broker/tasks/main.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "def2e579d3b82534ea058df373a2aeb432706ec309a465464bebc555f7af7ad9",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_broker/tasks/service.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "43c88df632b4266b01e5223b40f46c12ed647a15327f608261a51b24670b7f9c",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_broker/tasks/validate.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "270a89ffb6229d136a3c6de141530400fcf72cf1f2227a3c9ec497c66bfa7a2e",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_broker/templates",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_broker/templates/admin-cli.properties.j2",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "83012cd3f17d5123f9689f43e164685f3a263fc018ff93f3594ecf7d447ee695",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_broker/templates/broker-jaas.conf.j2",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "21e50c3545545686f5d24119e7a0c2ea1effc0fc35510804884861c4a2cb15f8",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_broker/templates/server.properties.j2",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "be3b9b57dabf3ea10b408ea03b99172e37923d5f8b3bc7e72c9f09aac4dee1f9",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_broker/vars",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_broker/vars/main.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "2fa7d5f4b75cab6f7ba9e84067b8f21317d336f466bc86b9d0c66ffd961251ac",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_broker/README.md",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "7c3ec009ba6b1c314220e5c10c0c83c016136f4ea11a6fdc150e82f3fcc381ab",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_common",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_common/defaults",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_common/defaults/main.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "b33a7fa85cec4dd1b7ea8c38396ab51a378c87ba4bd2ea5bd46fdbf5899baacc",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_common/meta",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_common/meta/argument_specs.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "768a1e9ddd8dbfd5591f8b79bbdf2ca38f10754c59d914ed4160a17ce841232e",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_common/meta/main.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "cc7596bbd2eac79cdbfb3923bff2c1f9fb75937a78c5b2ead804ba9a1319d5a1",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_common/tasks",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_common/tasks/rhn",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_common/tasks/rhn/download.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "edc332d44c4bca59a6eab1ef93dac7c65f2547a6f1616697d7c77ed70da0a094",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_common/tasks/rhn/main.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "36056f6a881aaa3cac4d70b3b9a367b814153fa30e4c078caa2054a1e2221a0e",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_common/tasks/rhn/search.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "6423778c36f6e3bd985392220c58dcbe9290adf8aaca91109ef8dc5545b49da9",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_common/tasks/validation",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_common/tasks/validation/logfile.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "e7ead8964ac2ac2fbedbc0e42d264e06361da5f6d2515d7178d84e23ed465be6",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_common/tasks/validation/prometheus.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "01b3d396e10636c55471025a66dc2711423e80fe49ca020254771f2b7f4f3d8b",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_common/tasks/validation/service.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "dce6c369d0426a03decf6f26f98c208ac842bcbf31f6c605dacdeaab96ec62e6",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_common/tasks/download.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "7fa6afb84559131e7fbc36f315ea0d90329fcdd14fc810d1f61c3a9d6e6c0d98",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_common/tasks/firewalld.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "ab4eaeb442d0ee09da1ced8c41d5a8977521f45c710560242a55cbdf5e66da95",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_common/tasks/install.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "501fbc9e0b60de4953334d2b6ec3ad8dac6f11b2b8f515a55fe4a4edfb1065fc",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_common/tasks/main.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "8f5512ef5de17cf27c7acc2699d6e23233681221e552446fdd1e646f8385114a",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_common/tasks/os_tuning.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "e64a80223dbef4152dd440ad6e383e4edc64671455b08a68cd4a40f98e6e5ab0",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_common/tasks/prereqs.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "a135467ac6724a10def1d7983339323416143c46059881ea7a971628c8f02eed",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_common/tasks/prometheus.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "8cd94a33b2a6ca9227e92ccbf57da9fc68d002e73314786ba72ef2b69fe23fab",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_common/tasks/systemd.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "5b4c979bb681c3f557fee3af6d3d550203dce02d6e2a4ef99e95f1679ef09c88",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_common/tasks/user_group.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "4bb85675306a1fa05564a94cb863e64b6db35ef3fae03afddf4c374a56ad09ab",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_common/tasks/validation.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "d5b31886dea713095eeb9d4f38ec195ba2c05eaf3ae598854784f32d69371afc",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_common/templates",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_common/templates/prometheus",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_common/templates/prometheus/broker-config.yaml.j2",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "ba393e1c8106df79f347ad573a1d3f9ec2f40e7f1406b7823c7a6c7c6371c508",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_common/templates/prometheus/zk-config.yaml.j2",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "a97b643862bdcd88d8ac67dcc4d6da4964c6866dce3f341f73829e4ea7366c7e",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_common/templates/service.conf.j2",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "70d51e3fe410e0500d4c91c5560e1d5d0845e977ba14c1c5b8b1636ee86fc4a4",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_common/templates/service_systemd.j2",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "62142d583ed113188932ce82a9628cd151e5a671536738013a750d2daa0650a4",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_common/templates/ulimit.j2",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "66c0ca719798fdbbe2d3d33a5ddc71acfd2e230735b8db9f6a7a17a7c3f6e423",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_common/vars",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_common/vars/main.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "68669918d05ee69e9339c94d55c93bd87905a08d9bc6a44e2abd55cad939102f",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_common/README.md",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "87e37f2b9687d51fd39af5d885d7acce3df566a5049e6e843b05c6a654efc90d",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_connect",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_connect/defaults",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_connect/defaults/main.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "004523aa0037440a547297d61aeb62f6269f89af7cf0a073c2e741b80a69bd88",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_connect/handlers",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_connect/handlers/main.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "c66e38502ef40c931ad1f022fd580f566a0012690d639bf3fd130ba4df9fd62d",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_connect/meta",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_connect/meta/argument_specs.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "f66f749f79e22ec6f516741000542f00fc00c4086dbd62d9f26ae45e3218191e",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_connect/meta/main.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "3dec7fa89d1d6083f9ef661268e71295c39a40d8e16f8437b910c54a4637c8d8",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_connect/tasks",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_connect/tasks/connectors",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_connect/tasks/connectors/file.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "8b7d355485039f41009e4701bbc7e1fdff69bc75ddefbbd5ddf7629b6274166e",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_connect/tasks/main.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "bed8427919c4e45f4eebe12cdf86767e0061a2b828a6b37b8eb3c307b7c76ca1",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_connect/tasks/service.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "a034c817be80488d6991ad235e78a0603419a1547a586b1fa3eb8e91253e1a42",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_connect/tasks/validate.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "4d3e1ba51af6db950b5f69d37fc0519f67597dc73ec736ff028b8e514950ea64",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_connect/templates",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_connect/templates/connect-standalone.properties.j2",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "e342a33054b9f16d3691cda8428074317915a551b56970c173cca79e54bcbb69",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_connect/templates/file_connector_source.j2",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "615c45328b98afd71e8152a33483455faa3056ef78f94277239ff077ff8b5ec9",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_connect/README.md",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "4d0c17574b47bdaa958d5b3b1277c4c951854d1818099b34fde7098d6bfea416",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_cruise_control",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_cruise_control/defaults",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_cruise_control/defaults/main.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "db7a583b96a52b8937ab9dc9c621e9c811af99767061054c93a4677e1947c053",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_cruise_control/handlers",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_cruise_control/handlers/main.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "8ef1336855aeaf7a85146ffeaf7d0f3524110ecce968a939e8365cd57a7d73da",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_cruise_control/meta",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_cruise_control/meta/argument_specs.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "12f679b7b13b360f570db7e463af80be848a53a39d93b969bb6f3b28faeb5400",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_cruise_control/meta/main.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "f72b0e3e24a3421159d8270ae14699c7cee1ebf6570abbd9136614676116d083",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_cruise_control/tasks",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_cruise_control/tasks/capacity.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "debc1750bc3346179c6af35cba9fee0deec3549413fcc7550e02de490aaed0f6",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_cruise_control/tasks/cruise_control_operation.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "5d3585fcd92d7d8b3bf050a20932358878b611256354506debded767def99d41",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_cruise_control/tasks/jaas_config.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "a9bc7f87947f219f492db4f74bd176585f3e1cd2b0d2e69db4bf35db9af4dbf6",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_cruise_control/tasks/main.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "b04f7f1bca9de158b245cd744b446a2ecf4b11122eee84f7b231fe226d49630e",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_cruise_control/tasks/service.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "3c51e9d32c80661b594ea67c07d95caf1d8bc8befc3d4c266449afd944c02921",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_cruise_control/tasks/validate.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "98a5a96a354893bc868cfce9a84c6b59070e210c91edd4e43ef23cf571e9636b",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_cruise_control/templates",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_cruise_control/templates/capacity.json.j2",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "e56d063547cee6512932045fa3152142e0b888f56ba4a49dc24fd457d4acd6ac",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_cruise_control/templates/cruisecontrol.properties.j2",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "bda6088c065afb63c6a902c0fa247cbaa9ec51460128b513a923a1f2f1600762",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_cruise_control/templates/log4j.properties.j2",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "2c2bea6ffde54bdb535e5b5a6b8775373cf80a18bba8858487061ee7160c3b04",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_cruise_control/templates/sasl.properties.j2",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "910dedc0c0ef91987aafae100a2b85751ed981dd1e178cbb2da6043c520acbb1",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_cruise_control/README.md",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "3358e16cd0f5258485cc2f16fab0d0d0bc49f55bb16a658d740b9e7140cc2e3e",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_zookeeper",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_zookeeper/defaults",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_zookeeper/defaults/main.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "ba7e8dce71ba6e3f68d3536dc3a3e43785d63cc8d08fc092b7609fe5e8ee9e2a",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_zookeeper/handlers",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_zookeeper/handlers/main.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "a3ea089f1718c701c30626ee3f0223ff5be66aae1e8c2ea063dcb0b2095eedfb",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_zookeeper/meta",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_zookeeper/meta/argument_specs.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "b707c8afecc89f1372911746f73a7a126bd14c644741adcff1282481a750fb4c",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_zookeeper/meta/main.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "d7cf0bd861205e69a7007c7039e75b678f46582bd8088366f3d1b537f5b49e12",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_zookeeper/tasks",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_zookeeper/tasks/main.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "61739d39f7a7c474eea6ca368ed9808405dd7294b9a8c4f95cf46c3611539dcc",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_zookeeper/tasks/service.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "9a8825a4e9d02bf4bad6f732b7dc970fb2b1920fb4eab23000b876a37dd3d0fc",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_zookeeper/tasks/validate.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "bc7b0cafb494756651a8730f727101674540ea9942fae68c60403f49ad9f804a",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_zookeeper/templates",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_zookeeper/templates/zookeeper-jaas.conf.j2",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "509166035ca92c88147990851e82a6fc76096f17da2f33530cddde2e74f96ea0",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_zookeeper/templates/zookeeper.properties.j2",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "b01190e8ec0d330681e3432e6ecd117cf5ef8f51de7c39c008f04787cf18fd65",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_zookeeper/vars",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_zookeeper/vars/main.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "fccbaed57f0893a1fefdf623e7d3442c1bddb51ec2c28565ec2b31be07309c7c",
+   "format": 1
+  },
+  {
+   "name": "roles/amq_streams_zookeeper/README.md",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "b7dc46936d2a6390a938c6041dded8a8366e68947fb0eefbbbe7a728106c4b52",
+   "format": 1
+  },
+  {
+   "name": "tasks",
+   "ftype": "dir",
+   "chksum_type": null,
+   "chksum_sha256": null,
+   "format": 1
+  },
+  {
+   "name": "tasks/dummy.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "88d56547cd9ca94136c3381cf350904a886a034eb5758156ace0848e93503cae",
+   "format": 1
+  },
+  {
+   "name": "CHANGELOG.rst",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "d8ae0116f28d3a3f09b0a2b4b53c98725542a63d6d7caddc5b2fc548a51af494",
+   "format": 1
+  },
+  {
+   "name": "CONTRIBUTING.md",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "d5bf0ff2c9dc61ab0c18595d585f254ccfab1c45d4fe3f767ab02da4258a964a",
+   "format": 1
+  },
+  {
+   "name": "LICENSE",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "c5accbbd8546e94c34aed24afe689a617627d18eed5a6c48277e48db57c23851",
+   "format": 1
+  },
+  {
+   "name": "README.md",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "b986be06382f0dc84d6d3194f36290fdec74550fa630a1ddf1f8b93f3617c9e0",
+   "format": 1
+  },
+  {
+   "name": "requirements.txt",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "fe4e5e721cf958857a51de427dd208a73b3be4d9dd74f32cd1bd06de053d2b70",
+   "format": 1
+  },
+  {
+   "name": "requirements.yml",
+   "ftype": "file",
+   "chksum_type": "sha256",
+   "chksum_sha256": "cdc17f76c58cd0e179fddbb49c28ff69b36f310e985048f7c0bcac10e379dbc6",
+   "format": 1
+  }
+ ],
+ "format": 1
+}

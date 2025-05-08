@@ -1,0 +1,11 @@
+---
+- name: Run all tests
+  hosts: ilabs
+
+  tasks:
+    - name: Include tasks
+      block:
+        - name: Include tasks
+          ansible.builtin.include_tasks: "{{ item }}"
+          with_fileglob:
+            - "../tasks/*.yml"

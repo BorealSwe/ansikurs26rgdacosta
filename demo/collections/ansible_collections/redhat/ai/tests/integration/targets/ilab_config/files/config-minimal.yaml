@@ -1,0 +1,128 @@
+chat:
+  context: default
+  logs_dir: /var/home/ec2-user/.local/share/instructlab/chatlogs
+  max_tokens:
+  model: /var/home/ec2-user/.cache/instructlab/models/granite-8b-lab-v1
+  session:
+  temperature: 1.0
+  vi_mode: false
+  visible_overflow: true
+evaluate:
+  base_branch:
+  base_model: /var/home/ec2-user/.cache/instructlab/models/granite-8b-starter-v1
+  branch:
+  gpus: 4
+  mmlu:
+    batch_size: auto
+    few_shots: 5
+  mmlu_branch:
+    tasks_dir: /var/home/ec2-user/.local/share/instructlab/datasets
+  model:
+  mt_bench:
+    judge_model: /var/home/ec2-user/.cache/instructlab/models/prometheus-8x7b-v2-0
+    max_workers: auto
+    output_dir: /var/home/ec2-user/.local/share/instructlab/internal/eval_data
+  mt_bench_branch:
+    taxonomy_path: /var/home/ec2-user/.local/share/instructlab/taxonomy
+general:
+  debug_level: 0
+  log_format: '%(levelname)s %(asctime)s %(name)s:%(lineno)d: %(message)s'
+  log_level: INFO
+generate:
+  chunk_word_count: 1000
+  max_num_tokens: 4096
+  model: /var/home/ec2-user/.cache/instructlab/models/mixtral-8x7b-instruct-v0-1
+  num_cpus: 10
+  num_instructions: -1
+  output_dir: /var/home/ec2-user/.local/share/instructlab/datasets
+  pipeline: /usr/share/instructlab/sdg/pipelines/agentic
+  sdg_scale_factor: 30
+  seed_file: /var/home/ec2-user/.local/share/instructlab/internal/seed_tasks.json
+  taxonomy_base: empty
+  taxonomy_path: /var/home/ec2-user/.local/share/instructlab/taxonomy
+  teacher:
+    backend: vllm
+    chat_template: tokenizer
+    host_port: 127.0.0.1:8000
+    llama_cpp:
+      gpu_layers: -1
+      llm_family: ''
+      max_ctx_size: 4096
+    model_path: /var/home/ec2-user/.cache/instructlab/models/mixtral-8x7b-instruct-v0-1
+    vllm:
+      gpus: 4
+      llm_family: mixtral
+      max_startup_attempts: 120
+      vllm_args:
+        - --enable-lora
+        - --max-lora-rank
+        - '64'
+        - --dtype
+        - bfloat16
+        - --lora-dtype
+        - bfloat16
+        - --fully-sharded-loras
+        - --lora-modules
+        - skill-classifier-v3-clm=/var/home/ec2-user/.cache/instructlab/models/skills-adapter-v3
+        - text-classifier-knowledge-v3-clm=/var/home/ec2-user/.cache/instructlab/models/knowledge-adapter-v3
+metadata:
+  cpu_info:
+  gpu_count:
+  gpu_family:
+  gpu_manufacturer:
+  gpu_sku:
+serve:
+  backend: vllm
+  chat_template: auto
+  host_port: 127.0.0.1:8000
+  llama_cpp:
+    gpu_layers: -1
+    llm_family: ''
+    max_ctx_size: 4096
+  model_path: /var/home/ec2-user/.cache/instructlab/models/granite-8b-lab-v1
+  vllm:
+    gpus:
+    llm_family: ''
+    max_startup_attempts: 120
+    vllm_args:
+      - --tensor-parallel-size
+      - '4'
+train:
+  additional_args:
+    learning_rate: 6e-6
+    use_dolomite: true
+    lora_alpha: 32
+    lora_dropout: 0.1
+    warmup_steps: 25
+  checkpoint_at_epoch: true
+  ckpt_output_dir: /var/home/ec2-user/.local/share/instructlab/checkpoints
+  data_output_dir: /var/home/ec2-user/.local/share/instructlab/internal
+  data_path: /var/home/ec2-user/.local/share/instructlab/datasets
+  deepspeed_cpu_offload_optimizer: false
+  device: cuda
+  disable_flash_attn: false
+  distributed_backend: fsdp
+  effective_batch_size: 128
+  fsdp_cpu_offload_optimizer: false
+  is_padding_free: false
+  lora_quantize_dtype:
+  lora_rank: 0
+  max_batch_len: 60000
+  max_seq_len: 4096
+  model_path: /var/home/ec2-user/.cache/instructlab/models/granite-8b-starter-v1
+  nproc_per_node: 4
+  num_epochs: 8
+  phased_base_dir: /var/home/ec2-user/.local/share/instructlab/phased
+  phased_mt_bench_judge: /var/home/ec2-user/.cache/instructlab/models/prometheus-8x7b-v2-0
+  phased_phase1_effective_batch_size: 128
+  phased_phase1_learning_rate: 2e-05
+  phased_phase1_num_epochs: 7
+  phased_phase1_samples_per_save: 0
+  phased_phase2_effective_batch_size: 3840
+  phased_phase2_learning_rate: 6e-06
+  phased_phase2_num_epochs: 10
+  phased_phase2_samples_per_save: 0
+  pipeline: accelerated
+  save_samples: 0
+  training_journal:
+version: 1.0.0

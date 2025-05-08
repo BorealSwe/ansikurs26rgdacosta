@@ -1,0 +1,9 @@
+---
+- name: Run cleanup
+  hosts: ilabs
+
+  tasks:
+    - name: Remove ilab config file
+      ansible.builtin.file:
+        path: "{{ ansible_env.HOME }}/.config/instructlab/config.yaml"
+        state: absent
