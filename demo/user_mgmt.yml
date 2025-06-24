@@ -12,7 +12,7 @@
       user:
         name: "{{ my_user }}"
         state: "{{ my_state | default('present') }}"
-        password: "{{ my_pass | password_hash('sha512') }}"
+        password: "{{ my_pass | default('redhat123') | password_hash('sha512') }}"
         groups: "{{ my_group | default(omit) }}"
         generate_ssh_key: "{{ my_keygen | default(false) }}"
         update_password: on_create

@@ -8,7 +8,11 @@
 
   tasks:
 
+    - name: Ensure limited facts are gathered
+      ansible.builtin.setup:
+        gather_subset: network
+
     - name: Ensure /etc/hosts is correctly set
-      template:
+      ansible.builtin.template:
         dest: /etc/hosts
         src: hosts.j2

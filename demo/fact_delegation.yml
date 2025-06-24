@@ -14,6 +14,6 @@
       ansible.builtin.debug:
         msg: "{{ hostvars['servera']['my_fact'] }}"
 
-    - name: EXPECTED TO FAIL: Ensure fact is displayed from {{ inventory_hostname }}
+    - name: 'EXPECTED TO FAIL: Ensure fact is displayed from {{ inventory_hostname }}'
       ansible.builtin.debug:
         msg: "{{ my_fact }}"
