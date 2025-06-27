@@ -1,0 +1,17 @@
+---
+- name: Add users to automation controller
+  hosts: localhost
+  gather_facts: False
+  vars_files:
+    - vars/auth.yml
+    - vars/users_teams.yml
+  vars:
+    user_array:
+      - "{{ system_auditors['users'] }}"
+      - "{{ system_administrators['users'] }}"
+      - "{{ users_no_team['users'] }}"
+  tasks:
+    - name: Add users with task file
+      vars:
+        the_users: "{{ user_array | flatten }}"
+      include_tasks: tasks/add_users.yml

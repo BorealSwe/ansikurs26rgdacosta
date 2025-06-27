@@ -1,0 +1,17 @@
+---
+- name: Add role
+  ansible.controller.role:
+    controller_host: '{{ controller_auth["host"] }}'
+    controller_username: '{{ controller_auth["username"] }}'
+    controller_password: '{{ controller_auth["password"] }}'
+    validate_certs: False
+    user: '{{ item["user"] | default(omit) }}'
+    role: '{{ item["role"] }}'
+    organization: '{{ item["organization"] | default(omit) }}'
+    team: '{{ item["team"] | default(omit) }}'
+    target_team: '{{ item["target_team"] | default(omit) }}'
+    state: present
+  loop: '{{ the_roles }}'
+  loop_control:
+    label: Assigning the '{{ item["role"] }}' role to the '{{ item["user"] }}' user.
+

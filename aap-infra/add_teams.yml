@@ -1,0 +1,37 @@
+---
+- name: Add team
+  hosts: localhost
+  gather_facts: False
+  vars_files:
+    - vars/auth.yml
+    - vars/users_teams.yml
+  vars:
+    team_array:
+      - '{{ team1 }}'
+      - '{{ team2 }}'
+      - '{{ team3 }}'
+      - '{{ team_developers }}'
+  tasks:
+    - name: Add team in controller
+      ansible.controller.team:
+        controller_host: '{{ controller_auth["host"] }}'
+        controller_username: '{{ controller_auth["username"] }}'
+        controller_password: '{{ controller_auth["password"] }}'
+        validate_certs: False
+        name: '{{ the_team["name"] }}'
+        description: '{{ the_team["description"] | default(omit) }}'
+        organization: '{{ the_team["organization"] | default("Default") }}'
+      loop: '{{ team_array }}'
+      loop_control:
+        loop_var: the_team
+        label: Adding the '{{ the_team["name"] }}' team.
+
+    - name: Add users and assign roles using a task file
+      vars:
+        the_users: '{{ the_team["users"] }}'
+      include_tasks: tasks/add_users.yml
+      loop: '{{ team_array }}'
+      loop_control:
+        loop_var: the_team
+        label: Adding users to the '{{ the_team["name"] }}' team.
+      when: the_team["users"] is defined

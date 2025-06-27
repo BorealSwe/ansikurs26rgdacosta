@@ -1,0 +1,28 @@
+---
+- name: Add users
+  ansible.controller.user:
+    controller_host: '{{ controller_auth["host"] }}'
+    controller_username: '{{ controller_auth["username"] }}'
+    controller_password: '{{ controller_auth["password"] }}'
+    validate_certs: False
+    username: '{{ item["username"] }}'
+    first_name: '{{ item["first_name"] }}'
+    last_name: '{{ item["last_name"] }}'
+    email: '{{ item["email"] }}'
+    password: '{{ item["password"] }}'
+    update_secrets: '{{ item["update_secrets"] | default(False) }}'
+    is_superuser: '{{ item["is_superuser"] | default(False) }}'
+    is_system_auditor: '{{ item["is_system_auditor"] | default(False) }}'
+    state: present
+  loop: '{{ the_users }}'
+  loop_control:
+    label: Adding the '{{ item["username"] }}' user.
+
+- name: Assign user roles
+  vars:
+    the_roles: '{{ role_item["user_roles"] }}'
+  include_tasks: add_user_roles.yml
+  loop: '{{ the_users }}'
+  loop_control:
+    loop_var: role_item
+    label: Assigning roles to the '{{ role_item["username"] }}' user.
