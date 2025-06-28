@@ -22,14 +22,14 @@
           - ansible_facts['distribution_major_version'] | int = 9
         fail_msg: |
 
-        ****************************
-        This playbook is for RHEL 9
-        ****************************
+          ****************************
+          This playbook is for RHEL 9
+          ****************************
         success_msg: |
 
-        **********************************
-        Conditions satisfied - proceeding
-        **********************************
+          **********************************
+          Conditions satisfied - proceeding
+          **********************************
 
     - name: Set RHEL release 
       become: true
