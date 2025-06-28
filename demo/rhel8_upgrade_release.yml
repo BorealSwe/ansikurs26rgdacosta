@@ -20,14 +20,14 @@
           - ansible_facts['distribution_major_version'] | int = 8 
         fail_msg: |
 
-        ****************************
-        This playbook is for RHEL 8
-        ****************************
+          ****************************
+          This playbook is for RHEL 8
+          ****************************
         success_msg: |
 
-        **********************************
-        Conditions satisfied - proceeding
-        **********************************
+          **********************************
+          Conditions satisfied - proceeding
+          **********************************
 
     - name: Set RHEL release 
       community.general.rhsm_release: 
