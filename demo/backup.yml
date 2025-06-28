@@ -25,8 +25,6 @@
       ansible.builtin.archive:
         path: "{{ backup_target }}"
         dest: "{{ backup_file }}" 
-        #force_archive: true
-        #remove: true
         format: "{{ backup_format }}"
 
     - name: Ensure backup is stored on controller

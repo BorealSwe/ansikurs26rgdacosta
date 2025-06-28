@@ -1,3 +1,4 @@
+---
 - name: Configure Linux systems to use a tuned profile
   hosts: "{{ my_host }}"
   become: true

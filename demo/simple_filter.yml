@@ -1,3 +1,4 @@
+---
 - name: Demonstrate the user of filters and variables
   hosts: servera
   gather_facts: false

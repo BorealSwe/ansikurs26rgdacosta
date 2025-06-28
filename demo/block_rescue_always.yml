@@ -1,7 +1,9 @@
 - name: Demonstrate block, rescue, and always
   hosts: serverd 
   become: true
-
+  gather_facts: false
+  force_handlers: true
+  
   tasks:
 
     - name: Ensure snapshot of system packages are created 

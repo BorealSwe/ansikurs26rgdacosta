@@ -1,6 +1,8 @@
+---
 - name: Kernel updater
   hosts: servera
   become: true
+  gather_facts: false
   force_handlers: true
   
   tasks:

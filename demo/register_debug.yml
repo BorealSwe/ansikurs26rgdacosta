@@ -1,7 +1,9 @@
+---
 - name: Demonstrate the use of file, register, and debug to learn more about dictionaries
   hosts: "{{ my_host | default('localhost') }}"
   become: false
   gather_facts: false
+  force_handlers: true
 
   vars:
     

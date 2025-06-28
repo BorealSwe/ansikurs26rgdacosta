@@ -1,7 +1,9 @@
+---
 - name: Demonstrate privilege escalation
   hosts: "{{ my_host | default ('servera') }}"
   become: false
   gather_facts: false
+  force_handlers: true
 
   tasks:
 

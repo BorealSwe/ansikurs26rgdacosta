@@ -1,3 +1,4 @@
+---
 - name: Upgrade minor release for RHEL 8
   hosts: "{{ my_host | mandatory }}"
   gather_facts: true

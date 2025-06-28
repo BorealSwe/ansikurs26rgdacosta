@@ -1,3 +1,4 @@
+---
 - name: Manage LVM
   hosts: 
     - serverb
@@ -11,17 +12,11 @@
 
     my_disks:
       - /dev/vdb
-
     my_vg: vg_db
-
     my_lv: lv_mysql
-
     my_dev: /dev/{{ my_vg }}/{{ my_lv }}
-
     my_mount: /var/lib/mysql
-
     my_size: 512
-
     my_fs: ext4
 
   tasks:

@@ -1,7 +1,8 @@
 - name: Setup TLS
-  hosts: rhel
+  hosts: "{{ my_host | default('all') }}"
   become: true
   gather_facts: true
+  force_handlers: true
 
   vars:
     certificate_requests:

@@ -1,3 +1,4 @@
+---
 - name: Manage webservices
   hosts: "{{ my_host | mandatory('You must specify a host to target') }}"
   gather_facts: false

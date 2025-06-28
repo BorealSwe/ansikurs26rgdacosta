@@ -1,7 +1,9 @@
+---
 - name: Manage users
-  hosts: servera
+  hosts: "{{ my_host | default('all') }}"
   become: true
   gather_facts: false
+  force_handlers: true
 
   vars:
     my_user: bobby

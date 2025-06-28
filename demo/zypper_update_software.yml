@@ -1,7 +1,9 @@
+---
 - name: Update all software packages on SUSE systems
   hosts: suse
   gather_facts: true
   become: true
+  force_handlers: true
   serial:
     - 1
     - 2

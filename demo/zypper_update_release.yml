@@ -1,7 +1,9 @@
+---
 - name: Upgrade openSUSE 
   hosts: suse
   gather_facts: true
   become: true
+  force_handlers: true
 
   tasks:
 

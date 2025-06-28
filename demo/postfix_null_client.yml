@@ -1,7 +1,9 @@
+---
 - name: Manage postfix
   hosts: "{{ my_host }}"
   gather_facts: true
   become: true
+  force_handlers
 
   vars:
     postfix_conf:

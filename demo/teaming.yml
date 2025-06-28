@@ -1,3 +1,4 @@
+---
 - name: Configure team network device
   hosts:
     - servera

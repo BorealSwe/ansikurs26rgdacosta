@@ -1,9 +1,0 @@
----
-- name: Ensure webserver is setup
-  hosts: serverc
-  become: true
-  gather_facts: false
-
-  roles:
-    - role: rgdacosta.webserver
-      my_package: nginx

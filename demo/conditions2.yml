@@ -1,7 +1,8 @@
 - name: Conditionals demonstration
-  hosts: servera
+  hosts: "{{ my_host | default('servera') }}"
   gather_facts: true
   become: true
+  force_handlers: true
 
   tasks:
 

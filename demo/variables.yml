@@ -1,8 +1,0 @@
-variable_rules:
-  - must begin with an alphanetical character
-  - can contain punctuation but only using underscores
-  - when a key's value begins with a variable, encapsulation of the entire string or the variable is required
-
-my_variable: my value
-
-{{ my_variable }}

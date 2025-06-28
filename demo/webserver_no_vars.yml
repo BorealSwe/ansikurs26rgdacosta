@@ -1,4 +1,5 @@
-- name: Ensure webservers are installed
+---
+- name: Ensure webserver is installed
   hosts: servera
   become: true
 

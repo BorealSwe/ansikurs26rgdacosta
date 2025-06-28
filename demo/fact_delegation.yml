@@ -1,6 +1,8 @@
 - name: Fact delegation
   hosts: localhost
   gather_facts: false
+  become: false
+  force_handlers: true
 
   tasks:
 

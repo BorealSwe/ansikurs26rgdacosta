@@ -1,3 +1,4 @@
+---
 - name: Gather common properties of our systems
   hosts: 
     - rhel:&dbservers 

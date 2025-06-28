@@ -2,6 +2,7 @@
   hosts: "{{ my_host | default('localhost') }}"
   become: true
   gather_facts: false
+  force_handlers: true
 
   vars:
 
