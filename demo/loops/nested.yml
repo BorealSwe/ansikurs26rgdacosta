@@ -1,3 +1,4 @@
+---
 - name: Create the Beatles users, and give them access to their databases
   hosts: servera
   gather_facts: false
@@ -5,20 +6,18 @@
 
   vars_files:
     - nested_vars.yml
-
+    
   tasks:
 
     - name: Ensure users exist
-      loop: "{{ beatles }}"
+      loop: "{{ my_user }}"
       ansible.builtin.user:
         name: "{{ item }}"
         state: present
 
     - name: Ensure software is installed
       ansible.builtin.package:
-        name: 
-          - mariadb-server
-          - python3-PyMySQL
+        name: "{{ my_packages }}"
         state: present
 
     - name: Ensure mariadb is started and enabled
@@ -27,14 +26,18 @@
         state: started
         enabled: true
 
+    - name: Ensure databases exist
+      loop: "{{ my_db }"
+      community.mysql.mysql_db:
+        name: "{{ item }}"
+        state: present
+
     - name: Ensure Beatles access to their databases
-      with_nested:
-        - "{{ beatles }}"
-        - "{{ category_db }}"
+      loop: "{{ my_user | product(my_db) | list }}"
       community.mysql.mysql_user:
+        host: localhost
+        login_unix_socket: /var/lib/mysql/mysql.sock
         name: "{{ item[0] }}"
         priv: "{{ item[1] }}.*:ALL"
         append_privs: yes
-        password: "{{ db_pass }}"
-        login_unix_socket: /var/lib/mysql/mysql.sock
-        host: localhost
+        password: "{{ my_pass }}"

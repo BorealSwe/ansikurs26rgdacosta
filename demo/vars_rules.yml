@@ -5,9 +5,9 @@
 valid variable names:
   - {{ my_string }}
   - {{http_port}}
-  - nfs_port_1
+  - {{ my_port_1 }}
 
 reference variables using {{ }}
 
-firewalld:
+ansible.posix.firewalld:
   service: "{{ http_service }}"

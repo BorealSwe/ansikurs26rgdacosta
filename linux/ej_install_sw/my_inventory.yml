@@ -1,6 +1,0 @@
-all:
-  children:
-    ungrouped: {}
-    webservers:
-      hosts:
-        dev: {}

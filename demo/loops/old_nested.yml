@@ -5,7 +5,7 @@
 
   vars_files:
     - nested_vars.yml
-    
+
   tasks:
 
     - name: Ensure users exist
@@ -16,7 +16,7 @@
 
     - name: Ensure software is installed
       ansible.builtin.package:
-        name:
+        name: 
           - mariadb-server
           - python3-PyMySQL
         state: present
@@ -28,11 +28,13 @@
         enabled: true
 
     - name: Ensure Beatles access to their databases
-      loop: "{{ beatles | product(category_db) | list }}"
+      with_nested:
+        - "{{ beatles }}"
+        - "{{ category_db }}"
       community.mysql.mysql_user:
-        host: localhost
-        login_unix_socket: /var/lib/mysql/mysql.sock
         name: "{{ item[0] }}"
         priv: "{{ item[1] }}.*:ALL"
         append_privs: yes
         password: "{{ db_pass }}"
+        login_unix_socket: /var/lib/mysql/mysql.sock
+        host: localhost

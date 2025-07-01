@@ -1,12 +1,16 @@
-beatles:
+my_user:
   - john
   - paul
   - george
   - ringo
 
-category_db:
+my_pass: redhat
+
+my_db:
   - lyrics
   - concerts
   - instruments
 
-db_pass: redhat
+my_packages:
+  - mariadb-server
+  - python3-PyMySQL

@@ -1,0 +1,26 @@
+---
+- name: User management
+  hosts: "{{ my_host | default('servera') }}"
+  become: true
+  gather_facts: false
+  force_handlers: true
+
+  vars:
+    my_user: john
+    my_uid: 10000
+    my_shell: /bin/bash
+    my_password: redhat123
+
+  tasks:
+
+    - name: Ensure user is managed
+      ansible.builtin.user:
+        name: "{{ my_user }}"
+        uid: "{{ my_uid | default(omit) }}"
+        state: "{{ my_state | default('present') }}"
+        password: "{{ my_password | password_hash('sha512') }}"
+        update_password: on_create
+        groups: "{{ my_group | default(omit) }}"
+        generate_ssh_key: "{{ my_keygen | default(false) }}"
+
+

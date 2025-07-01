@@ -14,13 +14,13 @@
       loop: "{{ mygroups }}"
       ansible.builtin.group:
         name: "{{ item }}"
-        state: present
+        state: "{{ mystate | default('present') }}"
 
     - name: Ensure users are in their appropriate groups
-      loop: "{{ myusers | dict2items }}"
+      loop: "{{ lookup('dict', myusers) }}"
       ansible.builtin.user:
         name: "{{ item['key'] }}"
-        state: present
+        state: "{{ mystate | default('present') }}"
         groups: "{{ item['value']['groups'] | default(omit) }}"
         password: "{{ item['value']['password'] | password_hash('sha512') }}"
         update_password: on_create

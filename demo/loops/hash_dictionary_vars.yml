@@ -1,8 +1,8 @@
-mygroups:
+my_groups:
   - flintstones
   - rubbles
 
-myusers:
+my_users:
 
    fred:
      groups: 

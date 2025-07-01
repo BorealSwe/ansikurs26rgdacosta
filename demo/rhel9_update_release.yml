@@ -1,8 +1,9 @@
 ---
-- name: Upgrade minor release for RHEL 9
+- name: Set minor release for RHEL 9
   hosts: "{{ my_host | mandatory('You must use the variable my_host to define the target for automation')  }}"
   gather_facts: true
   become: false
+  force_handlers: true
 
   collections:
     - redhat.rhel_system_roles
@@ -34,7 +35,7 @@
     - name: Set RHEL release 
       become: true
       community.general.rhsm_release:
-        release: "{{ redhat_release | default('9.5') }}"
+        release: "{{ redhat_release | default('9.6') }}"
 
     - name: Update packages for new release
       become: true
