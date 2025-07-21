@@ -43,6 +43,7 @@
             src: "{{ aide_new_db }}"
             dest: "{{ aide_db }}"
             remote_src: true
+            mode: '0644'
 
         - name: Ensure database is stored securely
           ansible.builtin.fetch:
