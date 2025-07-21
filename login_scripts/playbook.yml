@@ -1,9 +1,0 @@
----
-- name: Install login scripts
-  hosts: all
-  tasks:
-
-    - name: Install .bash_profile 
-      copy:
-        src: src_bash_profile
-        dest: ~/.bash_profile

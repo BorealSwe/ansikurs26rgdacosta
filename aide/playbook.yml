@@ -1,0 +1,81 @@
+- name: Ensure AIDE is init
+  hosts: rhel
+  become: true
+
+  vars:
+
+    aide_rules: aide.conf
+    aide_conf: /etc/{{ aide_rules }}
+    aide_new_db: /var/lib/aide/aide.db.new.gz
+    aide_db: /var/lib/aide.db.gz
+    aide_storage: /home/student/aide
+    ansible_become_password: student
+
+  tasks:
+
+    - name: Setup aide
+      tags:
+      - init
+      - none
+      block:
+
+        - name: Ensure aide is removed
+          ansible.builtin.dnf:
+            name: aide
+            state: absent
+
+        - name: Ensure aide is installed
+          ansible.builtin.dnf:
+            name: aide
+            state: installed
+
+        - name: Ensure aide rules are defined
+          ansible.builtin.copy:
+            src: "{{ aide_rules }}"
+            dest: "{{ aide_conf }}"
+
+        - name: Ensure aide database is generated
+          ansible.builtin.command: aide --init
+
+        - name: Ensure aide database is stored at expected name
+          ansible.builtin.copy:
+            src: "{{ aide_new_db }}"
+            dest: "{{ aide_db }}"
+            remote_src: true
+
+        - name: Ensure database is stored securely
+          ansible.builtin.fetch:
+            src: "{{ aide_db }}"
+            dest: "{{ aide_storage }}/{{ inventory_hostname }}/"
+            flat: true
+
+        - name: Ensure database is readable by owning user only
+          delegate_to: localhost
+          ansible.builtin.file:
+            path: "{{ aide_storage }}"
+            mode: '0700'
+            recurse: true
+
+    - name: Check aide
+      tags:
+        - check
+        - none
+      block:
+
+        - name: Ensure aide is reinstalled before checking
+          ansible.builtin.command: dnf reinstall -y aide
+
+        - name: Ensure database is copied to {{ inventory_hostname }}
+          ansible.builtin.copy:
+            src: "{{ aide_storage }}/{{ inventory_hostname }}/{{ aide_db | basename }}"
+            dest: /var/lib/aide/
+
+        - name: Ensure database check is done
+          register: output
+          ansible.builtin.command: aide --check
+
+        - name: Report aide findings
+          ansible.builtin.assert:
+            that: '"AIDE found NO differences" in output.stdout'
+            success_msg: Your aide check passed
+            fail_msg: Your aide check failed and there are differences between your files and the database
