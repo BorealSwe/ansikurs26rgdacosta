@@ -33,6 +33,7 @@
           ansible.builtin.copy:
             src: "{{ aide_rules }}"
             dest: "{{ aide_conf }}"
+            mode: '0644'
 
         - name: Ensure aide database is generated
           ansible.builtin.command: aide --init
