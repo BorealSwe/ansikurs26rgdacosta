@@ -11,7 +11,7 @@
   tasks:
 
     - name: Ensure user is at state
-      user:
+      ansible.builtin.user:
         name: "{{ my_user }}"
         state: "{{ my_state | default('present') }}"
         password: "{{ my_pass | default('redhat123') | password_hash('sha512') }}"

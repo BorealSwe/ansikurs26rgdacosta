@@ -9,3 +9,4 @@ collections/**
 !roles/requirements.yml
 !collections/requirements.yml
 demo/lookups/credentials/**
+**__pycache__**
