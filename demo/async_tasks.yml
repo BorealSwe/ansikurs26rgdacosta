@@ -1,0 +1,55 @@
+---
+- name: Asynchronous tasks demo
+  hosts: localhost
+  become: false
+  gather_facts: false
+  force_handlers: true
+
+  tasks:
+
+    - name: Start task 1 asynchronously
+      async: 60
+      poll: 0
+      register: task1_job
+      ansible.builtin.command: sleep 1m
+
+    - name: Start task 2 asynchronously
+      async: 60
+      poll: 0
+      register: task2_job
+      ansible.builtin.command: sleep 45
+
+    - name: Start task 3 asynchronously
+      async: 60
+      poll: 0
+      register: task3_job
+      ansible.builtin.command: sleep 30
+
+    - name: Wait for task 1 to complete
+      ansible.builtin.async_status:
+        jid: "{{ task1_job['ansible_job_id'] }}"
+      register: task1_result
+      until: task1_result.finished
+      retries: 30
+      delay: 2
+
+    - name: Wait for task 2 to complete
+      ansible.builtin.async_status:
+        jid: "{{ task2_job['ansible_job_id'] }}"
+      register: task2_result
+      until: task2_result.finished
+      retries: 30
+      delay: 2
+
+    - name: Wait for task 3 to complete
+      ansible.builtin.async_status:
+        jid: "{{ task3_job['ansible_job_id'] }}"
+      register: task3_result
+      until: task3_result.finished
+      retries: 30
+      delay: 2
+
+    - name: Task 4 (after all tasks are done)
+      ansible.builtin.debug:
+        msg: "All background tasks are complete. Now running Task 4."
+
