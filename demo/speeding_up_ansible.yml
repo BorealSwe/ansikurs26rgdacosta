@@ -1,3 +1,4 @@
+---
 - don't gather facts unless you need them
 
 - if you do need facts, consider caching them for future use and refresh the fact cache using scheduling

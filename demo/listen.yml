@@ -1,3 +1,4 @@
+---
 - name: Demonstrate the listen directive
   hosts: localhost
   become: false

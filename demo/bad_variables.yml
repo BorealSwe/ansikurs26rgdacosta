@@ -1,3 +1,4 @@
+---
 - name: permit traffic in default zone for https service
   ansible.posix.firewalld:
     service: "{{ service }}"

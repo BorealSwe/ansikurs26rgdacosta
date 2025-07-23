@@ -1,3 +1,4 @@
+---
 - variable name must begin with an alphabetical
 - only punctuation allowed is the underscore 
 - when a key's value BEGINS with a variable, encapsultation is required with ""

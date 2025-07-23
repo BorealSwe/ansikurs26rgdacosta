@@ -1,3 +1,4 @@
+---
 - name: Demonstrate block, rescue, and always
   hosts: serverd 
   become: true

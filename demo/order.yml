@@ -1,3 +1,4 @@
+---
 - name: Demonstrate ordering
   hosts: all
   order: reverse_sorted

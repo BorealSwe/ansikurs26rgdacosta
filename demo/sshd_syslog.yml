@@ -1,3 +1,4 @@
+---
 - name: Set the syslog facility for sshd
   hosts: "{{ my_host | default('localhost') }}"
   become: true

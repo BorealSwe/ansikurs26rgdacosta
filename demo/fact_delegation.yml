@@ -1,3 +1,4 @@
+---
 - name: Fact delegation
   hosts: localhost
   gather_facts: false

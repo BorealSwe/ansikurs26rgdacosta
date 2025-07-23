@@ -1,3 +1,4 @@
+---
 - name: Fact gathering for caching
   hosts: all
   gather_facts: true

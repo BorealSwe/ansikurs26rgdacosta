@@ -1,3 +1,4 @@
+---
 - name: Package facts
   hosts: "{{ my_host | default('localhost') }}"
   become: false

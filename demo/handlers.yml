@@ -1,3 +1,4 @@
+---
 - name: Handler demonstration
   hosts: "{{ my_host | default('servera') }}"
   become: true

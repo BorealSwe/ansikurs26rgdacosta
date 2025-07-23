@@ -1,3 +1,4 @@
+---
 - name: Ensure backups are taken
   hosts: "{{ backup_host | default('localhost') }}" 
   become: true

@@ -1,3 +1,4 @@
+---
 - name: Conditionals demonstration
   hosts: "{{ my_host | default('servera') }}"
   gather_facts: true

@@ -1,3 +1,4 @@
+---
 - name: Variables demonstration
   hosts: all
   become: false

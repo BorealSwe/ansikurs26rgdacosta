@@ -1,3 +1,4 @@
+---
 - name: Play 1 
   hosts: "{{ my_host | default('servera') }}"
   become: false

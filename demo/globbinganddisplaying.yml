@@ -1,3 +1,4 @@
+---
 - name: Demonstrate globbing
   hosts: localhost
   become: false

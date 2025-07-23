@@ -1,3 +1,4 @@
+---
 - name: Setup TLS
   hosts: "{{ my_host | default('all') }}"
   become: true

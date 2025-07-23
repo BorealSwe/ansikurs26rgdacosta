@@ -1,3 +1,4 @@
+---
 - name: Demonstrate bad use of loops
   hosts: "{{ my_host | mandatory('You must specify a host to target') }}"
   gather_facts: false

@@ -29,24 +29,24 @@
       ansible.builtin.async_status:
         jid: "{{ task1_job['ansible_job_id'] }}"
       register: task1_result
-      until: task1_result.finished
-      retries: 30
+      until: task1_result['finished']
+      retries: 120
       delay: 2
 
     - name: Wait for task 2 to complete
       ansible.builtin.async_status:
         jid: "{{ task2_job['ansible_job_id'] }}"
       register: task2_result
-      until: task2_result.finished
-      retries: 30
+      until: task2_result['finished']
+      retries: 120
       delay: 2
 
     - name: Wait for task 3 to complete
       ansible.builtin.async_status:
         jid: "{{ task3_job['ansible_job_id'] }}"
       register: task3_result
-      until: task3_result.finished
-      retries: 30
+      until: task3_result['finished']
+      retries: 120
       delay: 2
 
     - name: Task 4 (after all tasks are done)
