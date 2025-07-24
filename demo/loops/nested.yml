@@ -27,7 +27,7 @@
         enabled: true
 
     - name: Ensure databases exist
-      loop: "{{ my_db }"
+      loop: "{{ my_db }}"
       community.mysql.mysql_db:
         name: "{{ item }}"
         state: present
