@@ -1,9 +1,10 @@
+---
 network_data:
   - ipv4: 127.0.0.1/8
     sname: localhost
     lname: localhost.localdomain
     
-   sname: classroom
+  - sname: classroom
     lname: classroom.example.com
     ipv4: 172.25.254.254/24
     gw4: 172.25.250.254

@@ -1,5 +1,6 @@
+---
 - name: Consistent network data
-  hosts: servera
+  hosts: "{{ my_host | default('servera') }}"
   become: true
   gather_facts: false
 
