@@ -1,0 +1,12 @@
+---
+- name: Demonstrate sequence lookup plugin
+  hosts: localhost
+  become: false
+  gather_facts: false
+
+  tasks:
+
+  - name: Ensure sequence is displayed
+    with_sequence: start=24 end=42 stride=6
+    debug:
+      msg: my current sequence number is {{ item }}
