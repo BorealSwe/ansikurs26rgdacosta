@@ -1,3 +1,4 @@
+---
 - name: Create users
   hosts: "{{ my_host | default('servera') }}"
   become: true

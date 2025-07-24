@@ -1,3 +1,4 @@
+---
 - name: Find free space on root filesystem
   hosts: "{{ my_host | default('localhost') }}"
   become: false

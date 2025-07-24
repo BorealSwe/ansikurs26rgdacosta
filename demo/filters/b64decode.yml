@@ -1,3 +1,4 @@
+---
 - name: Read a remote file 
   hosts: "{{ my_host | default('localhost') }}"
   become: false

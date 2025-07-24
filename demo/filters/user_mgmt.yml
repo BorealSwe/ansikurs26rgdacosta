@@ -1,3 +1,4 @@
+---
 - name: Manage users
   hosts: "{{ my_host | mandatory('Please set my_hosts to indicate which hosts to target') }}"
   become: true

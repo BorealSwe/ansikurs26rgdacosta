@@ -1,3 +1,4 @@
+---
 - name: Create users in the appropriate groups (without loops)
   hosts: "{{ myhosts | default('servera') }}"
   become: true

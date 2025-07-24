@@ -1,3 +1,4 @@
+---
 - name: Manage software
   hosts: "{{ my_host | mandatory('You must indicate the hosts to target with the variable my_host') }}"
   become: true

@@ -1,9 +1,0 @@
-- name: default filter demonstration
-  hosts: localhost
-  gather_facts: false
-  become: false
-  tasks:
-
-    - name: Ensure that the variable my_var is displayed
-      debug:
-        msg: The value of the variable my_var is {{ my_var | default(omit) }}

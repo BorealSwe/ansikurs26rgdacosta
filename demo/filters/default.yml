@@ -1,3 +1,4 @@
+---
 - name: default filter demonstration
   hosts: localhost
   gather_facts: false

@@ -1,7 +1,9 @@
+---
 - name: Create the Beatles users, and give them access to their databases
-  hosts: servera
+  hosts: "{{ my_host | default('servera') }}"
   gather_facts: false
   become: true
+  force_handlers: true
 
   vars_files:
     - nested_vars.yml

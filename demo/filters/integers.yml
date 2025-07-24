@@ -1,7 +1,9 @@
+---
 - name: Integer filter demonstration
-  hosts: servera
+  hosts: "{{ my_host | default('servera') }}"
   gather_facts: true
   become: false
+  
   tasks:
 
     - name: Determine requested size 

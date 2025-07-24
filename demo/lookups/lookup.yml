@@ -1,3 +1,4 @@
+---
 - name: Demonstration of various lookup plugins
   become: false
   gather_facts: true

@@ -1,3 +1,4 @@
+---
 - name: Demonstrate dict2items and items2dict filters
   hosts: localhost
   gather_facts: false

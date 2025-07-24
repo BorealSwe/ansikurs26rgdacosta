@@ -1,26 +1,27 @@
+---
 my_groups:
   - flintstones
   - rubbles
 
 my_users:
 
-   fred:
-     groups: 
-       - flintstones
-       - wheel
-     password: yabadabadoo
+  fred:
+   groups: 
+     - flintstones
+     - wheel
+   password: yabadabadoo
 
-   wilma:
-     groups: flintstones
-     password: yabadabadoo
+  wilma:
+   groups: flintstones
+   password: yabadabadoo
 
-   barney:
-     groups: rubbles
-     password: flimflom
+  barney:
+   groups: rubbles
+   password: flimflom
 
-   betty:
-     groups: rubbles
-     password: flimflom
+  betty:
+   groups: rubbles
+   password: flimflom
 
-   ricardo:
-     password: flimflom
+  ricardo:
+   password: flimflom
