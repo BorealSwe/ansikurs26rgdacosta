@@ -1,3 +1,52 @@
-Hello world
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Ansible Deployed Webserver</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f9fafb;
+      margin: 0;
+      padding: 0;
+      text-align: center;
+    }
+    .container {
+      margin-top: 10vh;
+      background: #fff;
+      display: inline-block;
+      padding: 3em 4em 2em 4em;
+      border-radius: 14px;
+      box-shadow: 0 2px 24px rgba(50,60,100,0.12);
+    }
+    h1 {
+      color: #b00d23;
+      margin-bottom: 0.4em;
+    }
+    .version {
+      margin-top: 2em;
+      color: #667;
+      font-size: 1.15em;
+      font-weight: bold;
+    }
+    .band-image {
+      margin-top: 2em;
+      max-width: 100%;
+      height: auto;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>{{ inventory_hostname }} runs {{ my_package }}</h1>
+    {% if my_package == 'httpd' %}
+        <img src="redhatwhiteband.jpeg" alt="Red Hat White Band" class="band-image">
+    {% elif my_package == 'nginx' %}
+        <img src="redhatblackband.jpeg" alt="Red Hat Black Band" class="band-image">
+    {% endif %}
+</body>
+</html>
 
-{{ inventory_hostname }} runs {{ my_webservice }}

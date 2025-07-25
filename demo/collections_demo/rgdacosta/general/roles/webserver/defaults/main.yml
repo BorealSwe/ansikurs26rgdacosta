@@ -1,3 +1,2 @@
 ---
-# defaults file for rgdacosta.foo
-my_webservice: httpd
+my_package: httpd

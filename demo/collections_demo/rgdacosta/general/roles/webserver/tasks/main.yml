@@ -1,44 +1,56 @@
 ---
-# tasks file for rgdacosta.foo
-
 - name: Ensure needed variables are defined
-  assert:
+  ansible.builtin.assert:
     that:
+      - my_package is defined
       - (my_package == "httpd") or (my_package == "nginx" )
     success_msg: |
 
-      The needed variables are set, proceeding
+      ✅ 🎉 The needed variables are set, proceeding 🎉 ✅
 
     fail_msg: |
 
-      OH NO! We need to set my_package to either httpd or nginx
+      ❌ 🚨OH NO! We need to set my_package to either httpd or nginx 🚨 ❌
 
-- name: Ensure software is managed
+- name: Ensure {{ my_package }} is installed
   ansible.builtin.dnf:
-    name: "{{ my_webservice }}"
-    state: "{{ my_state }}"
+    name: "{{ my_package }}"
+    state: installed
 
-- name: Ensure webserver is configured with systemd
-  ansible.builtin.service:
-    name: "{{ my_webservice }}"
-    state: "{{ my_systemd_state }}"
-    enabled: "{{ my_systemd_enabled }}"
+- name: Ensure {{ my_package }} is started and enabled
+  ansible.builtin.systemd:
+    name: "{{ my_package }}"
+    enabled: true
+    state: started
 
-- name: Ensure port open in firewall
+- name: Ensure service is allowed in firewall
+  loop: "{{ my_services }}"
   ansible.posix.firewalld:
-    service: "{{ my_fw_service }}"
-    state: "{{ my_fw_state }}"
-    permanent: "{{ my_fw_permanance }}"
-    immediate: "{{ my_fw_immediate }}"
+    service: "{{ item }}"
+    state: enabled 
+    permanent: true 
+    immediate: true 
 
 - name: Ensure stub content is deployed (httpd)
-  when: my_webservice == 'httpd'
+  when: my_package == 'httpd'
   ansible.builtin.template:
     src: index.j2 
     dest: /var/www/html/index.html
 
 - name: Ensure stub content is deployed (nginx)
-  when: my_webservice == 'nginx'
+  when: my_package == 'nginx'
   ansible.builtin.template:
     src: index.j2 
     dest: /usr/share/nginx/html/index.html
+
+- name: Ensure image is deployed (httpd)
+  when: my_package == 'httpd'
+  ansible.builtin.copy:
+    src: redhatwhiteband.jpeg
+    dest: /var/www/html
+
+- name: Ensure image is deployed (nginx)
+  when: my_package == 'nginx'
+  ansible.builtin.copy:
+    src: redhatblackband.jpeg
+    dest: /var/www/html
