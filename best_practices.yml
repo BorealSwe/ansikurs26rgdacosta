@@ -7,6 +7,8 @@
 
     - optimize for readability, if something is easy to read then it's easy to understand and easy to troubleshoot
 
+    - use emojis in your playbook to draw attention to important elements
+
     - use a good editor like VSCode, VSCodium, Sublime Text Editor etc and even try vim-ansible
 
     - think declaratively understanding that your playbooks aren't code but the declared state that ansible will synchronize your inventory hosts to
