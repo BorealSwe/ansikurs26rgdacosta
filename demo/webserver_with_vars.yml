@@ -35,3 +35,29 @@
         my_webserver: "{{ my_host }}"
         cacheable: true
 
+    - name: Ensure stub content is deployed
+      ansible.builtin.copy:
+        content: |
+          Hello world
+
+          I am a web server running httpd aka apache
+        dest: /var/www/html/index.html
+        mode: 0644
+
+- name: Test web server deployment
+  hosts: localhost
+  become: false
+
+  tasks:
+
+    - name: Test webserver
+      register: my_result
+      ansible.builtin.uri:
+        url: "{{ my_webserver }}"
+        return_content: true
+
+    - name: Ensurecontent is returned
+      ansible.builtin.debug:
+        msg: |
+           
+          {{ my_result['content'] }}
