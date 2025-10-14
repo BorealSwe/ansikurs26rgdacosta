@@ -56,8 +56,6 @@
         url: "{{ my_webserver }}"
         return_content: true
 
-    - name: Ensurecontent is returned
+    - name: Ensure content is returned
       ansible.builtin.debug:
-        msg: |
-           
-          {{ my_result['content'] }}
+        msg: "{{ my_result['content'] }}"
