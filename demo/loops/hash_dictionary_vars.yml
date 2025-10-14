@@ -6,22 +6,22 @@ my_groups:
 my_users:
 
   fred:
-   groups: 
-     - flintstones
-     - wheel
-   password: yabadabadoo
+    groups:
+      - flintstones
+      - wheel
+    password: yabadabadoo
 
   wilma:
-   groups: flintstones
-   password: yabadabadoo
+    groups: flintstones
+    password: yabadabadoo
 
   barney:
-   groups: rubbles
-   password: flimflom
+    groups: rubbles
+    password: flimflom
 
   betty:
-   groups: rubbles
-   password: flimflom
+    groups: rubbles
+    password: flimflom
 
   ricardo:
-   password: flimflom
+    password: flimflom

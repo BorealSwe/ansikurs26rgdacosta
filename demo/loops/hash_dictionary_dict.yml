@@ -11,13 +11,13 @@
   tasks:
 
     - name: Ensure groups are created
-      loop: "{{ mygroups }}"
+      loop: "{{ my_groups }}"
       ansible.builtin.group:
         name: "{{ item }}"
         state: "{{ mystate | default('present') }}"
 
     - name: Ensure users are in their appropriate groups
-      loop: "{{ lookup('dict', myusers) }}"
+      loop: "{{ lookup('dict', my_users) }}"
       ansible.builtin.user:
         name: "{{ item['key'] }}"
         state: "{{ mystate | default('present') }}"
