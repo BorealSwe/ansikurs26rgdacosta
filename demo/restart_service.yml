@@ -1,0 +1,12 @@
+- name: Restart a Linux service
+  hosts: "{{ my_host | mandatory('You must specify the host to target using -e my_host=inventory_hostname') }}"
+  become: true
+  gather_facts: false
+  force_handlers: true
+
+  tasks:
+
+    - name: Ensure {{ my_service }} is restarted
+      ansible.builtin.service:
+        name: "{{ my_service }}"
+        state: restarted

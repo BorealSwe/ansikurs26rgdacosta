@@ -20,7 +20,7 @@
       ansible.builtin.assert:
         that:
           - ansible_facts['distribution']  == "RedHat"
-          - ansible_facts['distribution_major_version'] | int = 9
+          - ansible_facts['distribution_major_version'] == "9"
         fail_msg: |
 
           ****************************
