@@ -10,3 +10,5 @@ collections/**
 !collections/requirements.yml
 demo/lookups/credentials/**
 **__pycache__**
+.ansible**
+.vscode**
