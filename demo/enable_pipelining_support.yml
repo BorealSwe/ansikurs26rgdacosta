@@ -1,0 +1,16 @@
+---
+- name: Enable pipelining support
+  hosts: "{{ my_host | mandatory('Ensure that you set a value for the varialbe my_host') }}"
+  gather_facts: false
+  become: true
+
+  tasks:
+
+    - name: Ensure requiretty is disabled
+      ansible.builtin.lineinfile:
+        line: 'Defaults !requiretty'
+        state: present
+        create: true
+        path: /etc/sudoers.d/00-norequiretty
+        mode: "0600"
+        validate: /usr/sbin/visudo -cf %s
