@@ -17,5 +17,8 @@
           address:
             - "{{ datacenter_ip }}/24"
 
-  roles:
-    - rhel-system-roles.network
+  tasks:
+
+    - name: Apply network configuration
+      ansible.builtin.include_role:
+        name: redhat.rhel_system_roles.network
