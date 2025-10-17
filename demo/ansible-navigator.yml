@@ -11,6 +11,7 @@ ansible-navigator:
     environment-variables:
       set:
         ANSIBLE_STDOUT_CALLBACK: debug
+        ANSIBLE_PIPELINING: true
 
   mode: stdout
   playbook-artifact:
