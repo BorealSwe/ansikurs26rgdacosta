@@ -1,0 +1,28 @@
+- name: Post provision datacenter servers
+  hosts: prod
+  become: true
+
+  vars:
+
+    my_roles:
+    - rhel-system-roles.firewall
+    - rhel-system-roles.timesync
+    - rhel-system-roles.network
+    - rhel-system-roles.storage
+    - rhel-system-roles.tlog
+    - rhel-system-roles.selinux
+    - rhel-system-roles.cockpit
+    - rhel-system-roles.metrics
+    - rhel-system-roles.journald
+    - rhel-system-roles.sshd
+    - rhel-system-roles.certificate
+
+
+  - name: Ensure roles are included
+    ansible.builtin.include_role:
+      name: "{{ item }}"
+    
+  - name: Ensure role vars are included
+    loop: "{{ my_roles }}"
+    ansible.builtin.include_vars:
+      file: vars/ 

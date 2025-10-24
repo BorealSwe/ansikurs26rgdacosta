@@ -1,0 +1,2 @@
+firewall:
+  - {service: tftp, state: enabled}

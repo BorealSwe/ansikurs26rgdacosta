@@ -1,0 +1,8 @@
+firewall:
+  - {service: [tftp,ftp],
+      port: ['443/tcp','443/udp'],
+      state: enabled}
+  - {forward_port: [eth2;447/tcp;;1.2.3.4,
+                    eth2;448/tcp;;1.2.3.5],
+      state: enabled}
+  - {service: tftp, state: enabled}

@@ -1,0 +1,3 @@
+tlog_scope_sssd: all
+tlog_users_sssd:
+  - recordeduser

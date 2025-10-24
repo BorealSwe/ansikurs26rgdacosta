@@ -1,0 +1,3 @@
+
+    timesync_ntp_servers:
+      - hostname: "{{ my_ntp | default('0.rhel.pool.ntp.org') }}"

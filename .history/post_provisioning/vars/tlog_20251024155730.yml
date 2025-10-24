@@ -1,0 +1,3 @@
+tlog_scope_sssd: all
+tlog_exclude_users_sssd:
+  - devops

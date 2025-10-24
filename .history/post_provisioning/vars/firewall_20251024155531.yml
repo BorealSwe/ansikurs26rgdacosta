@@ -1,0 +1,4 @@
+firewall:
+  
+  - service: ssh
+    state: enabled

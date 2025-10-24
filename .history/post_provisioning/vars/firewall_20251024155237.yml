@@ -1,0 +1,5 @@
+firewall:
+  - {service: [tftp,ftp],
+      state: enabled}
+      state: enabled}
+  - {service: tftp, state: enabled}

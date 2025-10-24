@@ -1,0 +1,5 @@
+firewall:
+  - previous: replaced
+  - service: ssh
+    state: enabled
+  - service: 
