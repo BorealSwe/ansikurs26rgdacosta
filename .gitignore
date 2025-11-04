@@ -12,3 +12,4 @@ demo/lookups/credentials/**
 **__pycache__**
 .ansible**
 .vscode**
+**.history

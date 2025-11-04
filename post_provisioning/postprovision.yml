@@ -14,11 +14,13 @@
 
   tasks:
 
-    - name: Ensure roles are included
-      ansible.builtin.include_role:
-        name: "{{ item }}"
-      
     - name: Ensure role vars are included
       loop: "{{ my_roles }}"
       ansible.builtin.include_vars:
         file: vars/{{ item | regex_replace('rhel-system-roles.') }}.yml 
+
+    - name: Ensure roles are included
+      loop: "{{ my_roles }}"
+      ansible.builtin.include_role:
+        name: "{{ item }}"
+      

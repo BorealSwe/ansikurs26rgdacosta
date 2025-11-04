@@ -1,0 +1,54 @@
+---
+- name: YAML Truthy vs Quoted String Demo
+  hosts: localhost
+  gather_facts: false
+
+  vars:
+    # Truthy and falsy examples without quotes
+    flag_yes: yes
+    flag_no: no
+    flag_on: on
+    flag_off: off
+
+    # Same values but *quoted*, so they become strings
+    flag_yes_str: "yes"
+    flag_no_str: "no"
+    flag_on_str: "on"
+    flag_off_str: "off"
+
+    # Explicit booleans for clarity
+    flag_true: true
+    flag_false: false
+
+  tasks:
+    - name: Show how YAML interprets truthy and quoted values
+      ansible.builtin.debug:
+        msg:
+          - "flag_yes       → {{ flag_yes | type_debug }} (value: {{ flag_yes }})"
+          - "flag_no        → {{ flag_no | type_debug }} (value: {{ flag_no }})"
+          - "flag_on        → {{ flag_on | type_debug }} (value: {{ flag_on }})"
+          - "flag_off       → {{ flag_off | type_debug }} (value: {{ flag_off }})"
+          - "flag_yes_str   → {{ flag_yes_str | type_debug }} (value: {{ flag_yes_str }})"
+          - "flag_no_str    → {{ flag_no_str | type_debug }} (value: {{ flag_no_str }})"
+          - "flag_on_str    → {{ flag_on_str | type_debug }} (value: {{ flag_on_str }})"
+          - "flag_off_str   → {{ flag_off_str | type_debug }} (value: {{ flag_off_str }})"
+          - "flag_true      → {{ flag_true | type_debug }} (value: {{ flag_true }})"
+          - "flag_false     → {{ flag_false | type_debug }} (value: {{ flag_false }})"
+
+    - name: Show conditional behaviour in Ansible
+      ansible.builtin.debug:
+        msg: |
+          👀 flag_yes evaluates to True
+      when: flag_yes
+
+    - name: This won't run — 'no' is treated as False
+      ansible.builtin.debug:
+        msg: |
+          🚫 You shouldn't see this — flag_no is False
+      when: flag_no
+
+    - name: ⚙️ This will run — quoted 'no' is a string, not a boolean
+      ansible.builtin.debug:
+        msg: |
+          ✅ 'no' (quoted) is just text, so it doesn't get converted to False
+      when: flag_no_str == "no"
