@@ -1,0 +1,31 @@
+---
+- name: Open maintenance window
+  hosts: all
+  become: false
+
+  tasks:
+    - name: Ensure maintenance window open fact is set
+      ansible.builtin.copy:
+        dest: /etc/ansible/facts.d/
+        src: custom.fact
+        mode: '0644'
+
+    - name: Ensure root login via SSH with the maintenance window open
+      ansible.builtin.lineinfile:
+        dest: /etc/ssh/sshd_config
+        state: present
+        regexp: PermitRootLogin no
+        line: PermitRootLogin yes
+
+    - name: Ensure regular logins are disallowed while the maintenance window is open
+      ansible.builtin.copy:
+        dest: /etc/nologin
+        content: "Maintenance window is currently open so no logins are allowed"
+        mode: '0644'
+
+    - name: Ensure cron jobs are stopped during maintenance window
+      ansible.builtin.service:
+        name: crond
+        state: stopped
+
+...

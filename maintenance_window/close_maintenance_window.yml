@@ -1,0 +1,29 @@
+---
+- name: Close maintenance window
+  hosts: all
+  become: false
+
+  tasks:
+    - name: Ensure maintenance window open fact is removed
+      ansible.builtin.file:
+        path: /etc/ansible/facts.d/custom.fact
+        state: absent
+
+    - name: Ensure root SSH login disallowed with the maintenance window closed
+      ansible.builtin.lineinfile:
+        dest: /etc/ssh/sshd_config
+        state: present
+        regexp: PermitRootLogin yes
+        line: PermitRootLogin no
+
+    - name: Ensure regular logins are allowed when the maintenance window is closed
+      ansible.builtin.file:
+        path: /etc/nologin
+        state: absent
+
+    - name: Ensure cron jobs are sstarted when window is closed
+      ansible.builtin.service:
+        name: crond
+        state: started
+
+...
