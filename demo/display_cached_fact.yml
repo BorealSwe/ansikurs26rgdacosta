@@ -1,0 +1,8 @@
+- name: Display Cached Fact
+  hosts: "{{ my_hosts | default('all') }}"
+  gather_facts: false
+
+  tasks:
+    - name: Display a cached fact
+      ansible.builtin.debug:
+        msg: "{{ inventory_hostname }} runs {{ ansible_facts['distribution'] }} version {{ ansible_facts['distribution_major_version'] }}"

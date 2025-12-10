@@ -25,10 +25,10 @@ dependencies:
 
 additional_build_steps:
   prepend_builder:
-    - microdnf update -y && microdnf clean all
+    - RUN microdnf update -y && microdnf clean all
   append_final:
-    - pip3 install --upgrade pip
-    - export PIP_NO_CACHE_DIR=off
+    - RUN pip3 install --upgrade pip
+    - RUN export PIP_NO_CACHE_DIR=off
 
 options:
   package_manager_path: /usr/bin/microdnf

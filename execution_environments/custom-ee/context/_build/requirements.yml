@@ -1,0 +1,16 @@
+collections:
+
+  - name: rgdacosta.general 
+  - name: ansible.posix
+  - name: ansible.utils
+  - name: community.kubernetes
+  - name: community.kubevirt
+  - name: community.crypto
+  - name: community.general
+  - name: community.libvirt
+  - name: kubernetes.core
+  - name: kubevirt.core
+  - name: redhat.openshift
+  - name: redhat.openshift_virtualization
+  - name: redhat.rhel_system_roles
+  - name: redhat.satellite

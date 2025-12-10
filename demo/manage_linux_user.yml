@@ -1,0 +1,17 @@
+- name: Manager Linux User
+  hosts: "{{ my_host | default('localhost') }}"
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: Ensure {{ my_user }} is managed
+      ansible.builtin.user:
+        name: "{{ my_user }}"
+        state: "{{ my_state | default('present') }}"
+        shell: "{{ my_shell | default('/bin/bash') }}"
+        create_home: true
+        uid: "{{ my_uid | default(omit) }}"
+        groups: "{{ my_groups | default(omit) }}"
+        append: true
+        password: "{{ my_password | password_hash('sha512') }}"
+        comment: "{{ my_fullname | default(omit) }}"

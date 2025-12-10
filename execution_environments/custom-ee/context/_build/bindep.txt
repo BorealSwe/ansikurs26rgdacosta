@@ -1,0 +1,4 @@
+git
+gcc
+python3-devel
+libffi-devel
