@@ -8,7 +8,7 @@
       ansible.builtin.user:
         name: "{{ my_user }}"
         state: "{{ my_state | default('present') }}"
-        shell: "{{ my_shell | default('/bin/bash') }}"
+        shell: "/bin/{{ my_shell | default('/bin/bash') }}"
         create_home: true
         uid: "{{ my_uid | default(omit) }}"
         groups: "{{ my_groups | default(omit) }}"
