@@ -13,5 +13,6 @@
         uid: "{{ my_uid | default(omit) }}"
         groups: "{{ my_groups | default(omit) }}"
         append: true
-        password: "{{ my_password | password_hash('sha512') }}"
+        password: "{{ my_password | password_hash('sha512') | default(omit) }}"
         comment: "{{ my_fullname | default(omit) }}"
+        update_password: on_create
