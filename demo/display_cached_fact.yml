@@ -5,4 +5,6 @@
   tasks:
     - name: Display a cached fact
       ansible.builtin.debug:
-        msg: "{{ inventory_hostname }} runs {{ ansible_facts['distribution'] }} version {{ ansible_facts['distribution_major_version'] }}"
+        msg: >
+            "{{ inventory_hostname }} runs {{ hostvars['inventory_hostname']['ansible_facts']['distribution'] }}
+             version {{ hostvars['inventory_hostname']['ansible_facts']['distribution_major_version'] }}"
