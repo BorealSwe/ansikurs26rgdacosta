@@ -5,24 +5,20 @@
   become: true
 
   vars:
-    repo_map:
-      "RHEL 8.6 BaseOS": "http://content.example.com/rhel8.6/x86_64/dvd/BaseOS"
-      "RHEL 8.6 AppStream": "http://content.example.com/rhel8.6/x86_64/dvd/AppStream"
+    repos:
+      baseos:
+        url: http://content.example.com/rhel8.6/x86_64/dvd/BaseOS
+      appstream:
+        url: http://content.example.com/rhel8.6/x86_64/dvd/AppStream
 
   tasks:
-    - name: Ensure that my_repo is normalised into a list
-      ansible.builtin.set_fact:
-        repo_list: "{{ my_repo if my_repo is iterable and my_repo is not string else [my_repo] }}"
 
     - name: Ensure that yum repositories are defined
-      loop: "{{ repo_list }}"
-      loop_control:
-        loop_var: item
-        index_var: index
+      loop: "{{ repos | dict2items }}"
       ansible.builtin.yum_repository:
-        name: "{{ repo_map[item].split('/') | last }}"
+        name: "{{ item['key'] }}"
         file: "ansible_{{ tower_job_id }}"
-        description: "Ansible Defined repo for {{ repo_map[item] }}"
-        baseurl: "{{ repo_map[item] }}"
+        description: "Ansible Defined repo for {{ item['key'] }}"
+        baseurl: "{{ item['value']['url'] }}"
         enabled: "{{ my_state | default('true') }}"
         gpgcheck: false
