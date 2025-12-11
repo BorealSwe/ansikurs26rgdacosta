@@ -1,0 +1,11 @@
+collections:
+
+  - name: ansible.netcommon
+
+  - name: kubernetes.core
+
+  - name: community.mysql
+
+  - name: ansible.eda
+
+  - name: redhat.rhel_system_roles
