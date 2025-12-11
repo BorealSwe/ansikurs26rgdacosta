@@ -1,0 +1,29 @@
+---
+- name: Set the syslog facility for sshd
+  hosts: "{{ my_host | default('localhost') }}"
+  become: true
+  gather_facts: false
+  force_handlers: true
+
+  vars:
+
+    my_syslog_facility: local2
+    my_sshd_config: /etc/ssh/sshd_config.d/02-custom-syslog.conf
+
+  tasks: 
+
+    - name: Set syslog facility
+      notify: Ensure sshd is restarted
+      ansible.builtin.lineinfile:
+        path: "{{ my_sshd_config }}"
+        regex: "^SyslogFacility"
+        line: SyslogFacility {{ my_syslog_facility }}
+        state: present
+        create: true
+
+  handlers:
+
+    - name: Ensure sshd is restarted
+      ansible.builtin.service:
+        service: sshd
+        state: restarted
