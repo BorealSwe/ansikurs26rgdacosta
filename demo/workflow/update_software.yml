@@ -21,16 +21,5 @@
     - name: Determine if reboot is necessary
       register: reboothint
       changed_when: false
-      ignore_errors: true
       ansible.builtin.command: /usr/bin/dnf needs-restarting -r
 
-    - name: Ensure server is rebooted
-      when: reboothint['rc'] == 1
-      ansible.builtin.reboot:
-        reboot_timeout: 600
-
-    - name: Ensure that we can connect to server
-      ansible.builtin.wait_for:
-        port: 22
-        delay: 10
-        timeout: 600
