@@ -4,4 +4,3 @@ firewall:
     state: enabled
   - service: cockpit
     state: enabled
-  - service: 
