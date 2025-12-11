@@ -1,6 +1,6 @@
 ---
 - name: Ensure that yum repositories are configured
-  hosts: "{{ my_hosts | default('all') }}"
+  hosts: "{{ my_host | default('all') }}"
   gather_facts: false
   become: true
 

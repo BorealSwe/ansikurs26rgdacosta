@@ -1,7 +1,8 @@
 ---
 - name: Setup timesync
-  hosts: all
+  hosts: "{{ my_host | default('all') }}"
   become: true
+  gather_facts: false
 
   vars:
 
