@@ -1,6 +1,6 @@
 - name: Display Cached Fact
   hosts: "{{ my_hosts | default('all') }}"
-  gather_facts: smart
+  gather_facts: false
 
   tasks:
     - name: Display a cached fact
