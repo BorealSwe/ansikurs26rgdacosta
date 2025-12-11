@@ -6,7 +6,7 @@
     - name: Display a cached fact
       ansible.builtin.debug:
         msg: >
-          {{ inventory_hostname }}  {{ ansible_distribution }}
+          "{{ inventory_hostname }} {{ ansible_distribution }}"
 
 #runs {{ hostvars[inventory_hostname]['ansible_distribution'] }}
 # version {{ hostvars[inventory_hostname]['ansible_distribution_major_version'] }}
