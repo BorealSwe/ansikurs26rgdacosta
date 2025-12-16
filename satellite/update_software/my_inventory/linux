@@ -1,0 +1,11 @@
+satellite
+capsule
+
+[capsules]
+satellite
+capsule
+
+[clients]
+server[a:d]
+
+
