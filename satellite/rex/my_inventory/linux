@@ -6,6 +6,6 @@ satellite
 capsule
 
 [clients]
-server[a:e]
+server[a:d]
 
 

@@ -25,6 +25,7 @@
 
   # Turn this into another play for multiple capsules         
     - name: Ensure capsules have the same ssh files
+      ignore_errors: true
       delegate_to: "{{ capsule_fqdn }}"
       loop: "{{ ssh_files }}"
       ansible.builtin.copy:
