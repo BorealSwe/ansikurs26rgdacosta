@@ -22,8 +22,3 @@
         groups: "{{ my_group | default(omit) }}"
         generate_ssh_key: "{{ my_keygen | default(false) }}"
         shell: "{{ my_shell | default(omit) }}"
-
-    - name: Ensure nmap is installed
-      ansible.builtin.package:
-        name: nmap
-        state: present
