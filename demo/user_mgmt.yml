@@ -18,5 +18,3 @@
         groups: "{{ my_group | default(omit) }}"
         generate_ssh_key: "{{ my_keygen | default(false) }}"
         update_password: on_create
-
-
