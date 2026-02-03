@@ -1,0 +1,13 @@
+{
+  "name": "Ansible (AAP EE)",
+  "image": "registry.redhat.io/ansible-automation-platform-25/ansible-dev-tools-rhel8:latest",
+  "remoteUser": "root",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "redhat.ansible",
+        "ms-azuretools.vscode-docker"
+      ]
+    }
+  }
+}
