@@ -9,12 +9,11 @@ serverc
 serverb
 serverd
 
-[rhel9]
+[rhel10]
 server[a:d]
 
 [rhel:children]
-rhel9
-
+rhel10
 [dev]
 servera
 serverb
