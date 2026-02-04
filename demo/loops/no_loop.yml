@@ -1,6 +1,6 @@
 ---
 - name: Create users in the appropriate groups (without loops)
-  hosts: "{{ myhosts | default('servera') }}"
+  hosts: "{{ my_host | default('servera') }}"
   become: true
   no_log: true
 
@@ -32,7 +32,7 @@
         groups:
           - rubbles
         password: flimflom
-        
+
       ricardo:
         groups:
           - wheel
@@ -49,7 +49,7 @@
       ansible.builtin.group:
         name: rubbles
         state: "{{ mystate | default('present') }}"
-        
+
     - name: Ensure user fred is created
       ansible.builtin.user:
         name: fred

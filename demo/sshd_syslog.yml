@@ -10,7 +10,7 @@
     my_syslog_facility: local2
     my_sshd_config: /etc/ssh/sshd_config.d/02-custom-syslog.conf
 
-  tasks: 
+  tasks:
 
     - name: Set syslog facility
       notify: Ensure sshd is restarted

@@ -13,3 +13,4 @@ demo/lookups/credentials/**
 .ansible**
 .vscode**
 **.history
+**bigfile

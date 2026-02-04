@@ -3,7 +3,6 @@
   hosts: localhost
   gather_facts: false
   become: false
-  force_handlers: true
 
   vars:
 
@@ -15,33 +14,32 @@
     - name: Block for sqlite related tasks
       block:
 
-      - name: Ensure current sqlite version is captured in a variable called my_sqlite
-        register: my_sqlite
-        changed_when: false
-        failed_when: "sqlite_version not in my_sqlite.stdout" 
-        command: sqlite3 -version
-
+        - name: Ensure current sqlite version is captured in a variable called my_sqlite
+          register: my_sqlite
+          changed_when: false
+          failed_when: "sqlite_version not in my_sqlite['stdout']"
+          ansible.builtin.command: sqlite3 -version
 
       rescue:
 
         - name: Ensure message is displayed about current tasks
-          debug: 
+          ansible.builtin.debug:
             msg: |
-              
+
               It looks like we are not running sqlite {{ sqlite_version }} so we're going to install it now
 
         - name: Ensure sqlite is downloaded
-          get_url:
+          ansible.builtin.get_url:
             url: "{{ sqlite_url }}"
             dest: /var/tmp/sqlite-{{ sqlite_version }}.zip
 
         - name: Ensure sqlite is unpacked
-          unarchive:
+          ansible.builtin.unarchive:
             remote_src: true
             src: /var/tmp/sqlite-{{ sqlite_version }}.zip
             dest: /var/tmp
 
         - name: Ensure downloaded file is absent
-          file:
+          ansible.builtin.file:
             path: /var/tmp/sqlite-{{ sqlite_version }}.zip
             state: absent

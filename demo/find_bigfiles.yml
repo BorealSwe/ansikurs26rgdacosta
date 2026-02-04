@@ -1,0 +1,33 @@
+---
+- name: Find old big files
+  hosts: "{{ my_host | default('servera') }}"
+  become: true
+  gather_facts: false
+
+  vars:
+
+    my_age: 4w
+    my_size: 1g
+    my_path:
+      - /tmp/
+      - /var/tmp
+
+  tasks:
+
+  - name: Ensure files are found
+    register: found_files
+    ansible.builtin.find:
+      paths: "{{ my_path }}"
+      age: "{{ my_age }}"
+      size: "{{ my_size }}"
+      recurse: yes
+
+  - name: Ensure file properties are displayed
+    loop: "{{ found_files['files'] }}"
+    loop_control:
+      label: "{{ item['path'] }}"
+    ansible.builtin.debug:
+      msg: |
+        File path : {{ item['path'] }}
+        Creation time: {{ '%Y-%m-%d %H:%M:%S' | strftime(item['ctime'] | int) }}
+        Size : {{ item['size'] | human_readable }}

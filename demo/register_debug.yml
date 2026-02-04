@@ -3,10 +3,9 @@
   hosts: "{{ my_host | default('localhost') }}"
   become: false
   gather_facts: false
-  force_handlers: true
 
   vars:
-    
+
     my_file: /etc/
 
   tasks:

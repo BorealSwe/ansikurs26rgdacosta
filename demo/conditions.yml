@@ -20,7 +20,7 @@
         - name: Ensure httpd is installed
           ansible.builtin.dnf:
             name: httpd
-            state: latest
+            state: installed
 
         - name: Ensure service is started
           ansible.builtin.service:

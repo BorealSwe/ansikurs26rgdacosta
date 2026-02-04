@@ -1,0 +1,29 @@
+---
+- name: Variables demonstration
+  hosts: servera
+  become: false
+  gather_facts: false
+
+  vars:
+
+    my_colour: white
+
+  vars_files:
+    - my_vars.yml
+
+  tasks:
+
+    - name: Ensure the fact controller learns
+      ansible.builtin.set_fact:
+        my_colour: turquoise
+
+    - name: Ensure variables are loaded from file
+      ansible.builtin.include_vars:
+        file: my_special_vars.yml
+
+    - name: Ensure my_colour is displayed
+      vars:
+        my_colour: teal
+      ansible.builtin.debug:
+        msg: The value of the variable my_colour is {{ my_colour }}
+

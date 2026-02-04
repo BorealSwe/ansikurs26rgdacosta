@@ -7,7 +7,7 @@
 
   vars_files:
     - nested_vars.yml
-    
+
   tasks:
 
     - name: Ensure users exist

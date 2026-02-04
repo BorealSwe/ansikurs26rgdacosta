@@ -5,7 +5,7 @@ ansible-navigator:
       path: ./ansible.cfg
 
   execution-environment:
-    image: ee-supported-rhel8:latest
+    image: utility.lab.example.com:5000/ansible-automation-platform-25/ee-supported-rhel8:latest
     pull:
       policy: missing
     environment-variables:

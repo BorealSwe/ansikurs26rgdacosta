@@ -1,0 +1,20 @@
+---
+- name: No handler demonstration
+  hosts: "{{ my_host | default('servera') }}"
+  become: true
+
+  tasks:
+
+    - name: Ensure needed content is present
+      ansible.builtin.copy:
+        content: Restart
+        dest: /var/tmp/reboot
+
+    - name: Ensure server is rebooted
+      ansible.builtin.reboot:
+
+    - name: Ensure that we can connect to server
+      ansible.builtin.wait_for:
+        port: 22
+        delay: 5
+        timeout: 20

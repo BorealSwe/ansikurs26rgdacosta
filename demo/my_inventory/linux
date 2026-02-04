@@ -3,11 +3,14 @@ serverf
 
 [webservers]
 servera
-serverc 
+serverc
 
 [dbservers]
 serverb
 serverd
+
+[dbservers:vars]
+ansible_user=devops
 
 [rhel9]
 server[a:d]

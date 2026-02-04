@@ -2,7 +2,6 @@
 - name: Handler demonstration
   hosts: "{{ my_host | default('servera') }}"
   become: true
-  gather_facts: true
   force_handlers: true
 
   tasks:
@@ -13,12 +12,16 @@
         content: Restart
         dest: /var/tmp/reboot
 
-    - name: Execute handlers now without any delay
+    - name: Ensure failure
+      ignore_errors: true
+      ansible.builtin.fail:
+
+    - name: Ensure all notified handlers execute right now
       ansible.builtin.meta: flush_handlers
 
-    - name: Deliberately fail
-      ignore_errors: false
-      ansible.builtin.fail:
+    - name: Ensure Hello, world is printed
+      ansible.builtin.debug:
+        msg: Hello, world
 
   handlers:
 

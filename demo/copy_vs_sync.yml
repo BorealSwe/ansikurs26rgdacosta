@@ -1,0 +1,16 @@
+- name: Demonstrate the difference between copy and synchronize
+  hosts: "{{ my_host | default('servera') }}"
+  become: true
+  gather_facts: false
+
+  tasks:
+
+    - ansible.builtin.copy:
+        src: bigfile
+        dest: /var/tmp/
+        mode: "0644"
+
+    - ansible.builtin.synchronize:
+        src: bigfile
+        dest: /tmp
+

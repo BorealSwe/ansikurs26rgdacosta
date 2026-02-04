@@ -1,13 +1,13 @@
 ---
 - name: Demonstrate block, rescue, and always
-  hosts: serverd 
+  hosts: serverd
   become: true
   gather_facts: false
   force_handlers: true
-  
+
   tasks:
 
-    - name: Ensure snapshot of system packages are created 
+    - name: Ensure snapshot of system packages are created
       ansible.builtin.command: /usr/bin/dnf snapshot create pre-update
 
     - name: Attempt to update the system

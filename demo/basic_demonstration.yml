@@ -1,0 +1,9 @@
+---
+- name: A basic demonstration of ansible
+  hosts: servera
+
+  tasks:
+
+    - name: Ensure Hello World is printed
+      ansible.builtin.debug:
+        msg: Hello World

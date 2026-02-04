@@ -22,5 +22,3 @@
         update_password: on_create
         groups: "{{ my_group | default(omit) }}"
         generate_ssh_key: "{{ my_keygen | default(false) }}"
-
-

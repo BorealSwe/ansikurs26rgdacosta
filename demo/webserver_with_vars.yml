@@ -1,7 +1,7 @@
 ---
 - name: Ensure webservers are installed
   hosts: "{{ my_host | default('servera') }}"
-  become: true 
+  become: true
   become: true
   force_handlers: true
 

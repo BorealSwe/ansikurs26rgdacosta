@@ -1,0 +1,168 @@
+my_bashrc: |
+  {% raw %}
+  # ===============================
+  # General environment variables
+  # ===============================
+
+  export EDITOR=/usr/bin/vim
+  export HISTSIZE=10000
+  export HISTTIMEFORMAT="%F %T "
+  export LESS='-X'
+  export GIT_PAGER=/usr/bin/cat
+  PROMPT_COMMAND="$PROMPT_COMMAND; history -a; history -n"
+
+  # ===============================
+  # General Aliases
+  # ===============================
+  alias ..='cd ..'
+  alias ...='cd ../..'
+  alias avc='ausearch -m avc -ts recent | aureport -a'
+  alias decomment='egrep -v "^[[:space:]]*((#|;|//).*)?$" '
+  alias please='sudo !!'
+
+  # ===============================
+  # OpenShift Aliases
+  # ===============================
+  alias lcl="oc login -u admin -p redhatocp https://api.ocp4.example.com:6443"
+  alias ccl="oc login -u admin -p redhatocp https://api.ocp4.example.com:6443"
+  alias mcl="oc login -u admin -p redhatocp https://api.ocp4-mng.example.com:6443"
+  alias dl="oc login -u developer -p developer https://api.ocp4.example.com:6443"
+  alias al="oc login -u admin -p redhatocp https://api.ocp4.example.com:6443"
+  alias vl="oc login -u vt-admin -p vt-redhatocp https://api.ocp4.example.com:6443"
+  alias clustercheck="ssh lab@utility ./wait.sh"
+  alias events="oc get events --sort-by='.lastTimestamp' -n \$1"
+  alias podsw="oc get pods -o wide -n \$1"
+  alias velero='oc -n openshift-adp exec deployment/velero -c velero -it -- ./velero'
+  alias ocd='oc describe'
+  alias ocp='oc project'
+  alias ocg='oc get'
+  alias ocl='oc logs'
+  alias vcon='virtctl console'
+  alias showtaints="oc get nodes -o jsonpath='{range .items[*]}{.metadata.name}{\"\t\"}{range .spec.taints[*]}{.key}:{.value}:{.effect}{\" \"}{end}{\"\n\"}{end}'"
+  alias showpods='oc get pods -A -o custom-columns="NAMESPACE:.metadata.namespace,POD:.metadata.name,NODE:.spec.nodeName,READY:.status.containerStatuses[*].ready"'
+  alias showcapacity='oc get nodes -o custom-columns=NODE:.metadata.name,CPU:.status.capacity.cpu,Memory:.status.capacity.memory'
+  alias showallocatable='oc get nodes -o custom-columns=NODE:.metadata.name,CPU:.status.allocatable.cpu,Memory:.status.allocatable.memory'
+
+  # ===============================
+  # Ansible Aliases
+  # ===============================
+
+  alias ap="ansible-playbook"
+  alias apsc="ansible-playbook --syntax-check"
+  alias acd="ansible-config dump"
+  alias av="ansible --version"
+  alias aig="ansible-inventory --graph"
+  alias anr="ansible-navigator run -m stdout"
+  alias ansc="ansible-navigator run -m stdout --syntax-check"
+  alias anch="ansible-navigator run -m stdout --check"
+  alias ancd="ansible-navigator config dump -m stdout"
+  alias anv="ansible-navigator --version"
+  alias anig="ansible-navigator inventory --graph"
+
+  # ===============================
+  # Git Aliases
+  # ===============================
+  alias gc="git commit -m"
+
+  # ===============================
+  # Functions
+  # ===============================
+
+  whohas() {
+    local role="$1"
+    if [[ -z "$role" ]]; then
+      echo "Usage: whohas <role>"
+      return 1
+    fi
+    oc get clusterrolebindings -o json | jq -r ".items[] | select(.roleRef.name == \"$role\" and .subjects != null) | .subjects[] | \"\(.kind) \(.name)\"" || {
+      echo "Error: Could not find role $role."
+      return 1
+    }
+  }
+
+  whomembers() {
+    local group="$1"
+    oc get group "$group" -o json | jq -r '.users[]'
+  }
+
+  pwgen (){
+    tr -dc 'A-Za-z0-9@#%+=' </dev/urandom | head -c ${1:-16}; echo
+  }
+
+  plogs () {
+    if [[ $# -eq 1 ]]; then
+      ns=$(oc project -q 2>/dev/null)
+      oc logs -f -n "$ns" "$1"
+    else
+      oc logs -f "$@"
+    fi
+  }
+
+  mcd (){
+    mkdir -pv "$1"
+    cd "$1" || return
+  }
+
+  mnt (){
+    mount | awk '$1 ~ /\/dev/ { print $1,$3; }' | column -t | sort
+  }
+
+  gnb (){
+    git checkout -b "$1"
+    git push -u origin "$1"
+  }
+
+  pastebin (){
+    local filename="$1"
+    if [[ -z  "$filename" ]]; then
+        echo "Usage: pastebin /path/to/file"
+        return 1
+    fi
+    glab snippet create -pv public --filename $filename --title $filename
+  }
+
+  # ===============================
+  # Prompt
+  # ===============================
+
+  get_oc_project() {
+  if [[ -n "$_LAST_OC_PROJECT" && "$(( $(date +%s) - ${_LAST_OC_PROJECT_TIME:-0} ))" -lt 5 ]]; then
+    echo "$_LAST_OC_PROJECT"
+  else
+    if oc whoami &>/dev/null; then
+      local project
+      project=$(oc project -q 2>/dev/null)
+      if [[ $? -eq 0 && -n "$project" ]]; then
+        _LAST_OC_PROJECT="$project"
+        _LAST_OC_PROJECT_TIME=$(date +%s)
+        echo "$_LAST_OC_PROJECT"
+      else
+        unset _LAST_OC_PROJECT
+        unset _LAST_OC_PROJECT_TIME
+      fi
+    else
+      unset _LAST_OC_PROJECT
+      unset _LAST_OC_PROJECT_TIME
+    fi
+  fi
+  }
+
+    export PS1='[\u@\h \W$(proj=$(get_oc_project); [[ -n "$proj" ]] && echo " ($proj)")]\$ '
+
+  # ===============================
+  # Bash Completion
+  # ===============================
+
+  load_completion() {
+    cmd="$1"
+    if command -v "$cmd" &> /dev/null; then
+      source <("$cmd" completion bash)
+    fi
+  }
+
+  for i in oc kubectl virtctl helm glab
+    do
+      load_completion $i
+    done
+
+  {% endraw %}
