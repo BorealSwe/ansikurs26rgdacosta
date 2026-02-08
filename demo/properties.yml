@@ -1,7 +1,7 @@
 ---
 - name: Gather common properties of our systems
-  hosts: 
-    - rhel:&dbservers 
+  hosts:
+    - rhel:&dbservers
     - servera
     - serverb
     - rhel:!webservers
@@ -33,7 +33,7 @@
       ansible.builtin.package_facts:
 
     - name: Render the properties template
-      ansible.builtin.template: 
+      ansible.builtin.template:
         src: "{{ prop_j2 }}"
         dest: "{{ prop_file }}"
 

@@ -4,6 +4,134 @@ Ansible Netcommon Collection Release Notes
 
 .. contents:: Topics
 
+v8.4.0
+======
+
+Release Summary
+---------------
+
+Re-released 8.3.1 with features added in the last release.
+
+Minor Changes
+-------------
+
+- Option to use libssh as transport while using netconf, is added.
+- The ssh-python module is needed, which will ensure libssh as transport for netconf operations. When use_libssh is enabled.
+
+v8.3.0
+======
+
+Minor Changes
+-------------
+
+- Option to use libssh as transport while using netconf, is added.
+- The ssh-python module is needed, which will ensure libssh as transport for netconf operations. When use_libssh is enabled.
+
+v8.2.1
+======
+
+Bugfixes
+--------
+
+- Adds backward compatibility of handling src attributes, functional consistency with ansible-core >= 2.19
+- Adds deprecation warning for the jinja2 processing functionality for src attributes, src attributes in collections would still support considering file path but they would not process template files directly once the functionality is deprecated.
+- It is suggested to use ansible.builtin.template module to process templates and use the processed template path in src attributes.
+
+v8.2.0
+======
+
+Minor Changes
+-------------
+
+- Exposes new libssh option to configure key_exchange_algorithms. This requires ansible-pylibssh v1.3.0 or higher.
+
+Bugfixes
+--------
+
+- Added support for private key passphrase in libssh connection plugin, when using encrypted private keys specified by the C(ansible_private_key_file) attribute.
+- Avoid legacy imports deprecated in ansible-core 2.20 (https://github.com/ansible-collections/ansible.netcommon/pull/720).
+- Avoid merging module_defaults for all ansible.netcommon.grpc_* modules.
+- Set libssh logging level to DEBUG when Ansible verbosity is greater than 3, to aid in troubleshooting connection issues.
+
+v8.1.0
+======
+
+Minor Changes
+-------------
+
+- Changes to supplement direct execution of Ansible module in validate_config(utils.py) and _patch_update_module(network.py) added.
+- Override new 2.19.1+ AnsibleModule._record_module_result hook in network action plugin to bypass module result serialization when direct execution is enabled
+
+Bugfixes
+--------
+
+- Improved error handling in DirectExecutionModule._record_module_result method for better compatibility with core<=2.18
+
+v8.0.1
+======
+
+Bugfixes
+--------
+
+- (#633) Fixed typo in ansible.netcommon.telnet parameter crlf (was clrf by mistake)
+- netconf - Adds check for netconf session_close RPC happens only if connection is alive.
+
+v8.0.0
+======
+
+Release Summary
+---------------
+
+With this release, the minimum required version of `ansible-core` for this collection is `2.16.0`. The last version known to be compatible with `ansible-core` versions below `2.16` is v7.2.0.
+
+Major Changes
+-------------
+
+- Bumping `requires_ansible` to `>=2.16.0`, since previous ansible-core versions are EoL now.
+
+v7.2.0
+======
+
+Minor Changes
+-------------
+
+- Exposes new libssh options to configure publickey_accepted_algorithms and hostkeys. This requires ansible-pylibssh v1.1.0 or higher.
+
+Deprecated Features
+-------------------
+
+- Added deprecation warnings for the above plugins, displayed when running respective filter plugins.
+- `parse_cli_textfsm` filter plugin is deprecated and will be removed in a future release after 2027-02-01. Use `ansible.utils.cli_parse` with the `ansible.utils.textfsm_parser` parser as a replacement.
+- `parse_cli` filter plugin is deprecated and will be removed in a future release after 2027-02-01. Use `ansible.utils.cli_parse` as a replacement.
+- `parse_xml` filter plugin is deprecated and will be removed in a future release after 2027-02-01. Use `ansible.utils.cli_parse` with the `ansible.utils.xml_parser` parser as a replacement.
+
+Bugfixes
+--------
+
+- libssh connection plugin - stop using long-deprecated and now removed internal field from ansible-core's base connection plugin class (https://github.com/ansible-collections/ansible.netcommon/issues/522, https://github.com/ansible-collections/ansible.netcommon/issues/690, https://github.com/ansible-collections/ansible.netcommon/pull/691).
+
+Documentation Changes
+---------------------
+
+- Includes a new support related section in the README.
+
+v7.1.0
+======
+
+Minor Changes
+-------------
+
+- ansible.netcommon.persistent - Connection local is marked deprecated and all dependent collections are advised to move to a proper connection plugin, complete support of connection local will be removed in a release after 01-01-2027.
+
+Bugfixes
+--------
+
+- Updated the error message for the content_templates parser to include the correct parser name and detailed error information.
+
+Documentation Changes
+---------------------
+
+- Add a simple regexp match example for multiple prompt with multiple answers. This example could be used to for restarting a network device with a delay.
 
 v7.0.0
 ======
@@ -12,7 +140,6 @@ Release Summary
 ---------------
 
 Starting from this release, the minimum `ansible-core` version this collection requires is `2.15.0`. The last known version compatible with ansible-core<2.15 is v6.1.3.
-
 
 Major Changes
 -------------

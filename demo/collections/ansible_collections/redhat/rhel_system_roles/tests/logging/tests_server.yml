@@ -10,6 +10,9 @@
 ---
 - name: "Test the server configuration containing tls tcp, plain tcp and udp connection"
   hosts: all
+  tags:
+  # certmonger does not work in container builds
+    - tests::booted
   vars:
     __test_cert_name: logging_cert
     __test_ca_cert: "/etc/pki/tls/certs/{{ __test_cert_name }}.crt"
@@ -124,10 +127,10 @@
 
   # notify Restart rsyslogd is executed at the end of this test task.
   # thus we have to force to invoke handlers
-    - name: "Force all notified handlers to run at this point, not waiting for normal sync points"
+    - name: "Force all notified handlers to run at this point, not waiting for normal sync points - 2"
       meta: flush_handlers
 
-    - name: Check ports managed by firewall and selinux
+    - name: Check ports managed by firewall and selinux - 2
       include_tasks: tasks/check_firewall_selinux.yml
 
     - name: Test case 1

@@ -72,7 +72,7 @@
             logging_flows:
               - name: flow_0
                 inputs: [files_input]
-                outputs: "[{{ __test_el }}]"
+                outputs: "{{ [__test_el] }}"
           include_role:
             name: redhat.rhel_system_roles.logging
             public: true

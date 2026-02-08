@@ -1,6 +1,3 @@
-servere
-serverf
-
 [webservers]
 servera
 serverc
@@ -12,11 +9,11 @@ serverd
 [dbservers:vars]
 ansible_user=devops
 
-[rhel9]
+[rhel10]
 server[a:d]
 
 [rhel:children]
-rhel9
+rhel10
 
 [dev]
 servera

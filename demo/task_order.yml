@@ -1,5 +1,5 @@
 ---
-- name: Play 1 
+- name: Play 1
   hosts: "{{ my_host | default('servera') }}"
   become: false
   gather_facts: false

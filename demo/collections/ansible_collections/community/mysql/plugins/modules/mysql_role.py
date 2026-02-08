@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, Andrew Klychkov <aaklychkov@mail.ru>
+# Copyright: (c) 2021, Andrew Klychkov <andrew.a.klychkov@gmail.com>
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
@@ -11,10 +11,10 @@ DOCUMENTATION = r'''
 ---
 module: mysql_role
 
-short_description: Adds, removes, or updates a MySQL role
+short_description: Adds, removes, or updates a MySQL or MariaDB role
 
 description:
-   - Adds, removes, or updates a MySQL role.
+   - Adds, removes, or updates a MySQL or MariaDB role.
    - Roles are supported since MySQL 8.0.0 and MariaDB 10.0.5.
 
 version_added: '2.2.0'
@@ -123,15 +123,18 @@ options:
 
   column_case_sensitive:
     description:
-      - The default is C(false).
+      - The default is C(true).
       - When C(true), the module will not uppercase the field in the privileges.
       - When C(false), the field names will be upper-cased. This was the default before this
         feature was introduced but since MySQL/MariaDB is case sensitive you should set this
         to C(true) in most cases.
+      - The default changed from C(false) to C(true) in v4.0.0
     type: bool
+    default: true
     version_added: '3.8.0'
 
 notes:
+  - Roles are supported since MySQL 8.0.0 and MariaDB 10.0.5.
   - Pay attention that the module runs C(SET DEFAULT ROLE ALL TO)
     all the I(members) passed by default when the state has changed.
     If you want to avoid this behavior, set I(set_default_role_all) to C(no).
@@ -309,14 +312,13 @@ from ansible_collections.community.mysql.plugins.module_utils.mysql import (
 )
 from ansible_collections.community.mysql.plugins.module_utils.user import (
     convert_priv_dict_to_str,
-    get_impl,
+    get_user_implementation,
     get_mode,
     user_mod,
     privileges_grant,
     privileges_unpack,
 )
 from ansible.module_utils._text import to_native
-from ansible.module_utils.six import iteritems
 
 
 def normalize_users(module, users, is_mariadb=False):
@@ -787,7 +789,7 @@ class Role():
             self.update_members(users, set_default_role_all=set_default_role_all)
 
         if privs:
-            for db_table, priv in iteritems(privs):
+            for db_table, priv in privs.items():
                 privileges_grant(self.cursor, self.name, self.host,
                                  db_table, priv, tls_requires=None,
                                  maria_role=self.is_mariadb)
@@ -929,11 +931,12 @@ class Role():
                                                       set_default_role_all=set_default_role_all)
 
         if privs:
-            result = user_mod(self.cursor, self.name, self.host,
-                              None, None, None, None, None, None,
-                              privs, append_privs, subtract_privs, None, None,
-                              self.module, None, None, role=True,
-                              maria_role=self.is_mariadb)
+            result = user_mod(cursor=self.cursor, user=self.name, host=self.host,
+                              host_all=None, password=None, encrypted=None, plugin=None,
+                              plugin_auth_string=None, plugin_hash_string=None, salt=None,
+                              new_priv=privs, append_privs=append_privs, subtract_privs=subtract_privs,
+                              attributes=None, tls_requires=None, module=self.module, password_expire=None,
+                              password_expire_interval=None, role=True, maria_role=self.is_mariadb)
             changed = result['changed']
 
         if admin:
@@ -971,7 +974,7 @@ def main():
         check_implicit_admin=dict(type='bool', default=False),
         set_default_role_all=dict(type='bool', default=True),
         members_must_exist=dict(type='bool', default=True),
-        column_case_sensitive=dict(type='bool', default=None),  # TODO 4.0.0 add default=True
+        column_case_sensitive=dict(type='bool', default=True),
     )
     module = AnsibleModule(
         argument_spec=argument_spec,
@@ -1019,13 +1022,6 @@ def main():
     if mysql_driver is None:
         module.fail_json(msg=mysql_driver_fail_msg)
 
-    # TODO Release 4.0.0 : Remove this test and variable assignation
-    if column_case_sensitive is None:
-        column_case_sensitive = False
-        module.warn("Option column_case_sensitive is not provided. "
-                    "The default is now false, so the column's name will be uppercased. "
-                    "The default will be changed to true in community.mysql 4.0.0.")
-
     cursor = None
     try:
         if check_implicit_admin:
@@ -1054,7 +1050,7 @@ def main():
     # Set defaults
     changed = False
 
-    get_impl(cursor)
+    impl = get_user_implementation(cursor)
 
     if priv is not None:
         try:

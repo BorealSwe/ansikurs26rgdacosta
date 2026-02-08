@@ -19,6 +19,9 @@ SplitMode={{ journald_per_user | bool | ternary("uid", "none") }}
 {%   if journald_sync_interval | int != 0 %}
 SyncIntervalSec={{ journald_sync_interval }}m
 {%   endif %}
+{%   if journald_keep_free | int != 0 %}
+SystemKeepFree={{ journald_keep_free }}M
+{%   endif %}
 {# Volatile journal #}
 {% else %}
 Storage=volatile
@@ -31,6 +34,9 @@ RuntimeMaxFiles={{ journald_max_files }}
 {%   if journald_max_file_size | int != 0 %}
 RuntimeMaxFileSize={{ journald_max_file_size }}M
 {%   endif %}
+{%   if journald_keep_free | int != 0 %}
+RuntimeKeepFree={{ journald_keep_free }}M
+{%   endif %}
 {% endif %}
 {# end of storage specific settings #}
 {# settings below here apply to all storage types #}
@@ -38,3 +44,6 @@ Compress={{ journald_compression | bool | ternary("yes", "no") }}
 ForwardToSyslog={{ journald_forward_to_syslog | bool | ternary("yes", "no") }}
 RateLimitIntervalSec={{ journald_rate_limit_interval_sec }}s
 RateLimitBurst={{ journald_rate_limit_burst }}
+{% if journald_max_retention | int != 0 %}
+MaxRetentionSec={{ journald_max_retention }}m
+{% endif %}

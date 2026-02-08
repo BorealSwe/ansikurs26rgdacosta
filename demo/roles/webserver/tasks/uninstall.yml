@@ -1,0 +1,22 @@
+---
+- name: Ensure service is stopped and disabled 
+  failed_when: false
+  ansible.builtin.service:
+    name: "{{ my_webservice }}"
+    state: stopped
+    enabled: false
+
+- name: Ensure ports are closed in firewalld
+  loop:
+    - http
+    - https
+  ansible.posix.firewalld:
+    service: "{{ item }}"
+    state: disabled
+    permanent: true
+    immediate: true
+
+- name: Ensure software is removed
+  ansible.builtin.dnf:
+    name: "{{ my_webservice }}"
+    state: absent

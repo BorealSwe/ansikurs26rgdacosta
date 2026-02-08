@@ -1,6 +1,65 @@
 Changelog
 =========
 
+[1.17.5] - 2025-08-01
+--------------------
+
+### Other Changes
+
+- test: ensure /etc/pki/tls/cert.pem exists for 802 tests on EL10 (#798)
+
+[1.17.4] - 2025-07-09
+--------------------
+
+### Other Changes
+
+- tests: Assert ethernet profile and device state (#793)
+- docs: Add guide for running CI tests locally with tox-lsr (#796)
+
+[1.17.3] - 2025-07-02
+--------------------
+
+### Other Changes
+
+- ci: bump sclorg/testing-farm-as-github-action from 3 to 4 (#785)
+- ci: bump tox-lsr to 3.8.0; rename qemu/kvm tests (#786)
+- ci: Add Fedora 42; use tox-lsr 3.9.0; use lsr-report-errors for qemu tests (#788)
+- ci: get rid of integration tests - broken, unmaintained (#789)
+- ci: Add support for bootc end-to-end validation tests (#790)
+- ci: Use ansible 2.19 for fedora 42 testing; support python 3.13 (#791)
+- test: improve method for finding secondary interface (#792)
+- refactor: support Ansible 2.19 (#794)
+
+[1.17.2] - 2025-04-23
+--------------------
+
+### Bug Fixes
+
+- fix: Refine MAC validation using interface name (#768)
+- fix: Remove MAC address matching from SysUtil.link_info_find() (#769)
+- fix: Correct attribute checks for routing rule validation (#774)
+
+### Other Changes
+
+- ci: Check spelling with codespell (#754)
+- ci: ansible-plugin-scan is disabled for now (#755)
+- ci: bump ansible-lint to v25; provide collection requirements for ansible-lint (#758)
+- refactor: fix python black formatting (#759)
+- ci: Add an additional NIC for test purposes (#762)
+- ci: Add test plan in .ci dir to be able to customize it per each role (#763)
+- ci: Add test plan that runs CI tests and customize it for each role (#765)
+- test: do not need to install from epel or pip (#770)
+- ci: In test plans, prefix all relate variables with SR_ (#771)
+- ci: Fix bug with ARTIFACTS_URL after prefixing with SR_ (#773)
+- ci: several changes related to new qemu test, ansible-lint, python versions, ubuntu versions (#776)
+- test: add another network interface device for qemu tests (#777)
+- test: set shell to /bin/bash in order to use pipefail (#778)
+- test: find second interface to use for mac address match (#779)
+- test: skip initscript related tests on Fedora 41 and later (#780)
+- test: exclude qemu interfaces from dhcp (#781)
+- ci: use tox-lsr 3.6.0; improve qemu test logging (#782)
+- ci: skip storage scsi, nvme tests in github qemu ci (#783)
+
 [1.17.1] - 2025-01-09
 --------------------
 

@@ -1,6 +1,60 @@
 Changelog
 =========
 
+[1.15.2] - 2025-07-09
+--------------------
+
+### Other Changes
+
+- refactor: support ansible 2.19 (#458)
+
+[1.15.1] - 2025-06-16
+--------------------
+
+### Other Changes
+
+- ci: Add Fedora 42; use tox-lsr 3.9.0; use lsr-report-errors for qemu tests (#453)
+- ci: Add support for bootc end-to-end validation tests (#454)
+- tests: Update tests_combination for bootc end-to-end validation (#455)
+- ci: Use ansible 2.19 for fedora 42 testing; support python 3.13 (#456)
+
+[1.15.0] - 2025-05-15
+--------------------
+
+### New Features
+
+- feat: Support this role in container builds (#444)
+
+### Bug Fixes
+
+- fix: Consider "degraded" systemd state as booted (#449)
+
+### Other Changes
+
+- ci: bump sclorg/testing-farm-as-github-action from 3 to 4 (#445)
+- ci: bump tox-lsr to 3.8.0; rename qemu/kvm tests (#446)
+- test: restart firewalld after dbus if firewalld is running (#447)
+- refactor: Re-unify service disabling and stopping (#448)
+
+[1.14.2] - 2025-04-23
+--------------------
+
+### Bug Fixes
+
+- fix: Add a variable for rsyslog base package on Debian (#436)
+- fix: Only remove rsyslog* packages, remove packages with command line (#440)
+
+### Other Changes
+
+- ci: ansible-plugin-scan is disabled for now (#430)
+- ci: bump ansible-lint to v25; provide collection requirements for ansible-lint (#433)
+- ci: Check spelling with codespell (#434)
+- ci: Add test plan that runs CI tests and customize it for each role (#435)
+- ci: In test plans, prefix all relate variables with SR_ (#437)
+- ci: Fix bug with ARTIFACTS_URL after prefixing with SR_ (#438)
+- ci: use tox-lsr 3.6.0; improve qemu test logging (#441)
+- ci: skip storage scsi, nvme tests in github qemu ci (#442)
+
 [1.14.1] - 2025-01-09
 --------------------
 

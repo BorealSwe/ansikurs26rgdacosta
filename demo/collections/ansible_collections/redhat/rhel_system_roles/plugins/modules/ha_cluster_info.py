@@ -27,6 +27,9 @@ author:
 requirements:
     - pcs-0.10.8 or newer installed on managed nodes
     - pcs-0.10.8 or newer for exporting corosync configuration
+    - pcs-0.10.14 or pcs-0.11.3 or newer for exporting resources configuration
+    - python3-firewall for exporting ha_cluster_manage_firewall
+    - python3-policycoreutils for exporting ha_cluster_manage_selinux
     - python 3.6 or newer
 """
 
@@ -49,14 +52,24 @@ ha_cluster:
           certain variables may not be exported.
         - HORIZONTALLINE
         - Following variables are present in the output
+        - ha_cluster_enable_repos
+        - ha_cluster_enable_repos_resilient_storage
+        - ha_cluster_manage_firewall
+        - ha_cluster_manage_selinux
         - ha_cluster_cluster_present
         - ha_cluster_start_on_boot
+        - ha_cluster_install_cloud_agents
+        - ha_cluster_pcs_permission_list
         - ha_cluster_cluster_name
         - ha_cluster_transport
         - ha_cluster_totem
         - ha_cluster_quorum
         - ha_cluster_node_options - currently only node_name,
           corosync_addresses and pcs_address are present
+        - ha_cluster_resource_primitives
+        - ha_cluster_resource_groups
+        - ha_cluster_resource_clones
+        - ha_cluster_resource_bundles
         - HORIZONTALLINE
         - Following variables are required for running ha_cluster role but are
           never present in this module output
@@ -64,9 +77,16 @@ ha_cluster:
         - HORIZONTALLINE
         - Following variables are never present in this module output (consult
           the role documentation for impact of the variables missing)
+        - ha_cluster_fence_agent_packages
+        - ha_cluster_extra_packages
+        - ha_cluster_use_latest_packages
+        - ha_cluster_hacluster_qdevice_password
         - ha_cluster_corosync_key_src
         - ha_cluster_pacemaker_key_src
         - ha_cluster_fence_virt_key_src
+        - ha_cluster_pcsd_public_key_src
+        - ha_cluster_pcsd_private_key_src
+        - ha_cluster_pcsd_certificates
         - ha_cluster_regenerate_keys
         - HORIZONTALLINE
 """
@@ -77,6 +97,36 @@ from ansible.module_utils.basic import AnsibleModule
 
 # pylint: disable=no-name-in-module
 from ansible_collections.redhat.rhel_system_roles.plugins.module_utils.ha_cluster_lsr.info import exporter, loader
+
+try:
+    # firewall module doesn't provide type hints
+    from firewall.client import FirewallClient  # type:ignore
+
+    HAS_FIREWALL = True
+except ImportError:
+    # create the class so it can be replaced by a mock in unit tests
+    class FirewallClient:  # type: ignore
+        # pylint: disable=missing-class-docstring
+        # pylint: disable=too-few-public-methods
+        pass
+
+    HAS_FIREWALL = False
+
+try:
+    # selinux module doesn't provide type hints
+    from seobject import portRecords as SelinuxPortRecords  # type: ignore
+
+    HAS_SELINUX = True
+except ImportError:
+    # create the class so it can be replaced by a mock in unit tests
+    class SelinuxPortRecords:  # type: ignore
+        # pylint: disable=missing-class-docstring
+        # pylint: disable=too-few-public-methods
+        pass
+
+    HAS_SELINUX = False
+
+_CAPABILITY_RESOURCE_OUTPUT = "pcmk.resource.config.output-formats"
 
 
 def get_cmd_runner(module: AnsibleModule) -> loader.CommandRunner:
@@ -92,6 +142,72 @@ def get_cmd_runner(module: AnsibleModule) -> loader.CommandRunner:
         )
 
     return runner
+
+
+def export_os_configuration(module: AnsibleModule) -> Dict[str, Any]:
+    """
+    Export OS configuration managed by the role
+    """
+    result: dict[str, Any] = dict()
+    cmd_runner = get_cmd_runner(module)
+
+    if loader.is_rhel_or_clone():
+        # The role only enables repos on RHEL and SLES.
+        dnf_repolist = loader.get_dnf_repolist(cmd_runner)
+        if dnf_repolist is not None:
+            result["ha_cluster_enable_repos"] = exporter.export_enable_repos_ha(
+                dnf_repolist
+            )
+            result["ha_cluster_enable_repos_resilient_storage"] = (
+                exporter.export_enable_repos_rs(dnf_repolist)
+            )
+
+        # Cloud agent packages are only handled on RHEL.
+        installed_packages = loader.get_rpm_installed_packages(cmd_runner)
+        if installed_packages is not None:
+            result["ha_cluster_install_cloud_agents"] = (
+                exporter.export_install_cloud_agents(installed_packages)
+            )
+
+    if HAS_FIREWALL:
+        fw_client = FirewallClient()
+        fw_config = loader.get_firewall_config(fw_client)
+        manage_firewall = False
+        if fw_config is not None:
+            manage_firewall = exporter.export_manage_firewall(fw_config)
+            result["ha_cluster_manage_firewall"] = manage_firewall
+
+        # ha_cluster_manage_selinux is irrelevant when running the role if
+        # ha_cluster_manage_firewall is not True
+        if HAS_SELINUX and manage_firewall:
+            selinux_ports = SelinuxPortRecords()
+            ha_ports_firewall = loader.get_firewall_ha_cluster_ports(fw_client)
+            ha_ports_selinux = loader.get_selinux_ha_cluster_ports(
+                selinux_ports
+            )
+            if ha_ports_firewall is not None and ha_ports_selinux is not None:
+                result["ha_cluster_manage_selinux"] = (
+                    exporter.export_manage_selinux(
+                        ha_ports_firewall, ha_ports_selinux
+                    )
+                )
+
+    return result
+
+
+def export_pcsd_configuration() -> Dict[str, Any]:
+    """
+    Export pcsd configuration managed by the role
+    """
+    result: dict[str, Any] = dict()
+
+    pcsd_settings_dict = loader.get_pcsd_settings_conf()
+    if pcsd_settings_dict is not None:
+        result["ha_cluster_pcs_permission_list"] = (
+            exporter.export_pcs_permission_list(pcsd_settings_dict)
+        )
+
+    return result
 
 
 def export_cluster_configuration(module: AnsibleModule) -> Dict[str, Any]:
@@ -110,7 +226,7 @@ def export_cluster_configuration(module: AnsibleModule) -> Dict[str, Any]:
         corosync_enabled, pacemaker_enabled
     )
 
-    # Corosync config is availabe via CLI since pcs-0.10.8, via API v2 since
+    # Corosync config is available via CLI since pcs-0.10.8, via API v2 since
     # pcs-0.12.0 and pcs-0.11.9. For old pcs versions, CLI must be used, and
     # there is no benefit in implementing access via API on top of that.
     # No need to check pcs capabilities. If this is not supported by pcs,
@@ -143,6 +259,44 @@ def export_cluster_configuration(module: AnsibleModule) -> Dict[str, Any]:
     return result
 
 
+def export_resources_configuration(
+    module: AnsibleModule, pcs_capabilities: List[str]
+) -> Dict[str, Any]:
+    """
+    Export existing HA cluster resources
+    """
+
+    if _CAPABILITY_RESOURCE_OUTPUT not in pcs_capabilities:
+        return dict()
+
+    cmd_runner = get_cmd_runner(module)
+    resources = loader.get_resources_configuration(cmd_runner)
+    stonith = loader.get_stonith_configuration(cmd_runner)
+    primitives = exporter.export_resource_primitive_list(resources, stonith)
+    groups = exporter.export_resource_group_list(resources)
+    clones = exporter.export_resource_clone_list(resources)
+    bundles = exporter.export_resource_bundle_list(resources)
+
+    result: dict[str, Any] = dict()
+    if primitives:
+        result["ha_cluster_resource_primitives"] = primitives
+    if groups:
+        result["ha_cluster_resource_groups"] = groups
+    if clones:
+        result["ha_cluster_resource_clones"] = clones
+    if bundles:
+        result["ha_cluster_resource_bundles"] = bundles
+    return result
+
+
+def get_pcs_capabilities(module: AnsibleModule) -> List[str]:
+    """
+    Extract pcsd pcs_capabilities from pcs version info
+    """
+    _version, capabilities = loader.get_pcs_version_info(get_cmd_runner(module))
+    return capabilities
+
+
 def main() -> None:
     """
     Top level module function
@@ -154,16 +308,29 @@ def main() -> None:
     ha_cluster_result: Dict[str, Any] = dict()
     module_result["ha_cluster"] = ha_cluster_result
 
+    pcs_capabilities = get_pcs_capabilities(module)
+
     try:
         if loader.has_corosync_conf():
+            ha_cluster_result.update(**export_os_configuration(module))
+            ha_cluster_result.update(**export_pcsd_configuration())
             ha_cluster_result.update(**export_cluster_configuration(module))
+            ha_cluster_result.update(
+                **export_resources_configuration(module, pcs_capabilities)
+            )
             ha_cluster_result["ha_cluster_cluster_present"] = True
         else:
+            # Exporting qnetd configuration will be added later here. It will
+            # probably call export_os and export_pcsd.
             ha_cluster_result["ha_cluster_cluster_present"] = False
         module.exit_json(**module_result)
-    except exporter.JsonMissingKey as e:
+    except exporter.InvalidSrc as e:
+        issue_location = f" ({e.issue_location})" if e.issue_location else ""
         module.fail_json(
-            msg=f"Missing key {e.key} in pcs {e.data_desc} JSON output",
+            msg=(
+                f"Invalid data in pcs {e.data_desc} JSON output{issue_location}"
+                f": {e.issue_desc}"
+            ),
             error_details=e.kwargs,
         )
     except loader.JsonParseError as e:

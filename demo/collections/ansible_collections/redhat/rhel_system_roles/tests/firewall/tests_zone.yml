@@ -56,11 +56,14 @@
                 state: enabled
               - service: http
                 state: enabled
+          when: not __bootc_validation | d(false)
 
         - name: Fail if no changes are done
           fail:
             msg: "FAILED"
-          when: not firewall_lib_result.changed
+          when:
+            - not __bootc_validation | d(false)
+            - not firewall_lib_result.changed
 
       # ENSURE STATE AGAIN
 
@@ -91,58 +94,69 @@
                 state: enabled
               - service: http
                 state: enabled
+          when: not __bootc_validation | d(false)
 
         - name: Fail on newly changes
           fail:
             msg: "FAILED"
-          when: firewall_lib_result.changed # noqa no-handler
+          when:
+            - not __bootc_validation | d(false)
+            - firewall_lib_result.changed # noqa no-handler
+
+        - name: Create QEMU deployment during bootc end-to-end test
+          delegate_to: localhost
+          become: false
+          command: "{{ lsr_scriptdir }}/bootc-buildah-qcow.sh {{ ansible_host }}"
+          changed_when: true
+          when: ansible_connection == "buildah"
 
       # VERIFY
 
         - name: Verify firewalld zone internal services
-          command: firewall-cmd --permanent --zone=internal --list-services
+          command: firewall-offline-cmd --zone=internal --list-services
           register: result
           changed_when: false
           failed_when: result.failed or "tftp" not in result.stdout or "ftp" not in result.stdout
 
         - name: Verify firewalld zone internal ports
-          command: firewall-cmd --permanent --zone=internal --list-ports
+          command: firewall-offline-cmd --zone=internal --list-ports
           register: result
           changed_when: false
           failed_when: result.failed or "443/tcp" not in result.stdout or "443/udp" not in result.stdout
 
         - name: Verify firewalld zone internal forward ports
-          command: firewall-cmd --permanent --zone=internal --list-forward-ports
+          command: firewall-offline-cmd --zone=internal --list-forward-ports
           register: result
           changed_when: false
           failed_when: result.failed or "port=447:proto=tcp:toport=:toaddr=1.2.3.4" not in result.stdout or "port=448:proto=tcp:toport=:toaddr=1.2.3.5" not in result.stdout
 
         - name: Verify custom zone has masquerade added to it
-          command: firewall-cmd --permanent --zone=customzone --query-masquerade
+          command: firewall-offline-cmd --zone=customzone --query-masquerade
           register: result
           changed_when: false
           failed_when: result is failed or "yes" not in result.stdout
 
         - name: Verify custom zone has masquerade added to it
-          command: firewall-cmd --get-default-zone
+          command: firewall-offline-cmd --get-default-zone
           register: result
           changed_when: false
           failed_when: result is failed or "dmz" not in result.stdout
 
         - name: Verify that service http has been added to the default zone dmz
-          command: firewall-cmd --zone=dmz --query-service=http
+          command: firewall-offline-cmd --zone=dmz --query-service=http
           register: result
           changed_when: false
           failed_when: result is failed or "yes" not in result.stdout
       always:
         - name: Cleanup
+          when: not __bootc_validation | d(false)
           tags:
             - tests::cleanup
           block:
           # CLEANUP: RESET TO ZONE DEFAULTS
 
             - name: Remove customzone zone
-              command: firewall-cmd --permanent --delete-zone=customzone
+              command: firewall-offline-cmd --delete-zone=customzone
               register: result
               failed_when: result.failed and "INVALID_ZONE" not in result.stderr
               changed_when: false
@@ -150,8 +164,12 @@
             - name: Reset to zone defaults
               shell:
                 cmd: |
-                  firewall-cmd --permanent --load-zone-defaults=internal
-                  firewall-cmd --permanent --load-zone-defaults=external
-                  firewall-cmd --permanent --load-zone-defaults=trusted
-                  firewall-cmd --reload
+                  firewall-offline-cmd --load-zone-defaults=internal
+                  firewall-offline-cmd --load-zone-defaults=external
+                  firewall-offline-cmd --load-zone-defaults=trusted || true
+              changed_when: false
+
+            - name: Reload firewall
+              when: __firewall_is_booted
+              command: firewall-cmd --reload
               changed_when: false

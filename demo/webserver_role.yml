@@ -1,13 +1,8 @@
 ---
 - name: Demonstration to test role
-  hosts: "{{ my_host }}"
+  hosts: "{{ my_host | default('webservers') }}"
   gather_facts: false
   become: true
-  force_handlers: true
-
-  collections:
-
-    - rgdacosta.general
 
   roles:
-    - rgdacosta.general.webserver
+    - webserver

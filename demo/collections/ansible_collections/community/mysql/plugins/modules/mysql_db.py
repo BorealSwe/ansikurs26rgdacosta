@@ -11,9 +11,9 @@ __metaclass__ = type
 DOCUMENTATION = r'''
 ---
 module: mysql_db
-short_description: Add or remove MySQL databases from a remote host
+short_description: Add or remove MySQL or MariaDB databases from a remote host
 description:
-- Add or remove MySQL databases from a remote host.
+- Add or remove MySQL or MariaDB databases from a remote host.
 options:
   name:
     description:
@@ -46,8 +46,8 @@ options:
   target:
     description:
     - Location, on the remote host, of the dump file to read from or write to.
-    - Uncompressed SQL files (C(.sql)) as well as bzip2 (C(.bz2)), gzip (C(.gz)) and
-      xz (Added in 2.0) compressed files are supported.
+    - Uncompressed SQL files (C(.sql)) as well as bzip2 (C(.bz2)), gzip (C(.gz)),
+      xz (Added in 2.0) and zstd (C(.zst)) (Added in 3.12.0) compressed files are supported.
     type: path
   single_transaction:
     description:
@@ -159,12 +159,15 @@ options:
   pipefail:
     description:
     - Use C(bash) instead of C(sh) and add C(-o pipefail) to catch errors from the
-      mysql_dump command when I(state=import) and compression is used.
-    - The default is C(no) to prevent issues on systems without bash as a default interpreter.
-    - The default will change to C(yes) in community.mysql 4.0.0.
+      mysql_dump command when I(state=dump) and compression is used.
     type: bool
-    default: false
+    default: true
     version_added: '3.4.0'
+  sql_log_bin:
+    description:
+      - Whether binary logging should be enabled or disabled for the connection.
+    type: bool
+    default: true
 
 seealso:
 - module: community.mysql.mysql_info
@@ -188,6 +191,7 @@ requirements:
    - mysql (command line binary)
    - mysqldump (command line binary)
 notes:
+   - Compatible with MariaDB or MySQL.
    - Requires the mysql and mysqldump binaries on the remote host.
    - This module is B(not idempotent) when I(state) is C(import),
      and will import the dump file each time if run more than once.
@@ -342,7 +346,15 @@ import traceback
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.community.mysql.plugins.module_utils.database import mysql_quote_identifier
-from ansible_collections.community.mysql.plugins.module_utils.mysql import mysql_connect, mysql_driver, mysql_driver_fail_msg, mysql_common_argument_spec
+from ansible_collections.community.mysql.plugins.module_utils.mysql import (
+    mysql_connect,
+    mysql_driver,
+    mysql_driver_fail_msg,
+    mysql_common_argument_spec,
+    get_server_implementation,
+    get_server_version,
+)
+from ansible_collections.community.mysql.plugins.module_utils.version import LooseVersion
 from ansible.module_utils.six.moves import shlex_quote
 from ansible.module_utils._text import to_native
 
@@ -371,68 +383,81 @@ def db_delete(cursor, db):
 
 
 def db_dump(module, host, user, password, db_name, target, all_databases, port,
-            config_file, socket=None, ssl_cert=None, ssl_key=None, ssl_ca=None,
+            config_file, server_implementation, server_version, socket=None,
+            ssl_cert=None, ssl_key=None, ssl_ca=None,
             single_transaction=None, quick=None, ignore_tables=None, hex_blob=None,
             encoding=None, force=False, master_data=0, skip_lock_tables=False,
             dump_extra_args=None, unsafe_password=False, restrict_config_file=False,
             check_implicit_admin=False, pipefail=False):
-    cmd = module.get_bin_path('mysqldump', True)
+
+    cmd_str = 'mysqldump'
+    if server_implementation == 'mariadb' and LooseVersion(server_version) >= LooseVersion("10.4.6"):
+        cmd_str = 'mariadb-dump'
+    try:
+        cmd = [module.get_bin_path(cmd_str, True)]
+    except Exception as e:
+        return 1, "", "Error determining dump command: %s" % str(e)
+
     # If defined, mysqldump demands --defaults-extra-file be the first option
     if config_file:
         if restrict_config_file:
-            cmd += " --defaults-file=%s" % shlex_quote(config_file)
+            cmd.append("--defaults-file=%s" % shlex_quote(config_file))
         else:
-            cmd += " --defaults-extra-file=%s" % shlex_quote(config_file)
+            cmd.append("--defaults-extra-file=%s" % shlex_quote(config_file))
 
     if check_implicit_admin:
-        cmd += " --user=root --password=''"
+        cmd.append("--user=root --password=''")
     else:
         if user is not None:
-            cmd += " --user=%s" % shlex_quote(user)
+            cmd.append("--user=%s" % shlex_quote(user))
 
         if password is not None:
             if not unsafe_password:
-                cmd += " --password=%s" % shlex_quote(password)
+                cmd.append("--password=%s" % shlex_quote(password))
             else:
-                cmd += " --password=%s" % password
+                cmd.append("--password=%s" % password)
 
     if ssl_cert is not None:
-        cmd += " --ssl-cert=%s" % shlex_quote(ssl_cert)
+        cmd.append("--ssl-cert=%s" % shlex_quote(ssl_cert))
     if ssl_key is not None:
-        cmd += " --ssl-key=%s" % shlex_quote(ssl_key)
+        cmd.append("--ssl-key=%s" % shlex_quote(ssl_key))
     if ssl_ca is not None:
-        cmd += " --ssl-ca=%s" % shlex_quote(ssl_ca)
+        cmd.append("--ssl-ca=%s" % shlex_quote(ssl_ca))
     if force:
-        cmd += " --force"
+        cmd.append("--force")
     if socket is not None:
-        cmd += " --socket=%s" % shlex_quote(socket)
+        cmd.append("--socket=%s" % shlex_quote(socket))
     else:
-        cmd += " --host=%s --port=%i" % (shlex_quote(host), port)
+        cmd.append("--host=%s --port=%i" % (shlex_quote(host), port))
 
     if all_databases:
-        cmd += " --all-databases"
+        cmd.append("--all-databases")
     elif len(db_name) > 1:
-        cmd += " --databases {0}".format(' '.join(db_name))
+        cmd.append("--databases {0}".format(' '.join(db_name)))
     else:
-        cmd += " %s" % shlex_quote(' '.join(db_name))
+        cmd.append("%s" % shlex_quote(' '.join(db_name)))
 
     if skip_lock_tables:
-        cmd += " --skip-lock-tables"
+        cmd.append("--skip-lock-tables")
     if (encoding is not None) and (encoding != ""):
-        cmd += " --default-character-set=%s" % shlex_quote(encoding)
+        cmd.append("--default-character-set=%s" % shlex_quote(encoding))
     if single_transaction:
-        cmd += " --single-transaction=true"
+        cmd.append("--single-transaction=true")
     if quick:
-        cmd += " --quick"
+        cmd.append("--quick")
     if ignore_tables:
         for an_ignored_table in ignore_tables:
-            cmd += " --ignore-table={0}".format(an_ignored_table)
+            cmd.append("--ignore-table={0}".format(an_ignored_table))
     if hex_blob:
-        cmd += " --hex-blob"
+        cmd.append("--hex-blob")
     if master_data:
-        cmd += " --master-data=%s" % master_data
+        if (server_implementation == 'mysql' and
+                LooseVersion(server_version) >= LooseVersion("8.2.0")):
+            cmd.append("--source-data=%s" % master_data)
+        else:
+            cmd.append("--master-data=%s" % master_data)
     if dump_extra_args is not None:
-        cmd += " " + dump_extra_args
+        cmd.append(dump_extra_args)
 
     path = None
     if os.path.splitext(target)[-1] == '.gz':
@@ -441,6 +466,10 @@ def db_dump(module, host, user, password, db_name, target, all_databases, port,
         path = module.get_bin_path('bzip2', True)
     elif os.path.splitext(target)[-1] == '.xz':
         path = module.get_bin_path('xz', True)
+    elif os.path.splitext(target)[-1] == '.zst':
+        path = module.get_bin_path('zstd', True)
+
+    cmd = ' '.join(cmd)
 
     if path:
         cmd = '%s | %s > %s' % (cmd, path, shlex_quote(target))
@@ -460,13 +489,21 @@ def db_dump(module, host, user, password, db_name, target, all_databases, port,
 
 
 def db_import(module, host, user, password, db_name, target, all_databases, port, config_file,
-              socket=None, ssl_cert=None, ssl_key=None, ssl_ca=None, encoding=None, force=False,
+              server_implementation, server_version, socket=None, ssl_cert=None, ssl_key=None, ssl_ca=None,
+              encoding=None, force=False,
               use_shell=False, unsafe_password=False, restrict_config_file=False,
               check_implicit_admin=False):
     if not os.path.exists(target):
         return module.fail_json(msg="target %s does not exist on the host" % target)
 
-    cmd = [module.get_bin_path('mysql', True)]
+    cmd_str = 'mysql'
+    if server_implementation == 'mariadb' and LooseVersion(server_version) >= LooseVersion("10.4.6"):
+        cmd_str = 'mariadb'
+    try:
+        cmd = [module.get_bin_path(cmd_str, True)]
+    except Exception as e:
+        return 1, "", "Error determining mysql/mariadb command: %s" % str(e)
+
     # --defaults-file must go first, or errors out
     if config_file:
         if restrict_config_file:
@@ -512,6 +549,8 @@ def db_import(module, host, user, password, db_name, target, all_databases, port
         comp_prog_path = module.get_bin_path('bzip2', required=True)
     elif os.path.splitext(target)[-1] == '.xz':
         comp_prog_path = module.get_bin_path('xz', required=True)
+    elif os.path.splitext(target)[-1] == '.zst':
+        comp_prog_path = module.get_bin_path('zstd', required=True)
     if comp_prog_path:
         # The line below is for returned data only:
         executed_commands.append('%s -dc %s | %s' % (comp_prog_path, target, cmd))
@@ -596,7 +635,8 @@ def main():
         check_implicit_admin=dict(type='bool', default=False),
         config_overrides_defaults=dict(type='bool', default=False),
         chdir=dict(type='path'),
-        pipefail=dict(type='bool', default=False),
+        pipefail=dict(type='bool', default=True),
+        sql_log_bin=dict(type='bool', default=True),
     )
 
     module = AnsibleModule(
@@ -647,6 +687,7 @@ def main():
     config_overrides_defaults = module.params['config_overrides_defaults']
     chdir = module.params['chdir']
     pipefail = module.params['pipefail']
+    sql_log_bin = module.params["sql_log_bin"]
 
     if chdir:
         try:
@@ -689,6 +730,12 @@ def main():
         else:
             module.fail_json(msg="unable to find %s. Exception message: %s" % (config_file, to_native(e)))
 
+    if state in ['absent', 'present'] and not sql_log_bin:
+        cursor.execute("SET SQL_LOG_BIN=0;")
+
+    server_implementation = get_server_implementation(cursor)
+    server_version = get_server_version(cursor)
+
     changed = False
     if not os.path.exists(config_file):
         config_file = None
@@ -729,7 +776,8 @@ def main():
             module.exit_json(changed=True, db=db_name, db_list=db)
         rc, stdout, stderr = db_dump(module, login_host, login_user,
                                      login_password, db, target, all_databases,
-                                     login_port, config_file, socket, ssl_cert, ssl_key,
+                                     login_port, config_file, server_implementation, server_version,
+                                     socket, ssl_cert, ssl_key,
                                      ssl_ca, single_transaction, quick, ignore_tables,
                                      hex_blob, encoding, force, master_data, skip_lock_tables,
                                      dump_extra_args, unsafe_login_password, restrict_config_file,
@@ -750,8 +798,8 @@ def main():
         rc, stdout, stderr = db_import(module, login_host, login_user,
                                        login_password, db, target,
                                        all_databases,
-                                       login_port, config_file,
-                                       socket, ssl_cert, ssl_key, ssl_ca,
+                                       login_port, config_file, server_implementation,
+                                       server_version, socket, ssl_cert, ssl_key, ssl_ca,
                                        encoding, force, use_shell, unsafe_login_password,
                                        restrict_config_file, check_implicit_admin)
         if rc != 0:

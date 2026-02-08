@@ -1,5 +1,5 @@
 ---
-- name: Verify the extend verify commmand fails when space too low
+- name: Verify the extend verify command fails when space too low
   hosts: all
   vars:
     test_disk_min_size: "1g"
@@ -16,14 +16,14 @@
         - name: snapshot VG1 LV1
           vg: test_vg1
           lv: lv1
-          percent_space_required: 20
+          percent_space_required: 10
     snapshot_test_verify_set:
       name: snapset1
       volumes:
         - name: snapshot VG1 LV1
           vg: test_vg1
           lv: lv1
-          percent_space_required: 50
+          percent_space_required: 90
   tasks:
     - name: Run tests
       block:

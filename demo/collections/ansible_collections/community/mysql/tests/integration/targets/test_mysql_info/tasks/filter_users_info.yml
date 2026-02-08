@@ -31,6 +31,19 @@
             CREATE TABLE IF NOT EXISTS users_info_db.T_UPPER
             (id int, name1 varchar(9), NAME2 varchar(9), Name3 varchar(9))
 
+    # No need for a specific test later. When the module will retrieve the
+    # users privileges, it will fail with an error "1141 - There is no such
+    # grant defined for user 'PUBLIC' on host'%'" if the PUBLIC role is not
+    # handled properly by our module.
+    - name: Mysql_info users_info | Grant to PUBLIC for MariaDB 10.11+
+      community.mysql.mysql_query:
+        query:
+          - >-
+            GRANT SELECT,INSERT,UPDATE,DELETE on users_info_db.* TO PUBLIC
+      when:
+        - db_engine == 'mariadb'
+        - db_version is version('10.11.1', '>=')
+
     # I failed to create a procedure using community.mysql.mysql_query.
     # Maybe it's because we must changed the delimiter.
     - name: Mysql_info users_info | Create procedure SQL file
@@ -47,7 +60,7 @@
         state: import
         target: /root/create_procedure.sql
 
-    # Use a query instead of mysql_user, because we want to caches differences
+    # Use a query instead of mysql_user, because we want to catch differences
     # at the end and a bug in mysql_user would be invisible to this tests
     - name: Mysql_info users_info | Prepare common tests users
       community.mysql.mysql_query:
@@ -147,67 +160,96 @@
             '*CB3326D5279DE7915FE5D743232165EE887883CA'
           - GRANT SELECT ON users_info_db.* TO users_info_multi_hosts@'host2'
 
+          - >-
+            CREATE USER users_info_tls_none@'host'
+            IDENTIFIED WITH mysql_native_password AS
+            '*CB3326D5279DE7915FE5D743232165EE887883CA' REQUIRE NONE
+          - GRANT SELECT ON users_info_db.* TO users_info_tls_none@'host'
+
+          - >-
+            CREATE USER users_info_tls_ssl@'host'
+            IDENTIFIED WITH mysql_native_password AS
+            '*CB3326D5279DE7915FE5D743232165EE887883CA' REQUIRE SSL
+          - GRANT SELECT ON users_info_db.* TO users_info_tls_ssl@'host'
+
+          - >-
+            CREATE USER users_info_tls_cipher@'host'
+            IDENTIFIED WITH mysql_native_password AS
+            '*CB3326D5279DE7915FE5D743232165EE887883CA'
+            REQUIRE CIPHER 'ECDH-RSA-AES256-SHA384'
+          - GRANT SELECT ON users_info_db.* TO users_info_tls_cipher@'host'
+
+          - >-
+            CREATE USER users_info_tls_x509@'host'
+            IDENTIFIED WITH mysql_native_password AS
+            '*CB3326D5279DE7915FE5D743232165EE887883CA' REQUIRE X509
+          - GRANT SELECT ON users_info_db.* TO users_info_tls_x509@'host'
+
+          - >-
+            CREATE USER users_info_tls_subject@'host'
+            IDENTIFIED WITH mysql_native_password AS
+            '*CB3326D5279DE7915FE5D743232165EE887883CA'
+            REQUIRE SUBJECT '/CN=Bob/O=MyDom/C=US/ST=Oregon/L=Portland'
+          - GRANT SELECT ON users_info_db.* TO users_info_tls_subject@'host'
+
+          - >-
+            CREATE USER users_info_tls_issuer@'host'
+            IDENTIFIED WITH mysql_native_password AS
+            '*CB3326D5279DE7915FE5D743232165EE887883CA'
+            REQUIRE ISSUER '/C=FI/ST=Somewhere/L=City/
+            O=CompanyX/CN=Bob/emailAddress=bob@companyx.com'
+          - GRANT SELECT ON users_info_db.* TO users_info_tls_issuer@'host'
+
+          - >-
+            CREATE USER users_info_tls_subject_issuer@'host'
+            IDENTIFIED WITH mysql_native_password AS
+            '*CB3326D5279DE7915FE5D743232165EE887883CA'
+            REQUIRE SUBJECT '/CN=Bob/O=MyDom/C=US/ST=Oregon/L=Portland'
+            AND ISSUER '/C=FI/ST=Somewhere/L=City/
+            O=CompanyX/CN=Bob/emailAddress=bob@companyx.com'
+          - >-
+            GRANT SELECT ON users_info_db.*
+            TO users_info_tls_subject_issuer@'host'
+
+          - >-
+            CREATE USER users_info_tls_sub_issu_ciph@'host'
+            IDENTIFIED WITH mysql_native_password AS
+            '*CB3326D5279DE7915FE5D743232165EE887883CA'
+            REQUIRE SUBJECT '/CN=Bob/O=MyDom/C=US/ST=Oregon/L=Portland'
+            AND ISSUER '/C=FI/ST=Somewhere/L=City/
+            O=CompanyX/CN=Bob/emailAddress=bob@companyx.com'
+            AND CIPHER 'ECDH-RSA-AES256-SHA384'
+          - >-
+            GRANT SELECT ON users_info_db.*
+            TO users_info_tls_sub_issu_ciph@'host'
+
     - name: Mysql_info users_info | Prepare tests users for MariaDB
-      community.mysql.mysql_user:
-        name: "{{ item.name }}"
-        host: "users_info.com"
-        plugin: "{{ item.plugin | default(omit) }}"
-        plugin_auth_string: "{{ item.plugin_auth_string | default(omit) }}"
-        plugin_hash_string: "{{ item.plugin_hash_string | default(omit) }}"
-        tls_require: "{{ item.tls_require | default(omit) }}"
-        priv: "{{ item.priv }}"
-        resource_limits: "{{ item.resource_limits | default(omit) }}"
-        column_case_sensitive: true
-        state: present
-      loop:
-        - name: users_info_socket  # Only for MariaDB
-          priv:
-            '*.*': 'ALL'
-          plugin: 'unix_socket'
+      community.mysql.mysql_query:
+        query:
+          - >-
+            CREATE USER users_info_socket@'users_info.com' IDENTIFIED WITH
+            unix_socket
+          - GRANT ALL ON *.* to users_info_socket@'users_info.com'
       when:
         - db_engine == 'mariadb'
 
     - name: Mysql_info users_info | Prepare tests users for MySQL
-      community.mysql.mysql_user:
-        name: "{{ item.name }}"
-        host: "users_info.com"
-        plugin: "{{ item.plugin | default(omit) }}"
-        plugin_auth_string: "{{ item.plugin_auth_string | default(omit) }}"
-        plugin_hash_string: "{{ item.plugin_hash_string | default(omit) }}"
-        tls_require: "{{ item.tls_require | default(omit) }}"
-        priv: "{{ item.priv }}"
-        resource_limits: "{{ item.resource_limits | default(omit) }}"
-        column_case_sensitive: true
-        state: present
-      loop:
-        - name: users_info_sha256  # Only for MySQL
-          priv:
-            '*.*': 'ALL'
-          plugin_auth_string:
-            '$5$/<w*D`L4\"F$WQiI1Pev.7atAh8udYs3wqlzgdfV8LXoy7rqSEC7NF2'
-          plugin: 'sha256_password'
+      community.mysql.mysql_query:
+        query:
+          - >-
+            CREATE USER users_info_sha256@'users_info.com' IDENTIFIED WITH
+            sha256_password BY 'msandbox'
+          - GRANT ALL ON *.* to users_info_sha256@'users_info.com'
       when:
         - db_engine == 'mysql'
 
     - name: Mysql_info users_info | Prepare tests users for MySQL 8+
-      community.mysql.mysql_user:
-        name: "{{ item.name }}"
-        host: "users_info.com"
-        plugin: "{{ item.plugin | default(omit) }}"
-        plugin_auth_string: "{{ item.plugin_auth_string | default(omit) }}"
-        plugin_hash_string: "{{ item.plugin_hash_string | default(omit) }}"
-        tls_require: "{{ item.tls_require | default(omit) }}"
-        priv: "{{ item.priv }}"
-        resource_limits: "{{ item.resource_limits | default(omit) }}"
-        column_case_sensitive: true
-        state: present
-      loop:
-        - name: users_info_caching_sha2  # Only for MySQL 8+
-          priv:
-            '*.*': 'ALL'
-          plugin_auth_string:
-            '$A$005$61j/uF%Qb4-=O2xkeO82u2HNkF.lxDq0liO4U3xqi7bDUCbWM6HayRXWn1'
-          plugin: 'caching_sha2_password'
+      community.mysql.mysql_query:
+        query:
+          - >-
+            CREATE USER users_info_caching_sha2@'users_info.com' IDENTIFIED WITH
+            caching_sha2_password BY 'msandbox'
+          - GRANT ALL ON *.* to users_info_caching_sha2@'users_info.com'
       when:
         - db_engine == 'mysql'
         - db_version is version('8.0', '>=')
@@ -220,31 +262,35 @@
           - users_info
       register: result
 
-    - name: Recreate users from mysql_info users_info result
+    - name: Mysql_info users_info | Recreate users from mysql_info result
       community.mysql.mysql_user:
         name: "{{ item.name }}"
         host: "{{ item.host }}"
         plugin: "{{ item.plugin | default(omit) }}"
         plugin_auth_string: "{{ item.plugin_auth_string | default(omit) }}"
         plugin_hash_string: "{{ item.plugin_hash_string | default(omit) }}"
-        tls_require: "{{ item.tls_require | default(omit) }}"
+        tls_requires: "{{ item.tls_requires | default(omit) }}"
         priv: "{{ item.priv | default(omit) }}"
         resource_limits: "{{ item.resource_limits | default(omit) }}"
         column_case_sensitive: true
         state: present
+        locked: "{{ item.locked | default(omit) }}"
       loop: "{{ result.users_info }}"
       loop_control:
         label: "{{ item.name }}@{{ item.host }}"
       register: recreate_users_result
       failed_when:
-        - recreate_users_result is changed
+        - >-
+          recreate_users_result is changed or
+          recreate_users_result.msg != 'User unchanged'
       when:
         - item.name != 'root'
         - item.name != 'mysql'
         - item.name != 'mariadb.sys'
         - item.name != 'mysql.sys'
         - item.name != 'mysql.infoschema'
-
+        - item.name != 'mysql.session'
+        - item.name != 'PUBLIC'  # MariaDB roles are not supported
 
     # ================================== Cleanup ============================
 
@@ -265,6 +311,14 @@
         - users_info_usage_only
         - users_info_columns_uppercase
         - users_info_multi_hosts
+        - users_info_tls_none
+        - users_info_tls_ssl
+        - users_info_tls_cipher
+        - users_info_tls_x509
+        - users_info_tls_subject
+        - users_info_tls_issuer
+        - users_info_tls_subject_issuer
+        - users_info_tls_sub_issu_ciph
 
     - name: Mysql_info users_info | Cleanup databases
       community.mysql.mysql_db:

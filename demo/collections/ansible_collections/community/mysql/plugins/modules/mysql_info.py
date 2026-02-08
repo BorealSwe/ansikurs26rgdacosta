@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2019, Andrew Klychkov (@Andersson007) <aaklychkov@mail.ru>
+# Copyright: (c) 2019, Andrew Klychkov (@Andersson007) <andrew.a.klychkov@gmail.com>
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
 
 from __future__ import absolute_import, division, print_function
 
@@ -11,9 +12,9 @@ __metaclass__ = type
 DOCUMENTATION = r'''
 ---
 module: mysql_info
-short_description: Gather information about MySQL servers
+short_description: Gather information about MySQL or MariaDB servers
 description:
-- Gathers information about MySQL servers.
+- Gathers information about MySQL or MariaDB servers.
 
 options:
   filter:
@@ -35,7 +36,7 @@ options:
   exclude_fields:
     description:
     - List of fields which are not needed to collect.
-    - "Supports elements: C(db_size). Unsupported elements will be ignored."
+    - "Supports elements: C(db_size), C(db_table_count). Unsupported elements will be ignored."
     type: list
     elements: str
     version_added: '0.1.0'
@@ -46,8 +47,10 @@ options:
     default: false
 
 notes:
+- Compatible with MariaDB or MySQL.
 - Calculating the size of a database might be slow, depending on the number and size of tables in it.
   To avoid this, use I(exclude_fields=db_size).
+- filters C(users_info) doesn't support MariaDB roles.
 
 attributes:
   check_mode:
@@ -144,11 +147,11 @@ EXAMPLES = r'''
       name: "{{ item.name }}"
       host: "{{ item.host }}"
       plugin: "{{ item.plugin | default(omit) }}"
-      plugin_auth_string: "{{ item.plugin_auth_string | default(omit) }}"
       plugin_hash_string: "{{ item.plugin_hash_string | default(omit) }}"
-      tls_require: "{{ item.tls_require | default(omit) }}"
+      tls_requires: "{{ item.tls_requires | default(omit) }}"
       priv: "{{ item.priv | default(omit) }}"
       resource_limits: "{{ item.resource_limits | default(omit) }}"
+      locked: "{{ item.locked | default(omit) }}"
       column_case_sensitive: true
       state: present
     loop: "{{ result.users_info }}"
@@ -158,9 +161,16 @@ EXAMPLES = r'''
       - item.name != 'root'  # In case you don't want to import admin accounts
       - item.name != 'mariadb.sys'
       - item.name != 'mysql'
+      - item.name != 'PUBLIC'  # MariaDB roles are not supported
 '''
 
 RETURN = r'''
+server_engine:
+  description: Database server engine.
+  returned: if not excluded by filter
+  type: str
+  sample: 'MariaDB'
+  version_added: '3.10.0'
 version:
   description: Database server version.
   returned: if not excluded by filter
@@ -197,13 +207,19 @@ databases:
   returned: if not excluded by filter
   type: dict
   sample:
-  - { "mysql": { "size": 656594 }, "information_schema": { "size": 73728 } }
+  - { "mysql": { "size": 656594, "tables": 31 }, "information_schema": { "size": 73728, "tables": 79 } }
   contains:
     size:
       description: Database size in bytes.
       returned: if not excluded by filter
       type: dict
       sample: { 'size': 656594 }
+    tables:
+      description: Count of tables and views in that database.
+      returned: if not excluded by filter
+      type: dict
+      sample: { 'tables': 12 }
+      version_added: '3.11.0'
 settings:
   description: Global settings (variables) information.
   returned: if not excluded by filter
@@ -230,17 +246,20 @@ users_info:
     - Does not support proxy privileges. If an account has proxy privileges, they won't appear in the output.
     - Causes issues with authentications plugins C(sha256_password) and C(caching_sha2_password).
       If the output is fed to M(community.mysql.mysql_user), the
-      ``plugin_auth_string`` will most likely be unreadable due to non-binary
+      ``plugin_hash_string`` will most likely be unreadable due to non-binary
       characters.
+    - The "locked" field was aded in ``community.mysql`` 3.13.
   returned: if not excluded by filter
   type: dict
   sample:
-  - { "plugin_auth_string": '*1234567',
+  - { "plugin_hash_string": '*1234567',
       "name": "user1",
       "host": "host.com",
       "plugin": "mysql_native_password",
       "priv": "db1.*:SELECT/db2.*:SELECT",
-      "resource_limits": { "MAX_USER_CONNECTIONS": 100 } }
+      "resource_limits": { "MAX_USER_CONNECTIONS": 100 },
+      "tls_requires": { "SSL": null },
+      "locked": false }
   version_added: '3.8.0'
 engines:
   description: Information about the server's storage engines.
@@ -272,7 +291,6 @@ connector_name:
   type: str
   sample:
   - "pymysql"
-  - "MySQLdb"
   version_added: '3.6.0'
 connector_version:
   description: Version of the python connector used by the module. When the connector is not identified, returns C(Unknown).
@@ -286,6 +304,9 @@ connector_version:
 from decimal import Decimal
 
 from ansible.module_utils.basic import AnsibleModule
+from ansible_collections.community.mysql.plugins.module_utils.command_resolver import (
+    CommandResolver
+)
 from ansible_collections.community.mysql.plugins.module_utils.mysql import (
     mysql_connect,
     mysql_common_argument_spec,
@@ -294,14 +315,16 @@ from ansible_collections.community.mysql.plugins.module_utils.mysql import (
     get_connector_name,
     get_connector_version,
     get_server_implementation,
+    get_server_version,
 )
 
 from ansible_collections.community.mysql.plugins.module_utils.user import (
     privileges_get,
     get_resource_limits,
     get_existing_authentication,
+    get_user_implementation,
+    user_is_locked,
 )
-from ansible.module_utils.six import iteritems
 from ansible.module_utils._text import to_native
 
 
@@ -327,10 +350,13 @@ class MySQL_Info(object):
         5. add info about the new subset with an example to RETURN block
     """
 
-    def __init__(self, module, cursor, server_implementation):
+    def __init__(self, module, cursor, server_implementation, server_version, user_implementation):
         self.module = module
         self.cursor = cursor
         self.server_implementation = server_implementation
+        self.server_version = server_version
+        self.user_implementation = user_implementation
+        self.command_resolver = CommandResolver(self.server_implementation, self.server_version)
         self.info = {
             'version': {},
             'databases': {},
@@ -428,7 +454,7 @@ class MySQL_Info(object):
                 engine = line['Engine']
                 self.info['engines'][engine] = {}
 
-                for vname, val in iteritems(line):
+                for vname, val in line.items():
                     if vname != 'Engine':
                         self.info['engines'][engine][vname] = val
 
@@ -492,46 +518,46 @@ class MySQL_Info(object):
 
     def __get_master_status(self):
         """Get master status if the instance is a master."""
-        res = self.__exec_sql('SHOW MASTER STATUS')
+        query = self.command_resolver.resolve_command("SHOW MASTER STATUS")
+        res = self.__exec_sql(query)
         if res:
             for line in res:
-                for vname, val in iteritems(line):
+                for vname, val in line.items():
                     self.info['master_status'][vname] = self.__convert(val)
 
     def __get_slave_status(self):
         """Get slave status if the instance is a slave."""
-        if self.server_implementation == "mariadb":
-            res = self.__exec_sql('SHOW ALL SLAVES STATUS')
-        else:
-            res = self.__exec_sql('SHOW SLAVE STATUS')
+        query = self.command_resolver.resolve_command("SHOW SLAVE STATUS")
+        res = self.__exec_sql(query)
         if res:
             for line in res:
-                host = line['Master_Host']
+                host = line.get('Master_Host') or line.get('Source_Host')
                 if host not in self.info['slave_status']:
                     self.info['slave_status'][host] = {}
 
-                port = line['Master_Port']
+                port = line.get('Master_Port') or line.get('Source_Port')
                 if port not in self.info['slave_status'][host]:
                     self.info['slave_status'][host][port] = {}
 
-                user = line['Master_User']
+                user = line.get('Master_User') or line.get('Source_User')
                 if user not in self.info['slave_status'][host][port]:
                     self.info['slave_status'][host][port][user] = {}
 
-                for vname, val in iteritems(line):
-                    if vname not in ('Master_Host', 'Master_Port', 'Master_User'):
+                for vname, val in line.items():
+                    if vname not in ('Master_Host', 'Master_Port', 'Master_User', 'Source_Host', 'Source_Port', 'Source_User'):
                         self.info['slave_status'][host][port][user][vname] = self.__convert(val)
 
     def __get_slaves(self):
         """Get slave hosts info if the instance is a master."""
-        res = self.__exec_sql('SHOW SLAVE HOSTS')
+        query = self.command_resolver.resolve_command("SHOW SLAVE HOSTS")
+        res = self.__exec_sql(query)
         if res:
             for line in res:
                 srv_id = line['Server_id']
                 if srv_id not in self.info['slave_hosts']:
                     self.info['slave_hosts'][srv_id] = {}
 
-                for vname, val in iteritems(line):
+                for vname, val in line.items():
                     if vname != 'Server_id':
                         self.info['slave_hosts'][srv_id][vname] = self.__convert(val)
 
@@ -547,7 +573,7 @@ class MySQL_Info(object):
                 user = line['User']
                 self.info['users'][host][user] = {}
 
-                for vname, val in iteritems(line):
+                for vname, val in line.items():
                     if vname not in ('Host', 'User'):
                         self.info['users'][host][user][vname] = self.__convert(val)
 
@@ -580,7 +606,9 @@ class MySQL_Info(object):
             user = line['User']
             host = line['Host']
 
-            user_priv = privileges_get(self.cursor, user, host)
+            # MariaDB roles have no host
+            is_role = self.server_implementation == 'mariadb' and not host
+            user_priv = privileges_get(self.cursor, user, host, maria_role=is_role)
 
             if not user_priv:
                 self.module.warn("No privileges found for %s on host %s" % (user, host))
@@ -602,13 +630,17 @@ class MySQL_Info(object):
                 priv_string.remove('*.*:USAGE')
 
             resource_limits = get_resource_limits(self.cursor, user, host)
-
             copy_ressource_limits = dict.copy(resource_limits)
+
+            tls_requires = self.user_implementation.get_tls_requires(
+                self.cursor, user, host)
+
             output_dict = {
                 'name': user,
                 'host': host,
                 'priv': '/'.join(priv_string),
                 'resource_limits': copy_ressource_limits,
+                'tls_requires': tls_requires,
             }
 
             # Prevent returning a resource limit if empty
@@ -619,12 +651,20 @@ class MySQL_Info(object):
                 if len(output_dict['resource_limits']) == 0:
                     del output_dict['resource_limits']
 
+            # Prevent returning tls_require if empty
+            if not tls_requires:
+                del output_dict['tls_requires']
+
             authentications = get_existing_authentication(self.cursor, user, host)
             if authentications:
-                output_dict.update(authentications)
+                output_dict.update(authentications[0])
+                # https://github.com/ansible-collections/community.mysql/pull/629
+                output_dict.pop('plugin_auth_string', None)
+
+            if line.get('is_role') and line['is_role'] == 'N':
+                output_dict['locked'] = user_is_locked(self.cursor, user, host)
 
             # TODO password_option
-            # TODO lock_option
             # but both are not supported by mysql_user atm. So no point yet.
 
             output.append(output_dict)
@@ -633,40 +673,39 @@ class MySQL_Info(object):
 
     def __get_databases(self, exclude_fields, return_empty_dbs):
         """Get info about databases."""
-        if not exclude_fields:
-            query = ('SELECT table_schema AS "name", '
-                     'SUM(data_length + index_length) AS "size" '
-                     'FROM information_schema.TABLES GROUP BY table_schema')
-        else:
-            if 'db_size' in exclude_fields:
-                query = ('SELECT table_schema AS "name" '
-                         'FROM information_schema.TABLES GROUP BY table_schema')
 
-        res = self.__exec_sql(query)
+        def is_field_included(field_name):
+            return not exclude_fields or 'db_{}'.format(field_name) not in exclude_fields
 
-        if res:
-            for db in res:
-                self.info['databases'][db['name']] = {}
+        def create_db_info(db_data):
+            info = {}
+            if is_field_included('size'):
+                info['size'] = int(db_data.get('size', 0) or 0)
+            if is_field_included('table_count'):
+                info['tables'] = int(db_data.get('tables', 0) or 0)
+            return info
 
-                if not exclude_fields or 'db_size' not in exclude_fields:
-                    if db['size'] is None:
-                        db['size'] = 0
+        # Build the main query
+        query_parts = ['SELECT table_schema AS "name"']
+        if is_field_included('size'):
+            query_parts.append('SUM(data_length + index_length) AS "size"')
+        if is_field_included('table_count'):
+            query_parts.append('COUNT(table_name) as "tables"')
 
-                    self.info['databases'][db['name']]['size'] = int(db['size'])
+        query = "{} FROM information_schema.TABLES GROUP BY table_schema".format(", ".join(query_parts))
 
-        # If empty dbs are not needed in the returned dict, exit from the method
-        if not return_empty_dbs:
-            return None
+        # Get and process databases with tables
+        databases = self.__exec_sql(query) or []
+        for db in databases:
+            self.info['databases'][db['name']] = create_db_info(db)
 
-        # Add info about empty databases (issue #65727):
-        res = self.__exec_sql('SHOW DATABASES')
-        if res:
-            for db in res:
-                if db['Database'] not in self.info['databases']:
-                    self.info['databases'][db['Database']] = {}
-
-                    if not exclude_fields or 'db_size' not in exclude_fields:
-                        self.info['databases'][db['Database']]['size'] = 0
+        # Handle empty databases if requested
+        if return_empty_dbs:
+            empty_databases = self.__exec_sql('SHOW DATABASES') or []
+            for db in empty_databases:
+                db_name = db['Database']
+                if db_name not in self.info['databases']:
+                    self.info['databases'][db_name] = create_db_info({})
 
     def __exec_sql(self, query, ddl=False):
         """Execute SQL.
@@ -745,13 +784,16 @@ def main():
         module.fail_json(msg)
 
     server_implementation = get_server_implementation(cursor)
+    server_version = get_server_version(cursor)
+    user_implementation = get_user_implementation(cursor)
 
     ###############################
     # Create object and do main job
 
-    mysql = MySQL_Info(module, cursor, server_implementation)
+    mysql = MySQL_Info(module, cursor, server_implementation, server_version, user_implementation)
 
     module.exit_json(changed=False,
+                     server_engine='MariaDB' if server_implementation == 'mariadb' else 'MySQL',
                      connector_name=connector_name,
                      connector_version=connector_version,
                      **mysql.get_info(filter_, exclude_fields, return_empty_dbs))

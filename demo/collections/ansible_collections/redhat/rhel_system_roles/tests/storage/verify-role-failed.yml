@@ -7,7 +7,7 @@
         storage_pools_global: "{{ storage_pools | d([]) }}"
         storage_volumes_global: "{{ storage_volumes | d([]) }}"
 
-    - name: Verify role raises correct error
+    - name: Verify role raises correct error - 2
       include_role:
         name: redhat.rhel_system_roles.storage
       vars:
@@ -38,9 +38,11 @@
 
     - name: Verify correct exception or error message
       assert:
-        that: exception is search(__storage_failed_exception) or msg_stdout is search(__storage_failed_exception) or msg_stderr is search(__storage_failed_exception) or stdout is search(__storage_failed_exception) or stderr is search(__storage_failed_exception)
+        that: result_msg is search(__storage_failed_exception) or msg_msg is search(__storage_failed_exception) or exception is search(__storage_failed_exception) or msg_stdout is search(__storage_failed_exception) or msg_stderr is search(__storage_failed_exception) or stdout is search(__storage_failed_exception) or stderr is search(__storage_failed_exception)
       when: __storage_failed_exception is defined
       vars:
+        result_msg: "{{ ansible_failed_result.msg | d('') }}"
+        msg_msg: "{{ ansible_failed_result.msg.msg | d('') }}"
         exception: "{{ ansible_failed_result.msg.exception | d('') }}"
         msg_stdout: "{{ ansible_failed_result.msg.module_stdout | d('') }}"
         msg_stderr: "{{ ansible_failed_result.msg.module_stderr | d('') }}"

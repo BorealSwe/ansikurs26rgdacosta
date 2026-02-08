@@ -20,4 +20,6 @@ galaxy_info:
     - fedora
     - keylime
     - redhat
+    - leap
+    - sles
 dependencies: []

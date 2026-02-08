@@ -1,6 +1,138 @@
 Changelog
 =========
 
+[1.25.6] - 2025-08-20
+--------------------
+
+### Other Changes
+
+- test: fix setting and resetting PQC (#306)
+
+[1.25.5] - 2025-08-18
+--------------------
+
+### Other Changes
+
+- test: clean up certs/keys created by tests (#304)
+
+[1.25.4] - 2025-08-08
+--------------------
+
+### Other Changes
+
+- refactor: crmsh update for ansible-core 2.19 (#301)
+- style: fix typos (#302)
+
+[1.25.3] - 2025-08-01
+--------------------
+
+### Bug Fixes
+
+- fix: crsmh corosync template wrongly used variable from run_once host (#299)
+
+### Other Changes
+
+- test: use post quantum crypto for certs where available (#297)
+- test: don't use fence_xvm in tests (#298)
+
+[1.25.2] - 2025-07-24
+--------------------
+
+### Bug Fixes
+
+- fix: use empty init to prevent old ansible issues (#294)
+
+### Other Changes
+
+- ci: add some ansible-test ignores for 2.14 (#293)
+- ci: update pcs test matrix (#295)
+
+[1.25.1] - 2025-07-15
+--------------------
+
+### Other Changes
+
+- refactor: fixes for ansible 2.19 (#291)
+
+[1.25.0] - 2025-07-09
+--------------------
+
+### New Features
+
+- feat: export cluster resources (#288)
+
+### Other Changes
+
+- ci: use py311 for pylint (#289)
+
+[1.24.1] - 2025-07-02
+--------------------
+
+### Bug Fixes
+
+- fix: ensure /var/lib/pcsd exists (#285)
+
+### Other Changes
+
+- refactor: support Ansible 2.19 (#286)
+
+[1.24.0] - 2025-06-23
+--------------------
+
+### New Features
+
+- feat: crmsh SLES 16 changes and introduction of zypper patterns (#283)
+
+### Other Changes
+
+- ci: Add Fedora 42; use tox-lsr 3.9.0; use lsr-report-errors for qemu tests (#280)
+- ci: Add support for bootc end-to-end validation tests (#281)
+- ci: Use ansible 2.19 for fedora 42 testing; support python 3.13 (#282)
+
+[1.23.2] - 2025-05-15
+--------------------
+
+### Other Changes
+
+- ci: bump tox-lsr to 3.8.0; rename qemu/kvm tests (#277)
+- test: update attributes and utilization tests for new pcs (#278)
+
+[1.23.1] - 2025-05-05
+--------------------
+
+### Other Changes
+
+- ci: bump sclorg/testing-farm-as-github-action from 3 to 4 (#274)
+- refactor: use single line pylint disable broad-except (#275)
+
+[1.23.0] - 2025-04-23
+--------------------
+
+### New Features
+
+- feat: export pcsd and OS configuration (#264)
+- feat: crmsh remove python3-rpm dependency (#270)
+
+### Bug Fixes
+
+- fix: restart qdevice when its certificates have been regenerated (#262)
+- fix: disable proxy when connecting to pcsd local socket (#265)
+
+### Other Changes
+
+- ci: update pcs test matrix (#253)
+- ci: ansible-plugin-scan is disabled for now (#256)
+- ci: bump ansible-lint to v25; provide collection requirements for ansible-lint (#259)
+- refactor: fix python black formatting (#260)
+- ci: Check spelling with codespell (#261)
+- ci: Add test plan that runs CI tests and customize it for each role (#263)
+- ci: In test plans, prefix all relate variables with SR_ (#266)
+- ci: Fix bug with ARTIFACTS_URL after prefixing with SR_ (#267)
+- ci: several changes related to new qemu test, ansible-lint, python versions, ubuntu versions (#268)
+- test: update alerts test for new pcs (#269)
+- ci: use tox-lsr 3.6.0; improve qemu test logging (#271)
+- ci: skip storage scsi, nvme tests in github qemu ci (#272)
+
 [1.22.2] - 2025-01-27
 --------------------
 

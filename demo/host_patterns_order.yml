@@ -1,0 +1,12 @@
+---
+- name: Demonstrate host patterns and order
+  hosts: "{{ my_host | default('all') }}"
+  order: "{{ my_order | default('inventory') }}"
+  become: false
+  gather_facts: false
+
+  tasks:
+
+    - name: Display current inventory host
+      ansible.builtin.debug:
+        var: inventory_hostname

@@ -61,7 +61,8 @@
 
 - name: Process thin pool sizes when applicable
   when:
-    - storage_test_volume.thin
+    - not storage_test_volume.thin is none
+    - storage_test_volume.thin | bool
     - _storage_test_volume_present | bool
   block:
     - name: Default thin pool reserved space values
@@ -117,7 +118,7 @@
         - storage_test_volume.thin_pool_size is not none
         - "'%' not in storage_test_volume.thin_pool_size"
 
-    - name: Calculate the expected size based on pool size and percentage value
+    - name: Calculate the expected size based on pool size and percentage value - 2
       set_fact:
         storage_test_expected_thin_pool_size: "{{ (_storage_test_max_thin_pool_size.bytes * ((storage_test_volume.thin_pool_size[:-1] | int) / 100.0)) }}"
       when:
@@ -144,7 +145,7 @@
   debug:
     var: storage_test_actual_size
 
-- name: Show expected size
+- name: Show expected size - 2
   debug:
     var: storage_test_expected_size
 

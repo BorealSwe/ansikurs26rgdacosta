@@ -58,7 +58,7 @@ dnf install rhel-system-roles
 This collection provides Ansible roles that manage different Red Hat Enterprise Linux subsystems.
 
 
-A list of all roles and their documentation can be found at https://rhel-system-roles.github.io/ as well as in the Supported Roles section.
+A list of all roles and their documentation can be found at https://linux-system-roles.github.io/ as well as in the Supported Roles section.
 
 Once Red Hat Enterprise Linux System Roles Collection is installed, the individual role documentation is found at:
 
@@ -70,7 +70,7 @@ Once Red Hat Enterprise Linux System Roles Collection is installed, the individu
 
 If you wish to contribute to roles within this collection, feel free to open a pull request for the role's upstream repository at https://github.com/rhel-system-roles/.
 
-We recommend that prior to submitting a PR, you familiarize yourself with our [Contribution Guidelines](https://rhel-system-roles.github.io/contribute.html).
+We recommend that prior to submitting a PR, you familiarize yourself with our [Contribution Guidelines](https://linux-system-roles.github.io/contribute.html).
 
 ## Support
 

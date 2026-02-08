@@ -1,6 +1,72 @@
 Changelog
 =========
 
+[1.10.2] - 2025-08-01
+--------------------
+
+### Other Changes
+
+- test: debug finding ethernet with pci (#285)
+
+[1.10.1] - 2025-06-23
+--------------------
+
+### Other Changes
+
+- tests: Update tests_zone to do bootc end-to-end validation (#280)
+- ci: Use ansible 2.19 for fedora 42 testing; support python 3.13 (#281)
+
+[1.10.0] - 2025-05-21
+--------------------
+
+### New Features
+
+- feat: Support this role in container builds (#274)
+
+### Bug Fixes
+
+- fix: Fix "helpers" service option (#277)
+- fix: Fix "interface_pci_id" role option (#278)
+
+### Other Changes
+
+- ci: Assert fact structure and some well-known entries (#265)
+- ci: Bump sclorg/testing-farm-as-github-action from 3 to 4 (#268)
+- ci: bump tox-lsr to 3.8.0; rename qemu/kvm tests (#269)
+- ci: Two prerequisites for bootc support (#270)
+- refactor: Add backend abstraction to firewall_lib, remove obsolete firewall_lib offline code (#271)
+- tests: Various fixes and additions (#273)
+- ci: Add Fedora 42; use tox-lsr 3.9.0; use lsr-report-errors for qemu tests (#275)
+
+[1.9.1] - 2025-04-29
+--------------------
+
+### Other Changes
+
+- ci: Add container integration test for rpm and bootc (#264)
+- test: skip include tests on el7, document el7 support (#266)
+
+[1.9.0] - 2025-04-23
+--------------------
+
+### New Features
+
+- feat: support includes for services (#259)
+
+### Other Changes
+
+- ci: ansible-plugin-scan is disabled for now (#248)
+- ci: bump ansible-lint to v25; provide collection requirements for ansible-lint (#251)
+- refactor: fix python black formatting (#252)
+- ci: Check spelling with codespell (#253)
+- ci: Add test plan that runs CI tests and customize it for each role (#254)
+- ci: In test plans, prefix all relate variables with SR_ (#256)
+- ci: Fix bug with ARTIFACTS_URL after prefixing with SR_ (#257)
+- ci: several changes related to new qemu test, ansible-lint, python versions, ubuntu versions (#258)
+- ci: Avoid too large inline test logs in QEMU/KVM integration test (#260)
+- ci: use tox-lsr 3.6.0; improve qemu test logging (#261)
+- ci: skip storage scsi, nvme tests in github qemu ci (#262)
+
 [1.8.2] - 2025-01-09
 --------------------
 
@@ -161,7 +227,7 @@ Changelog
 
 ### Other Changes
 
-- tests: test_ping: fix compatability issues (#171)
+- tests: test_ping: fix compatibility issues (#171)
 
 [1.6.0] - 2023-08-08
 --------------------

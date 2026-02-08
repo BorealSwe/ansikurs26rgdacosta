@@ -181,17 +181,18 @@ options:
     - This parameter can be used with C(label_selectors) to restrict the resources to be deleted.
     type: bool
     default: false
-    version_added: 2.5.0
+    version_added: 3.0.0
     aliases:
     - all
   hidden_fields:
     description:
       - Hide fields matching this option in the result
       - An example might be C(hidden_fields=[metadata.managedFields])
-      - Only field definitions that don't reference list items are supported (so V(spec.containers[0]) would not work)
+        or V(hidden_fields=[spec.containers[0].env[3].value])
+        or V(hidden_fields=[metadata.annotations[kubectl.kubernetes.io/last-applied-configuration]])
     type: list
     elements: str
-    version_added: 2.5.0
+    version_added: 3.0.0
 
 requirements:
   - "python >= 3.9"
@@ -382,28 +383,24 @@ result:
   contains:
      api_version:
        description: The versioned schema of this representation of an object.
-       returned: success
+       returned: when O(resource_definition) or O(src) contains a single object.
        type: str
      kind:
        description: Represents the REST resource this object represents.
-       returned: success
+       returned: when O(resource_definition) or O(src) contains a single object.
        type: str
      metadata:
        description: Standard object metadata. Includes name, namespace, annotations, labels, etc.
-       returned: success
+       returned: when O(resource_definition) or O(src) contains a single object.
        type: complex
      spec:
        description: Specific attributes of the object. Will vary based on the I(api_version) and I(kind).
-       returned: success
+       returned: when O(resource_definition) or O(src) contains a single object.
        type: complex
      status:
        description: Current status details for the object.
-       returned: success
+       returned: when O(resource_definition) or O(src) contains a single object.
        type: complex
-     items:
-       description: Returned only when multiple yaml documents are passed to src or resource_definition
-       returned: when resource_definition or src contains list of objects
-       type: list
      duration:
        description: elapsed time of task in seconds
        returned: when C(wait) is true
@@ -413,6 +410,46 @@ result:
        description: error while trying to create/delete the object.
        returned: error
        type: complex
+     results:
+       description: An array of created, patched, or otherwise present objects.
+       returned: when O(resource_definition) or O(src) contains a list of objects.
+       type: complex
+       contains:
+         api_version:
+           description: The versioned schema of this representation of an object.
+           returned: when O(resource_definition) or O(src) contains a single object.
+           type: str
+         kind:
+           description: Represents the REST resource this object represents.
+           returned: when O(resource_definition) or O(src) contains a single object.
+           type: str
+         metadata:
+           description: Standard object metadata. Includes name, namespace, annotations, labels, etc.
+           returned: when O(resource_definition) or O(src) contains a single object.
+           type: complex
+         spec:
+           description: Specific attributes of the object. Will vary based on the I(api_version) and I(kind).
+           returned: when O(resource_definition) or O(src) contains a single object.
+           type: complex
+         status:
+           description: Current status details for the object.
+           returned: when O(resource_definition) or O(src) contains a single object.
+           type: complex
+         duration:
+           description: elapsed time of task in seconds
+           returned: when C(wait) is true
+           type: int
+           sample: 48
+         error:
+           description: error while trying to create/delete the object.
+           returned: error
+           type: complex
+method:
+  description:
+  - The method used to deploy the resource.
+  returned: success
+  type: str
+  sample: create
 """
 
 import copy

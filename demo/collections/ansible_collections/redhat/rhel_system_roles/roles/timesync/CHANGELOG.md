@@ -1,6 +1,51 @@
 Changelog
 =========
 
+[1.10.2] - 2025-07-09
+--------------------
+
+### Other Changes
+
+- ci: bump sclorg/testing-farm-as-github-action from 3 to 4 (#290)
+- ci: bump tox-lsr to 3.8.0; rename qemu/kvm tests (#291)
+- ci: Add Fedora 42; use tox-lsr 3.9.0; use lsr-report-errors for qemu tests (#292)
+- ci: Add support for bootc end-to-end validation tests (#293)
+- ci: Use ansible 2.19 for fedora 42 testing; support python 3.13 (#294)
+- refactor: support ansible 2.19; fix ansible-lint issues (#295)
+
+[1.10.1] - 2025-04-28
+--------------------
+
+### Other Changes
+
+- test: add test for secccomp on el9/el10 (#288)
+
+[1.10.0] - 2025-04-23
+--------------------
+
+### New Features
+
+- feat: add support for timesync_ntp_ip_family (#277)
+
+### Bug Fixes
+
+- fix: add default seccomp filters for el9/10 (#279)
+
+### Other Changes
+
+- ci: Check spelling with codespell (#267)
+- ci: ansible-plugin-scan is disabled for now (#268)
+- ci: bump ansible-lint to v25; provide collection requirements for ansible-lint (#271)
+- ci: Add test plan that runs CI tests and customize it for each role (#273)
+- ci: In test plans, prefix all relate variables with SR_ (#274)
+- ci: Create inventory for wrapper test with inventory_hostname (#275)
+- ci: Fix bug with ARTIFACTS_URL after prefixing with SR_ (#276)
+- ci: several changes related to new qemu test, ansible-lint, python versions, ubuntu versions (#281)
+- refactor: make OracleLinux vars files symlinks to RedHat vars files (#283)
+- ci: use tox-lsr 3.6.0; improve qemu test logging (#284)
+- ci: skip storage scsi, nvme tests in github qemu ci (#285)
+- test: ensure tests cleanup and restore the system state (#286)
+
 [1.9.2] - 2025-01-09
 --------------------
 
@@ -265,7 +310,7 @@ anymore. Match the lower-case strings instead.
 
 ### New Features
 
-- adding support fpr Oracle Linux 6,7,8 and 9
+- adding support for Oracle Linux 6,7,8 and 9
 
 ### Bug Fixes
 

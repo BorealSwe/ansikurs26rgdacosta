@@ -53,6 +53,7 @@
     - name: Call role to change provider
       include_role:
         name: redhat.rhel_system_roles.timesync
+        public: true
       vars:
       # ntp is the default choice for RedHat and CentOS
       # version < 7.0 - reverse it
@@ -89,7 +90,7 @@
       vars:
         timesync_ntp_provider: "{{ timesync_ntp_provider_os_default }}"
 
-    - name: Verify provider set correctly
+    - name: Verify provider set correctly - 2
       tags: tests::verify
       block:
         - name: Wait for services to start

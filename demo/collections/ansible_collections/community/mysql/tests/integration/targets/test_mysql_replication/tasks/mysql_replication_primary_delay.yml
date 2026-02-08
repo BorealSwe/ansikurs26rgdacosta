@@ -1,4 +1,4 @@
-# Copyright: (c) 2019, Andrew Klychkov (@Andersson007) <aaklychkov@mail.ru>
+# Copyright: (c) 2019, Andrew Klychkov (@Andersson007) <andrew.a.klychkov@gmail.com>
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 - vars:
@@ -18,10 +18,24 @@
         primary_delay: '{{ test_primary_delay }}'
       register: result
 
-    - assert:
+    - name: Assert that run replication is changed and query match expectation for MariaDB and MySQL < 8.0.23
+      ansible.builtin.assert:
         that:
-        - result is changed
-        - result.queries == ["CHANGE MASTER TO MASTER_DELAY=60"]
+          - result is changed
+          - result.queries == ["CHANGE MASTER TO MASTER_DELAY=60"]
+      when:
+        - >
+          db_engine == 'mariadb' or
+          (db_engine == 'mysql' and db_version is version('8.0.23', '<'))
+
+    - name: Assert that run replication is changed and query match expectation for MySQL >= 8.0.23
+      ansible.builtin.assert:
+        that:
+          - result is changed
+          - result.queries == ["CHANGE REPLICATION SOURCE TO SOURCE_DELAY=60"]
+      when:
+        - db_engine == 'mysql'
+        - db_version is version('8.0.23', '>=')
 
     # Auxiliary step:
     - name: Start replica
@@ -41,5 +55,5 @@
 
     - assert:
         that:
-        - replica_status.SQL_Delay == {{ test_primary_delay }}
+        - replica_status.SQL_Delay == test_primary_delay
         - replica_status is not changed

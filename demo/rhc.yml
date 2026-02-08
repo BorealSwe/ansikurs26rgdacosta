@@ -1,0 +1,22 @@
+- name: Register systems
+  hosts: "{{ my_host | default('all') }}"
+  become: true
+  gather_facts: true
+
+  vars:
+
+    rhc_auth:
+      login:
+        username: "{{ my_username }}"
+        password: "{{ my_password }}"
+
+    rhc_repositories:
+      - name: rhel-10-for-x86_64-baseos-rpms
+        state: enabled
+      - name: rhel-10-for-x86_64-appstream-rpms
+        state: enabled
+
+    rhc_release: 10.1
+
+  roles:
+    - redhat.rhel_system_roles.rhc

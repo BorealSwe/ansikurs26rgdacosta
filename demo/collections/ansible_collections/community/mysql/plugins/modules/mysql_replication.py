@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Copyright: (c) 2013, Balazs Pocze <banyek@gawker.com>
-# Copyright: (c) 2019, Andrew Klychkov (@Andersson007) <aaklychkov@mail.ru>
+# Copyright: (c) 2019, Andrew Klychkov (@Andersson007) <andrew.a.klychkov@gmail.com>
 # Certain parts are taken from Mark Theunissen's mysqldb module
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
@@ -13,17 +13,20 @@ __metaclass__ = type
 DOCUMENTATION = r'''
 ---
 module: mysql_replication
-short_description: Manage MySQL replication
+short_description: Manage MySQL or MariaDB replication
 description:
-- Manages MySQL server replication, replica, primary status, get and change primary host.
+- Manages MySQL or MariaDB server replication, replica, primary status, get and change primary host.
 author:
 - Balazs Pocze (@banyek)
 - Andrew Klychkov (@Andersson007)
+- Dennis Urtubia (@dennisurtubia)
+- Laurent Indermühle (@laurent-indermuehle)
 options:
   mode:
     description:
     - Module operating mode. Could be
-      C(changeprimary) (CHANGE MASTER TO),
+      C(changeprimary) (CHANGE MASTER TO) - also works for MySQL 8.0.23 and later since community.mysql 3.10.0,
+      C(changereplication) (CHANGE REPLICATION SOURCE TO) - only supported in MySQL 8.0.23 and later,
       C(getprimary) (SHOW MASTER STATUS),
       C(getreplica) (SHOW REPLICA STATUS),
       C(startreplica) (START REPLICA),
@@ -34,6 +37,7 @@ options:
     type: str
     choices:
     - changeprimary
+    - changereplication
     - getprimary
     - getreplica
     - startreplica
@@ -133,9 +137,10 @@ options:
     aliases: [master_ssl_cipher]
   primary_ssl_verify_server_cert:
     description:
-    - Same as mysql variable.
+    - Same as C(MASTER_SSL_VERIFY_SERVER_CERT) MySQL/MariaDB variable.
+    - The module switch automatically to C(SOURCE_SSL_VERIFY_SERVER_CERT) for MySQL 8.0.23 and later.
+    - Prior to community.mysql 3.14.0 C(false) had no effect.
     type: bool
-    default: false
     version_added: '3.5.0'
   primary_auto_position:
     description:
@@ -188,7 +193,8 @@ options:
     version_added: '0.1.0'
 
 notes:
-- If an empty value for the parameter of string type is needed, use an empty string.
+   - Compatible with MariaDB or MySQL.
+   - If an empty value for the parameter of string type is needed, use an empty string.
 
 attributes:
   check_mode:
@@ -225,6 +231,13 @@ EXAMPLES = r'''
 - name: Change primary to primary server 192.0.2.1 and use binary log 'mysql-bin.000009' with position 4578
   community.mysql.mysql_replication:
     mode: changeprimary
+    primary_host: 192.0.2.1
+    primary_log_file: mysql-bin.000009
+    primary_log_pos: 4578
+
+- name: Change replication source to replica server 192.0.2.1 and use binary log 'mysql-bin.000009' with position 4578
+  community.mysql.mysql_replication:
+    mode: changereplication
     primary_host: 192.0.2.1
     primary_log_file: mysql-bin.000009
     primary_log_pos: 4578
@@ -272,7 +285,6 @@ EXAMPLES = r'''
   community.mysql.mysql_replication:
     mode: changeprimary
     fail_on_error: true
-
 '''
 
 RETURN = r'''
@@ -288,7 +300,12 @@ import os
 import warnings
 
 from ansible.module_utils.basic import AnsibleModule
+from ansible_collections.community.mysql.plugins.module_utils.command_resolver import (
+    CommandResolver
+)
 from ansible_collections.community.mysql.plugins.module_utils.mysql import (
+    get_server_version,
+    get_server_implementation,
     mysql_connect,
     mysql_driver,
     mysql_driver_fail_msg,
@@ -299,11 +316,10 @@ from ansible.module_utils._text import to_native
 executed_queries = []
 
 
-def get_primary_status(cursor):
-    # TODO: when it's available to change on MySQL's side,
-    # change MASTER to PRIMARY using the approach from
-    # get_replica_status() function. Same for other functions.
-    cursor.execute("SHOW MASTER STATUS")
+def get_primary_status(cursor, command_resolver):
+    query = command_resolver.resolve_command("SHOW MASTER STATUS")
+    cursor.execute(query)
+
     primarystatus = cursor.fetchone()
     return primarystatus
 
@@ -388,8 +404,8 @@ def reset_replica_all(module, cursor, connection_name='', channel='', fail_on_er
     return reset
 
 
-def reset_primary(module, cursor, fail_on_error=False):
-    query = 'RESET MASTER'
+def reset_primary(module, cursor, command_resolver, fail_on_error=False):
+    query = command_resolver.resolve_command('RESET MASTER')
     try:
         executed_queries.append(query)
         cursor.execute(query)
@@ -398,7 +414,7 @@ def reset_primary(module, cursor, fail_on_error=False):
         reset = False
     except Exception as e:
         if fail_on_error:
-            module.fail_json(msg="RESET MASTER failed: %s" % to_native(e))
+            module.fail_json(msg="%s failed: %s" % (command_resolver.resolve_command('RESET MASTER'), to_native(e)))
         reset = False
     return reset
 
@@ -425,11 +441,22 @@ def start_replica(module, cursor, connection_name='', channel='', fail_on_error=
     return started
 
 
-def changeprimary(cursor, chm, connection_name='', channel=''):
+def changeprimary(cursor, command_resolver, chm, connection_name='', channel=''):
+    query_head = command_resolver.resolve_command("CHANGE MASTER")
     if connection_name:
-        query = "CHANGE MASTER '%s' TO %s" % (connection_name, ','.join(chm))
+        query = "%s '%s' TO %s" % (query_head, connection_name, ','.join(chm))
     else:
-        query = 'CHANGE MASTER TO %s' % ','.join(chm)
+        query = '%s TO %s' % (query_head, ','.join(chm))
+
+    if channel:
+        query += " FOR CHANNEL '%s'" % channel
+
+    executed_queries.append(query)
+    cursor.execute(query)
+
+
+def changereplication(cursor, chm, channel=''):
+    query = 'CHANGE REPLICATION SOURCE TO %s' % ','.join(chm)
 
     if channel:
         query += " FOR CHANNEL '%s'" % channel
@@ -449,7 +476,8 @@ def main():
             'startreplica',
             'resetprimary',
             'resetreplica',
-            'resetreplicaall']),
+            'resetreplicaall',
+            'changereplication']),
         primary_auto_position=dict(type='bool', default=False, aliases=['master_auto_position']),
         primary_host=dict(type='str', aliases=['master_host']),
         primary_user=dict(type='str', aliases=['master_user']),
@@ -466,7 +494,7 @@ def main():
         primary_ssl_cert=dict(type='str', aliases=['master_ssl_cert']),
         primary_ssl_key=dict(type='str', no_log=False, aliases=['master_ssl_key']),
         primary_ssl_cipher=dict(type='str', aliases=['master_ssl_cipher']),
-        primary_ssl_verify_server_cert=dict(type='bool', default=False),
+        primary_ssl_verify_server_cert=dict(type='bool'),
         primary_use_gtid=dict(type='str', choices=[
             'current_pos', 'replica_pos', 'disabled'], aliases=['master_use_gtid']),
         primary_delay=dict(type='int', aliases=['master_delay']),
@@ -533,8 +561,11 @@ def main():
         else:
             module.fail_json(msg="unable to find %s. Exception message: %s" % (config_file, to_native(e)))
 
+    server_version = get_server_version(cursor)
+    server_implementation = get_server_implementation(cursor)
+    command_resolver = CommandResolver(server_implementation, server_version)
     cursor.execute("SELECT VERSION()")
-    if 'mariadb' in cursor.fetchone()["VERSION()"].lower():
+    if server_implementation == 'mariadb':
         from ansible_collections.community.mysql.plugins.module_utils.implementations.mariadb import replication as impl
     else:
         from ansible_collections.community.mysql.plugins.module_utils.implementations.mysql import replication as impl
@@ -549,21 +580,27 @@ def main():
             primary_use_gtid = 'slave_pos'
 
     if mode == 'getprimary':
-        status = get_primary_status(cursor)
-        if not isinstance(status, dict):
-            status = dict(Is_Primary=False,
-                          msg="Server is not configured as mysql primary")
-        else:
+        status = get_primary_status(cursor, command_resolver)
+        if status and "File" in status and "Position" in status:
             status['Is_Primary'] = True
+        else:
+            status = dict(
+                Is_Primary=False,
+                msg="Server is not configured as mysql primary. "
+                    "Meaning: Binary logs are disabled")
 
         module.exit_json(queries=executed_queries, **status)
 
     elif mode == "getreplica":
         status = get_replica_status(cursor, connection_name, channel, replica_term)
-        if not isinstance(status, dict):
-            status = dict(Is_Replica=False, msg="Server is not configured as mysql replica")
-        else:
+        # MySQL 8.0 uses Replica_...
+        # MariaDB 10.6 uses Slave_...
+        if status and (
+                "Slave_IO_Running" in status or
+                "Replica_IO_Running" in status):
             status['Is_Replica'] = True
+        else:
+            status = dict(Is_Replica=False, msg="Server is not configured as mysql replica")
 
         module.exit_json(queries=executed_queries, **status)
 
@@ -571,52 +608,55 @@ def main():
         chm = []
         result = {}
         if primary_host is not None:
-            chm.append("MASTER_HOST='%s'" % primary_host)
+            chm.append("%s='%s'" % (command_resolver.resolve_command('MASTER_HOST'), primary_host))
         if primary_user is not None:
-            chm.append("MASTER_USER='%s'" % primary_user)
+            chm.append("%s='%s'" % (command_resolver.resolve_command('MASTER_USER'), primary_user))
         if primary_password is not None:
-            chm.append("MASTER_PASSWORD='%s'" % primary_password)
+            chm.append("%s='%s'" % (command_resolver.resolve_command('MASTER_PASSWORD'), primary_password))
         if primary_port is not None:
-            chm.append("MASTER_PORT=%s" % primary_port)
+            chm.append("%s=%s" % (command_resolver.resolve_command('MASTER_PORT'), primary_port))
         if primary_connect_retry is not None:
-            chm.append("MASTER_CONNECT_RETRY=%s" % primary_connect_retry)
+            chm.append("%s=%s" % (command_resolver.resolve_command('MASTER_CONNECT_RETRY'), primary_connect_retry))
         if primary_log_file is not None:
-            chm.append("MASTER_LOG_FILE='%s'" % primary_log_file)
+            chm.append("%s='%s'" % (command_resolver.resolve_command('MASTER_LOG_FILE'), primary_log_file))
         if primary_log_pos is not None:
-            chm.append("MASTER_LOG_POS=%s" % primary_log_pos)
+            chm.append("%s=%s" % (command_resolver.resolve_command('MASTER_LOG_POS'), primary_log_pos))
         if primary_delay is not None:
-            chm.append("MASTER_DELAY=%s" % primary_delay)
+            chm.append("%s=%s" % (command_resolver.resolve_command('MASTER_DELAY'), primary_delay))
         if relay_log_file is not None:
             chm.append("RELAY_LOG_FILE='%s'" % relay_log_file)
         if relay_log_pos is not None:
             chm.append("RELAY_LOG_POS=%s" % relay_log_pos)
         if primary_ssl is not None:
             if primary_ssl:
-                chm.append("MASTER_SSL=1")
+                chm.append("%s=1" % command_resolver.resolve_command('MASTER_SSL'))
             else:
-                chm.append("MASTER_SSL=0")
+                chm.append("%s=0" % command_resolver.resolve_command('MASTER_SSL'))
         if primary_ssl_ca is not None:
-            chm.append("MASTER_SSL_CA='%s'" % primary_ssl_ca)
+            chm.append("%s='%s'" % (command_resolver.resolve_command('MASTER_SSL_CA'), primary_ssl_ca))
         if primary_ssl_capath is not None:
-            chm.append("MASTER_SSL_CAPATH='%s'" % primary_ssl_capath)
+            chm.append("%s='%s'" % (command_resolver.resolve_command('MASTER_SSL_CAPATH'), primary_ssl_capath))
         if primary_ssl_cert is not None:
-            chm.append("MASTER_SSL_CERT='%s'" % primary_ssl_cert)
+            chm.append("%s='%s'" % (command_resolver.resolve_command('MASTER_SSL_CERT'), primary_ssl_cert))
         if primary_ssl_key is not None:
-            chm.append("MASTER_SSL_KEY='%s'" % primary_ssl_key)
+            chm.append("%s='%s'" % (command_resolver.resolve_command('MASTER_SSL_KEY'), primary_ssl_key))
         if primary_ssl_cipher is not None:
-            chm.append("MASTER_SSL_CIPHER='%s'" % primary_ssl_cipher)
-        if primary_ssl_verify_server_cert:
-            chm.append("SOURCE_SSL_VERIFY_SERVER_CERT=1")
+            chm.append("%s='%s'" % (command_resolver.resolve_command('MASTER_SSL_CIPHER'), primary_ssl_cipher))
+        if primary_ssl_verify_server_cert is not None:
+            if primary_ssl_verify_server_cert:
+                chm.append("%s=1" % command_resolver.resolve_command('MASTER_SSL_VERIFY_SERVER_CERT'))
+            else:
+                chm.append("%s=0" % command_resolver.resolve_command('MASTER_SSL_VERIFY_SERVER_CERT'))
         if primary_auto_position:
-            chm.append("MASTER_AUTO_POSITION=1")
+            chm.append("%s=1" % command_resolver.resolve_command('MASTER_AUTO_POSITION'))
         if primary_use_gtid is not None:
-            chm.append("MASTER_USE_GTID=%s" % primary_use_gtid)
+            chm.append("MASTER_USE_GTID=%s" % primary_use_gtid)  # MariaDB only
         try:
-            changeprimary(cursor, chm, connection_name, channel)
+            changeprimary(cursor, command_resolver, chm, connection_name, channel)
         except mysql_driver.Warning as e:
             result['warning'] = to_native(e)
         except Exception as e:
-            module.fail_json(msg='%s. Query == CHANGE MASTER TO %s' % (to_native(e), chm))
+            module.fail_json(msg='%s. Query == %s TO %s' % (to_native(e), command_resolver.resolve_command('CHANGE MASTER'), chm))
         result['changed'] = True
         module.exit_json(queries=executed_queries, **result)
     elif mode == "startreplica":
@@ -632,7 +672,7 @@ def main():
         else:
             module.exit_json(msg="Replica already stopped", changed=False, queries=executed_queries)
     elif mode == 'resetprimary':
-        reset = reset_primary(module, cursor, fail_on_error)
+        reset = reset_primary(module, cursor, command_resolver, fail_on_error)
         if reset is True:
             module.exit_json(msg="Primary reset", changed=True, queries=executed_queries)
         else:
@@ -649,6 +689,59 @@ def main():
             module.exit_json(msg="Replica reset", changed=True, queries=executed_queries)
         else:
             module.exit_json(msg="Replica already reset", changed=False, queries=executed_queries)
+    elif mode == 'changereplication':
+        chm = []
+        result = {}
+        if primary_host is not None:
+            chm.append("SOURCE_HOST='%s'" % primary_host)
+        if primary_user is not None:
+            chm.append("SOURCE_USER='%s'" % primary_user)
+        if primary_password is not None:
+            chm.append("SOURCE_PASSWORD='%s'" % primary_password)
+        if primary_port is not None:
+            chm.append("SOURCE_PORT=%s" % primary_port)
+        if primary_connect_retry is not None:
+            chm.append("SOURCE_CONNECT_RETRY=%s" % primary_connect_retry)
+        if primary_log_file is not None:
+            chm.append("SOURCE_LOG_FILE='%s'" % primary_log_file)
+        if primary_log_pos is not None:
+            chm.append("SOURCE_LOG_POS=%s" % primary_log_pos)
+        if primary_delay is not None:
+            chm.append("SOURCE_DELAY=%s" % primary_delay)
+        if relay_log_file is not None:
+            chm.append("RELAY_LOG_FILE='%s'" % relay_log_file)
+        if relay_log_pos is not None:
+            chm.append("RELAY_LOG_POS=%s" % relay_log_pos)
+        if primary_ssl is not None:
+            if primary_ssl:
+                chm.append("SOURCE_SSL=1")
+            else:
+                chm.append("SOURCE_SSL=0")
+        if primary_ssl_ca is not None:
+            chm.append("SOURCE_SSL_CA='%s'" % primary_ssl_ca)
+        if primary_ssl_capath is not None:
+            chm.append("SOURCE_SSL_CAPATH='%s'" % primary_ssl_capath)
+        if primary_ssl_cert is not None:
+            chm.append("SOURCE_SSL_CERT='%s'" % primary_ssl_cert)
+        if primary_ssl_key is not None:
+            chm.append("SOURCE_SSL_KEY='%s'" % primary_ssl_key)
+        if primary_ssl_cipher is not None:
+            chm.append("SOURCE_SSL_CIPHER='%s'" % primary_ssl_cipher)
+        if primary_ssl_verify_server_cert is not None:
+            if primary_ssl_verify_server_cert:
+                chm.append("%s=1" % command_resolver.resolve_command('MASTER_SSL_VERIFY_SERVER_CERT'))
+            else:
+                chm.append("%s=0" % command_resolver.resolve_command('MASTER_SSL_VERIFY_SERVER_CERT'))
+        if primary_auto_position:
+            chm.append("SOURCE_AUTO_POSITION=1")
+        try:
+            changereplication(cursor, chm, channel)
+        except mysql_driver.Warning as e:
+            result['warning'] = to_native(e)
+        except Exception as e:
+            module.fail_json(msg='%s. Query == CHANGE REPLICATION SOURCE TO %s' % (to_native(e), chm))
+        result['changed'] = True
+        module.exit_json(queries=executed_queries, **result)
 
     warnings.simplefilter("ignore")
 

@@ -2,36 +2,74 @@
 # Tests interface_pci field, test must be used in VM
 - name: Test interfaces with PCI ids
   hosts: all
+  tags:
+  # container builds have no PCI devices, so ethernet interface detection
+  # won't find anything; so save ourselves the extra initial role invocation
+    - tests::booted
   become: true
   roles:
     - redhat.rhel_system_roles.firewall
 
   tasks:
-    - name: Get backend from dbus
-      command: >-
-        dbus-send --system --print-reply --type=method_call
-        --dest=org.fedoraproject.FirewallD1
-        /org/fedoraproject/FirewallD1/config
-        org.freedesktop.DBus.Properties.Get
-        string:"org.fedoraproject.FirewallD1.config"
-        string:"FirewallBackend"
-      ignore_errors: true # noqa ignore-errors
-      register: result
+    - name: Set expected backend
+      set_fact:
+        nftables_backend: "{{ true if ansible_distribution in ['RedHat', 'CentOS', 'Fedora'] and ansible_distribution_major_version is version('8', '>=') else false }}"
+
+    - name: Find ethernet interface
+      shell: |
+        set -euo pipefail
+        I=$(find /sys/class/net -name 'e*' | head -n1)
+        # containers only have virtual devices; for PCI we need a real one
+        if [ -n "$I" ] && [ -e "$I/device/vendor" ]; then
+          echo "$I"
+        fi
+      register: find_iface
       changed_when: false
 
-    - name: Get backend from result
-      set_fact:
-        nftables_backend: "{{ result is not failed and 'nftables' in result.stdout }}"
+    - name: Debug
+      shell: |
+        set -euxo pipefail
+        exec 1>&2
+        ip addr
+        ls -alrtF /sys/class/net
+        ls -alrtF /sys/class/net/*/device/vendor || :
+        ls -alrtF /sys/class/net/*/device/device || :
+      changed_when: false
 
     - name: Test interfaces with PCI ids
+    # this can't be tested in containers or similar envs without any real
+    # ethernet devices
+      when: find_iface.stdout != ""
       block:
+        - name: Get temp directory
+          tempfile:
+            prefix: lsr_
+            suffix: _firewall_pci
+            state: directory
+          register: temp_dir
+
+        - name: Debug - get nftables ruleset before
+          shell: |
+            set -euo pipefail
+            nft list ruleset > {{ temp_dir.path }}/nft_before.txt || :
+          changed_when: false
+
+        - name: Determine interface vendor/product ID
+          shell: |
+            set -euo pipefail
+            VID="$(sed 's/^0x//' < {{ find_iface.stdout | quote }}/device/vendor)"
+            PID="$(sed 's/^0x//' < {{ find_iface.stdout | quote }}/device/device)"
+            echo "$VID:$PID"
+          register: pci_id
+          changed_when: false
+
         - name: Add pci device ethernet controller
           include_role:
             name: redhat.rhel_system_roles.firewall
           vars:
             firewall:
               zone: internal
-              interface_pci_id: 1af4:0001
+              interface_pci_id: "{{ pci_id.stdout }}"
               state: enabled
               permanent: true
 
@@ -41,23 +79,43 @@
           vars:
             firewall:
               zone: internal
-              interface_pci_id: 1af4:0001
+              interface_pci_id: "{{ pci_id.stdout }}"
               state: enabled
               permanent: true
 
-        - name: Assert pcid not in nftable ruleset
-          command: nft list ruleset
-          register: result
-          failed_when: result is failed or '1af4:0001' in result.stdout
-          when: nftables_backend | bool
+        - name: Debug - get nftables ruleset after and show diff
+          shell: |
+            set -euo pipefail
+            nft list ruleset > {{ temp_dir.path }}/nft_after.txt || :
+            diff -u {{ temp_dir.path }}/nft_before.txt {{ temp_dir.path }}/nft_after.txt || :
+            rm -rf {{ temp_dir.path }}
           changed_when: false
 
-        - name: Assert pcid not in iptables rules
-          command: iptables -S
-          register: result
-          failed_when: result is failed or '1af4:0001' in result.stdout
-          when: not nftables_backend | bool
+        - name: Get nftable ruleset
+          command: nft list ruleset
+          register: nft_list
           changed_when: false
+          when: nftables_backend | bool
+
+        - name: Assert that interface is in nftable ruleset
+          assert:
+            that:
+              - find_iface.stdout | basename in nft_list.stdout
+              - pci_id.stdout | trim not in nft_list.stdout
+          when: nftables_backend | bool
+
+        - name: Get iptables ruleset
+          command: iptables -S
+          register: ipt_list
+          changed_when: false
+          when: not nftables_backend | bool
+
+        - name: Assert that interface is in iptables ruleset
+          assert:
+            that:
+              - find_iface.stdout | basename in ipt_list.stdout
+              - pci_id.stdout | trim not in ipt_list.stdout
+          when: not nftables_backend | bool
 
         - name: Remove interface from internal
           include_role:
@@ -65,9 +123,9 @@
           vars:
             firewall:
               zone: internal
-              interface_pci_id: 1af4:0001
+              interface_pci_id: "{{ pci_id.stdout }}"
               state: disabled
-              permament: true
+              permanent: true
       always:
         - name: Cleanup
           tags:

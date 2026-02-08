@@ -20,7 +20,7 @@
           shell:
             cmd: |
               set -o pipefail
-              firewall-cmd --permanent --get-ipsets | grep customipset
+              firewall-offline-cmd --get-ipsets | grep customipset
           register: result
           changed_when: false
           failed_when: result.rc != 1
@@ -38,7 +38,7 @@
                   - 127.0.0.1
                   - 8.8.8.8
                 short: Custom
-                desciption: Custom IPSet for testing purposes
+                description: Custom IPSet for testing purposes
                 state: present
                 permanent: true
 
@@ -46,14 +46,14 @@
           shell:
             cmd: |
               set -o pipefail
-              firewall-cmd --permanent --get-ipsets | grep "customipset"
+              firewall-offline-cmd --get-ipsets | grep "customipset"
           changed_when: false
           register: result
           failed_when: result.rc == 1
 
         - name: Fail if entry not added to ipset
           command: |
-            firewall-cmd --permanent --ipset customipset --query-entry 8.8.8.8
+            firewall-offline-cmd --ipset customipset --query-entry 8.8.8.8
           changed_when: false
 
         - name: Redefine new ipset
@@ -63,7 +63,7 @@
             firewall:
               - ipset: customipset
                 short: Custom
-                desciption: Custom IPSet for testing purposes
+                description: Custom IPSet for testing purposes
                 state: present
                 permanent: true
           register: result
@@ -89,14 +89,14 @@
           shell:
             cmd: |
               set -o pipefail
-              firewall-cmd --permanent --get-ipsets | grep customipset
+              firewall-offline-cmd --get-ipsets | grep customipset
           changed_when: false
           register: result
           failed_when: result.rc != 0
 
         - name: Check that entry has been removed
           command: >-
-            firewall-cmd --permanent --ipset customipset --query-entry 8.8.8.8
+            firewall-offline-cmd --ipset customipset --query-entry 8.8.8.8
           changed_when: false
           register: result
           failed_when: result.rc != 1
@@ -118,15 +118,15 @@
           register: result
           loop:
             - command: |
-                firewall-cmd --permanent --ipset customipset --get-description
+                firewall-offline-cmd --ipset customipset --get-description
               expected: "Custom IPSet for testing purposes (changed)"
             - command: |
-                firewall-cmd --permanent --ipset customipset --get-short
+                firewall-offline-cmd --ipset customipset --get-short
               expected: "CustomChanged"
           failed_when: result.stdout != item["expected"]
 
       # Test that ipset can be added to zones
-        - name: Add ipset to default zone
+        - name: Add ipset to default zone (runtime)
           include_role:
             name: redhat.rhel_system_roles.firewall
           vars:
@@ -134,8 +134,9 @@
               - source: "ipset:customipset"
                 state: enabled
                 runtime: true
+          when: __firewall_is_booted
 
-        - name: Add ipset to default zone again
+        - name: Add ipset to default zone again (runtime)
           include_role:
             name: redhat.rhel_system_roles.firewall
           vars:
@@ -144,11 +145,14 @@
                 state: enabled
                 runtime: true
           register: result
+          when: __firewall_is_booted
 
         - name: Fail if adding ipset is not idempotent (runtime)
           fail:
             msg: "enabling ipsets in zones is not idempotent (runtime)"
-          when: result.changed | bool # noqa no-handler
+          when:
+            - result.changed | bool # noqa no-handler
+            - __firewall_is_booted
 
         - name: Add ipset to default zone (permanent)
           include_role:
@@ -157,7 +161,7 @@
             firewall:
               - source: "ipset:customipset"
                 state: enabled
-                runtime: true
+                permanent: true
 
         - name: Add ipset to default zone again (permanent)
           include_role:
@@ -166,7 +170,7 @@
             firewall:
               - source: "ipset:customipset"
                 state: enabled
-                runtime: true
+                permanent: true
           register: result
 
         - name: Fail if adding ipset is not idempotent (permanent)
@@ -174,7 +178,7 @@
             msg: "enabling ipsets in zones is not idempotent (permanent)"
           when: result.changed | bool # noqa no-handler
 
-        - name: Add ipset to default zone
+        - name: Remove ipset from default zone
           include_role:
             name: redhat.rhel_system_roles.firewall
           vars:
@@ -196,7 +200,7 @@
           shell:
             cmd: |
               set -o pipefail
-              firewall-cmd --permanent --get-ipsets | grep "customipset"
+              firewall-offline-cmd --get-ipsets | grep "customipset"
           changed_when: false
           register: result
           failed_when: result.rc != 1

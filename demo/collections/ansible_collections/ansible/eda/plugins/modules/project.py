@@ -52,6 +52,11 @@ options:
       type: str
       aliases:
         - organization
+    scm_branch:
+      description:
+        - The scm branch of the git project.
+      type: str
+      version_added: 2.8.0
     state:
       description:
         - Desired state of the resource.
@@ -91,6 +96,7 @@ EXAMPLES = r"""
     new_name: "Latest Example Project"
     description: "Example project description"
     url: "https://example.com/project1"
+    scm_branch: "devel"
     organization_name: Default
     state: present
 
@@ -131,6 +137,7 @@ def main() -> None:
         url=dict(),
         proxy=dict(),
         credential=dict(),
+        scm_branch=dict(),
         organization_name=dict(type="str", aliases=["organization"]),
         state=dict(choices=["present", "absent"], default="present"),
         sync=dict(type="bool", default=False),
@@ -146,6 +153,7 @@ def main() -> None:
         password=module.params.get("controller_password"),
         timeout=module.params.get("request_timeout"),
         validate_certs=module.params.get("validate_certs"),
+        token=module.params.get("controller_token"),
     )
 
     project_endpoint = "projects"
@@ -183,6 +191,7 @@ def main() -> None:
 
     new_name = module.params.get("new_name")
     description = module.params.get("description")
+    scm_branch = module.params.get("scm_branch")
     credential = module.params.get("credential")
     ret = {}
 
@@ -199,6 +208,8 @@ def main() -> None:
         project_params["description"] = description
     if url:
         project_params["url"] = url
+    if scm_branch:
+        project_params["scm_branch"] = scm_branch
     if proxy:
         project_params["proxy"] = proxy
 

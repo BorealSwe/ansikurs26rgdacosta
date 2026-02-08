@@ -1,0 +1,16 @@
+---
+- name: Manage groups
+  hosts: "{{ my_host | default('all') }}"
+  become: true
+  gather_facts: false
+
+  tasks:
+
+    - name: Ensure group is at state
+      ansible.builtin.group:
+        name: "{{ my_group }}"
+        gid: "{{ my_gid | default(omit) }}"
+        state: "{{ my_state | default('present') }}"
+        system: "{{ my_system_group | default('false') }}"
+
+

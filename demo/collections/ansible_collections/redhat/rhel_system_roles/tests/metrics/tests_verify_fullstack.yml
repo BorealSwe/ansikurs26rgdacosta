@@ -7,6 +7,8 @@
     metrics_graph_service: true
     metrics_manage_firewall: true
     metrics_manage_selinux: true
+    metrics_optional_domains: [apache]
+    metrics_optional_packages: [pcp-pmda-apache]
 
   pre_tasks:
     - name: Stop test
@@ -23,6 +25,20 @@
           include_role:
             name: redhat.rhel_system_roles.metrics
             public: true
+          when: not __bootc_validation | d(false)
+
+        - name: Create QEMU deployment during bootc end-to-end test
+          delegate_to: localhost
+          command: "{{ lsr_scriptdir }}/bootc-buildah-qcow.sh {{ ansible_host }}"
+          changed_when: true
+          when: ansible_connection == "buildah"
+
+      # role does not run during bootc QEMU validation, thus some vars are undefined
+        - name: Set missing variables for bootc validation tests
+          set_fact:
+            __metrics_is_booted: true
+            metrics_provider: pcp
+          when: __bootc_validation | d(false)
 
         - name: Check if all services work
           include_tasks: "{{ item }}"
@@ -36,6 +52,12 @@
             - check_grafanapcp.yml
             - check_firewall_selinux.yml
 
+        - name: Check if optional apache domain is active
+          command: pminfo -f pmcd.agent.status
+          changed_when: false
+          register: __check
+          failed_when: __check is failed or __check is not search("apache")
+
         - name: Flush handlers
           meta: flush_handlers
 
@@ -46,3 +68,4 @@
       always:
         - name: Restore state of services
           import_tasks: restore_services_state.yml
+          when: not __bootc_validation | d(false)

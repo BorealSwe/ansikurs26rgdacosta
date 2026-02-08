@@ -7,36 +7,151 @@
 # pylint: disable=missing-class-docstring
 # pylint: disable=missing-function-docstring
 
-import sys
-from importlib import import_module
+from textwrap import dedent
 from typing import Any, Dict
 from unittest import TestCase
 
-sys.modules["ansible.module_utils.ha_cluster_lsr"] = import_module(
-    "ha_cluster_lsr"
-)
-
-from ha_cluster_lsr.info import exporter
+from .ha_cluster_info import exporter, exporter_package
 
 
 class DictToNvList(TestCase):
     # pylint: disable=protected-access
     def test_no_item(self) -> None:
         self.assertEqual(
-            exporter._dict_to_nv_list(dict()),
+            exporter_package.nvset.dict_to_nv_list(dict()),
             [],
         )
 
     def test_one_item(self) -> None:
         self.assertEqual(
-            exporter._dict_to_nv_list(dict(one="1")),
+            exporter_package.nvset.dict_to_nv_list(dict(one="1")),
             [dict(name="one", value="1")],
         )
 
     def test_two_items(self) -> None:
         self.assertEqual(
-            exporter._dict_to_nv_list(dict(one="1", two="2")),
+            exporter_package.nvset.dict_to_nv_list(dict(one="1", two="2")),
             [dict(name="one", value="1"), dict(name="two", value="2")],
+        )
+
+
+class ExportEnableReposHa(TestCase):
+    def test_enabled(self) -> None:
+        # pylint: disable=line-too-long
+        dnf_repolist = dedent(
+            """\
+            Updating Subscription Management repositories.
+            repo id                                  repo name
+            rhel-10-for-x86_64-appstream-rpms        Red Hat Enterprise Linux 10 for x86_64 - AppStream (RPMs)
+            rhel-10-for-x86_64-baseos-rpms           Red Hat Enterprise Linux 10 for x86_64 - BaseOS (RPMs)
+            rhel-10-for-x86_64-highavailability-rpms Red Hat Enterprise Linux 10 for x86_64 - High Availability (RPMs)
+            """
+        )
+        self.assertTrue(exporter.export_enable_repos_ha(dnf_repolist))
+
+    def test_not_enabled(self) -> None:
+        dnf_repolist = dedent(
+            """\
+            repo id                repo name
+            fedora                 Fedora 41 - x86_64
+            fedora-cisco-openh264  Fedora 41 openh264 (From Cisco) - x86_64
+            updates                Fedora 41 - x86_64 - Updates
+            """
+        )
+        self.assertFalse(exporter.export_enable_repos_ha(dnf_repolist))
+
+
+class ExportEnableReposRs(TestCase):
+    def test_enabled(self) -> None:
+        # pylint: disable=line-too-long
+        dnf_repolist = dedent(
+            """\
+            Updating Subscription Management repositories.
+            repo id                                  repo name
+            rhel-9-for-x86_64-appstream-rpms         Red Hat Enterprise Linux 9 for x86_64 - AppStream (RPMs)
+            rhel-9-for-x86_64-baseos-rpms            Red Hat Enterprise Linux 9 for x86_64 - BaseOS (RPMs)
+            rhel-9-for-x86_64-highavailability-rpms  Red Hat Enterprise Linux 9 for x86_64 - High Availability (RPMs)
+            rhel-9-for-x86_64-resilientstorage-rpms  Red Hat Enterprise Linux 9 for x86_64 - Resilient Storage (RPMs)
+            """
+        )
+        self.assertTrue(exporter.export_enable_repos_rs(dnf_repolist))
+
+    def test_not_enabled(self) -> None:
+        # pylint: disable=line-too-long
+        dnf_repolist = dedent(
+            """\
+            Updating Subscription Management repositories.
+            repo id                                  repo name
+            rhel-10-for-x86_64-appstream-rpms        Red Hat Enterprise Linux 10 for x86_64 - AppStream (RPMs)
+            rhel-10-for-x86_64-baseos-rpms           Red Hat Enterprise Linux 10 for x86_64 - BaseOS (RPMs)
+            rhel-10-for-x86_64-highavailability-rpms Red Hat Enterprise Linux 10 for x86_64 - High Availability (RPMs)
+            """
+        )
+        self.assertFalse(exporter.export_enable_repos_rs(dnf_repolist))
+
+
+class ExportInstallCloudAgents(TestCase):
+    def test_not_installed(self) -> None:
+        rpm_packages = ["package1", "package2"]
+        self.assertFalse(exporter.export_install_cloud_agents(rpm_packages))
+
+    def test_installed(self) -> None:
+        rpm_packages = ["package1", "package2", "resource-agents-cloud"]
+        self.assertTrue(exporter.export_install_cloud_agents(rpm_packages))
+
+
+class ExportManageFirewall(TestCase):
+    def test_true_by_service(self) -> None:
+        self.assertTrue(
+            exporter.export_manage_firewall(
+                {
+                    "services": ["service1", "high-availability"],
+                    "ports": [],
+                }
+            )
+        )
+
+    def test_true_by_port(self) -> None:
+        self.assertTrue(
+            exporter.export_manage_firewall(
+                {
+                    "services": ["service1"],
+                    "ports": [("1229", "tcp")],
+                }
+            )
+        )
+
+    def test_false(self) -> None:
+        self.assertFalse(
+            exporter.export_manage_firewall(
+                {
+                    "services": ["service1", "availability"],
+                    "ports": [("1229", "udp")],
+                }
+            )
+        )
+
+
+class ExportManageSelinux(TestCase):
+    def test_true_by_tcp(self) -> None:
+        firewall_ports = [("3456", "tcp"), ("45670", "udp")]
+        selinux_ports = (["2345", "3456"], ["4567", "5678"])
+        self.assertTrue(
+            exporter.export_manage_selinux(firewall_ports, selinux_ports)
+        )
+
+    def test_true_by_udp(self) -> None:
+        firewall_ports = [("34560", "tcp"), ("4567", "udp")]
+        selinux_ports = (["2345", "3456"], ["4567", "5678"])
+        self.assertTrue(
+            exporter.export_manage_selinux(firewall_ports, selinux_ports)
+        )
+
+    def test_false(self) -> None:
+        firewall_ports = [("34560", "tcp"), ("45670", "udp")]
+        selinux_ports = (["2345", "3456"], ["4567", "5678"])
+        self.assertFalse(
+            exporter.export_manage_selinux(firewall_ports, selinux_ports)
         )
 
 
@@ -53,14 +168,15 @@ class ExportCorosyncClusterName(TestCase):
 
     def test_missing_key(self) -> None:
         corosync_data: Dict[str, Any] = dict()
-        with self.assertRaises(exporter.JsonMissingKey) as cm:
+        with self.assertRaises(exporter.InvalidSrc) as cm:
             exporter.export_corosync_cluster_name(corosync_data)
         self.assertEqual(
             cm.exception.kwargs,
             dict(
-                data=corosync_data,
-                key="cluster_name",
                 data_desc="corosync configuration",
+                data=corosync_data,
+                issue_location="",
+                issue_desc="Missing key 'cluster_name'",
             ),
         )
 
@@ -78,12 +194,15 @@ class ExportCorosyncTransport(TestCase):
     def assert_missing_key(
         self, corosync_data: Dict[str, Any], key: str
     ) -> None:
-        with self.assertRaises(exporter.JsonMissingKey) as cm:
+        with self.assertRaises(exporter.InvalidSrc) as cm:
             exporter.export_corosync_transport(corosync_data)
         self.assertEqual(
             cm.exception.kwargs,
             dict(
-                data=corosync_data, key=key, data_desc="corosync configuration"
+                data_desc="corosync configuration",
+                data=corosync_data,
+                issue_location="",
+                issue_desc=f"Missing key '{key}'",
             ),
         )
 
@@ -224,14 +343,15 @@ class ExportCorosyncTotem(TestCase):
 
     def test_missing_key(self) -> None:
         corosync_data: Dict[str, Any] = dict()
-        with self.assertRaises(exporter.JsonMissingKey) as cm:
+        with self.assertRaises(exporter.InvalidSrc) as cm:
             exporter.export_corosync_totem(corosync_data)
         self.assertEqual(
             cm.exception.kwargs,
             dict(
                 data=corosync_data,
-                key="totem_options",
                 data_desc="corosync configuration",
+                issue_location="",
+                issue_desc="Missing key 'totem_options'",
             ),
         )
 
@@ -263,14 +383,15 @@ class ExportCorosyncQuorum(TestCase):
 
     def test_missing_key(self) -> None:
         corosync_data: Dict[str, Any] = dict()
-        with self.assertRaises(exporter.JsonMissingKey) as cm:
+        with self.assertRaises(exporter.InvalidSrc) as cm:
             exporter.export_corosync_quorum(corosync_data)
         self.assertEqual(
             cm.exception.kwargs,
             dict(
-                data=corosync_data,
-                key="quorum_options",
                 data_desc="corosync configuration",
+                data=corosync_data,
+                issue_location="",
+                issue_desc="Missing key 'quorum_options'",
             ),
         )
 
@@ -301,29 +422,31 @@ class ExportClusterNodes(TestCase):
     maxDiff = None
 
     def assert_missing_node_key(
-        self, corosync_data: Dict[str, Any], key: str, index: int = 0
+        self, corosync_data: Dict[str, Any], key: str, issue_location: str
     ) -> None:
-        with self.assertRaises(exporter.JsonMissingKey) as cm:
+        with self.assertRaises(exporter.InvalidSrc) as cm:
             exporter.export_cluster_nodes(corosync_data, {})
         self.assertEqual(
             cm.exception.kwargs,
             dict(
+                data_desc="corosync configuration",
                 data=corosync_data,
-                key=key,
-                data_desc=f"corosync configuration for node on index {index}",
+                issue_location=issue_location,
+                issue_desc=f"Missing key '{key}'",
             ),
         )
 
     def test_missing_key(self) -> None:
         corosync_data: Dict[str, Any] = dict()
-        with self.assertRaises(exporter.JsonMissingKey) as cm:
+        with self.assertRaises(exporter.InvalidSrc) as cm:
             exporter.export_cluster_nodes(corosync_data, {})
         self.assertEqual(
             cm.exception.kwargs,
             dict(
-                data=corosync_data,
-                key="nodes",
                 data_desc="corosync configuration",
+                data=corosync_data,
+                issue_location="",
+                issue_desc="Missing key 'nodes'",
             ),
         )
 
@@ -335,18 +458,18 @@ class ExportClusterNodes(TestCase):
 
     def test_corosync_nodes_missing_keys(self) -> None:
         corosync_data: Dict[str, Any] = dict(nodes=[dict()])
-        self.assert_missing_node_key(corosync_data, "name")
+        self.assert_missing_node_key(corosync_data, "name", "/nodes/0")
 
         corosync_data = dict(nodes=[dict(name="nodename")])
-        self.assert_missing_node_key(corosync_data, "addrs")
+        self.assert_missing_node_key(corosync_data, "addrs", "/nodes/0")
 
         corosync_data = dict(nodes=[dict(name="nodename", addrs=[dict()])])
-        self.assert_missing_node_key(corosync_data, "link")
+        self.assert_missing_node_key(corosync_data, "link", "/nodes/0/addrs/0")
 
         corosync_data = dict(
             nodes=[dict(name="nodename", addrs=[dict(link="0")])]
         )
-        self.assert_missing_node_key(corosync_data, "addr")
+        self.assert_missing_node_key(corosync_data, "addr", "/nodes/0/addrs/0")
 
         corosync_data = dict(
             nodes=[
@@ -354,7 +477,7 @@ class ExportClusterNodes(TestCase):
                 dict(name="node2"),
             ]
         )
-        self.assert_missing_node_key(corosync_data, "addrs", 1)
+        self.assert_missing_node_key(corosync_data, "addrs", "/nodes/1")
 
     def test_corosync_nodes_one_link(self) -> None:
         corosync_data: Dict[str, Any] = dict(
@@ -473,4 +596,126 @@ class ExportClusterNodes(TestCase):
                     corosync_addresses=["node2addr"],
                 ),
             ],
+        )
+
+
+class ExportPcsPermissionList(TestCase):
+    maxDiff = None
+
+    def test_minimal(self) -> None:
+        pcs_settings_dict: Dict[str, Any] = {
+            "permissions": {
+                "local_cluster": [],
+            }
+        }
+
+        self.assertEqual(
+            exporter.export_pcs_permission_list(pcs_settings_dict),
+            [],
+        )
+
+    def test_success(self) -> None:
+        pcs_settings_dict: Dict[str, Any] = {
+            "permissions": {
+                "local_cluster": [
+                    {"name": "test1", "type": "user", "allow": []},
+                    {"name": "test2", "type": "user", "allow": ["read"]},
+                    {
+                        "name": "test3",
+                        "type": "group",
+                        "allow": ["write", "grant"],
+                    },
+                ]
+            }
+        }
+
+        self.assertEqual(
+            exporter.export_pcs_permission_list(pcs_settings_dict),
+            [
+                {"name": "test1", "type": "user", "allow_list": []},
+                {"name": "test2", "type": "user", "allow_list": ["read"]},
+                {
+                    "name": "test3",
+                    "type": "group",
+                    "allow_list": ["write", "grant"],
+                },
+            ],
+        )
+
+    def assert_missing_key(
+        self,
+        pcs_settings_dict: Dict[str, Any],
+        key: str,
+        issue_location: str = "",
+    ) -> None:
+        with self.assertRaises(exporter.InvalidSrc) as cm:
+            exporter.export_pcs_permission_list(pcs_settings_dict)
+        self.assertEqual(
+            cm.exception.kwargs,
+            dict(
+                data_desc="pcs_settings.conf",
+                data=pcs_settings_dict,
+                issue_location=issue_location,
+                issue_desc=f"Missing key '{key}'",
+            ),
+        )
+
+    def test_raises_when_permissions_not_dict(self) -> None:
+        data = dict(permissions="perm1,perm2")
+        with self.assertRaises(exporter.InvalidSrc) as cm:
+            exporter.export_pcs_permission_list(data)
+        self.assertEqual(
+            cm.exception.kwargs,
+            dict(
+                data_desc="pcs_settings.conf",
+                data=data,
+                issue_location="/permissions",
+                issue_desc=(
+                    "Expected dict with key 'local_cluster' but got 'str'"
+                ),
+            ),
+        )
+
+    def test_raises_when_local_cluster_not_list(self) -> None:
+        data = dict(permissions=dict(local_cluster=None))
+        with self.assertRaises(exporter.InvalidSrc) as cm:
+            exporter.export_pcs_permission_list(data)
+        self.assertEqual(
+            cm.exception.kwargs,
+            dict(
+                data_desc="pcs_settings.conf",
+                data=data,
+                issue_location="/permissions/local_cluster",
+                issue_desc=("Expected iterable but got 'NoneType'"),
+            ),
+        )
+
+    def test_missing_key(self) -> None:
+        self.assert_missing_key(
+            dict(),
+            "permissions",
+        )
+        self.assert_missing_key(
+            dict(permissions=dict()),
+            "local_cluster",
+            issue_location="/permissions",
+        )
+        self.assert_missing_key(
+            dict(permissions=dict(local_cluster=[dict()])),
+            "type",
+            issue_location="/permissions/local_cluster/0",
+        )
+        self.assert_missing_key(
+            dict(permissions=dict(local_cluster=[dict(type="user")])),
+            "name",
+            issue_location="/permissions/local_cluster/0",
+        )
+        self.assert_missing_key(
+            dict(
+                permissions=dict(
+                    local_cluster=[dict(type="user", name="user1")]
+                )
+            ),
+            "allow",
+            issue_location="/permissions/local_cluster/0",
         )

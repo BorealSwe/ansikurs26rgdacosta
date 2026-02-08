@@ -29,7 +29,7 @@
     - name: Flush handlers
       meta: flush_handlers
 
-    - name: Check firewall and selinux status
+    - name: Check firewall and selinux status again
       include_tasks: check_firewall_selinux.yml
 
     - name: Check header for ansible_managed, fingerprint
@@ -46,7 +46,7 @@
           previous: replaced
           relay_domains: Liverpool city
 
-    - name: Flush handlers
+    - name: Flush handlers again
       meta: flush_handlers
 
     - name: Print postfix settings that have explicit value set
@@ -58,4 +58,4 @@
       assert:
         that:
           - __postfix_explicit_config.stdout is search( "relay_domains = Liverpool city")
-          - __postfix_explicit_config.stdout is not search("relayhost")
+          - (__postfix_explicit_config.stdout | regex_search('^relayhost\\s*=\\s*$', multiline=True)) or __postfix_explicit_config.stdout is not search("relayhost")

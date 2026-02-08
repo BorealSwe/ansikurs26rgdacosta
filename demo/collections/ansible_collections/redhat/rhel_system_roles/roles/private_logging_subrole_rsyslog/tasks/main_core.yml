@@ -8,22 +8,25 @@
     - logging_purge_confs | bool | d(false)
     - not (rsyslog_inputs and __rsyslog_enabled | bool)
     - not __logging_is_ostree | d(false)
+  vars:
+    __rsyslog_only_packages: "{{ __rsyslog_base_packages | select('search', 'rsyslog') | list }}"
   block:
   # it is assumed that the only packages providing config files that might
-  # be modified are the base packages - if this is not so, then additional
-  # packages will need to be added to this check
+  # be modified are the base packages (but not others like iproute);
+  # if this is not so, then additional packages will need to be added to this check
     - name: Get status of rsyslog packages
       command: rpm -V {{ item }} # noqa command-instead-of-module
-      loop: "{{ __rsyslog_base_packages }}"
+      loop: "{{ __rsyslog_only_packages }}"
       register: __rsyslog_package_status
       failed_when: false
       changed_when: false
 
     - name: Reset original confs - logging package is absent
-      package:
-        name: "{{ __rsyslog_base_packages }}"
-        state: absent
-        use: "{{ (__logging_is_ostree | d(false)) | ternary('redhat.rhel_system_roles.rhel_rpm_ostree', omit) }}"
+    # we can't do this with "package", dnf5 does not remove reverse
+    # dependencies (such as rsyslog-gnutls) any more
+      command: "{{ ansible_pkg_mgr }} remove -y {{ __rsyslog_only_packages | join(' ') }}"
+    # we know it's a change here, as we just rpm -V'ed it above
+      changed_when: true
       register: __rsyslog_erased
       when: __rsyslog_package_status.results | rejectattr('stdout', 'match', '^package .* is not installed') | selectattr('stdout', 'search', ' /etc/rsyslog[.]conf($|\n)') | list | length > 0
 
@@ -33,7 +36,7 @@
     state: present
     use: "{{ (__logging_is_ostree | d(false)) | ternary('redhat.rhel_system_roles.rhel_rpm_ostree', omit) }}"
   when:
-    - __rsyslog_enabled | bool or (__rsyslog_erased is success and __rsyslog_erased is changed)
+    - __rsyslog_enabled | bool or __rsyslog_erased is success
 
 # make sure we do not pollute the global namespace for subsequent runs
 # of this role
@@ -96,6 +99,36 @@
 
     - name: Generate global rule to add to __rsyslog_common_rules
       vars:
+        ca_cert_path: |-
+          {% if logging_pki_files | d([]) | length > 0 and
+             (logging_pki_files.0.ca_cert_src | d("") | length > 0 or
+              logging_pki_files.0.ca_cert | d("") | length > 0) %}
+          {%   set __ca_cert_file = logging_pki_files.0.ca_cert_src | d(__rsyslog_default_pki_ca_cert_name) | basename %}
+          {{- logging_pki_files.0.ca_cert |
+             d(__rsyslog_default_pki_path + __rsyslog_default_pki_cert_dir + __ca_cert_file) -}}
+          {% else %}
+          {{- "" -}}
+          {% endif %}
+        cert_path: |-
+          {% if logging_pki_files | d([]) | length > 0 and
+             (logging_pki_files.0.cert_src | d("") | length > 0 or
+              logging_pki_files.0.cert | d("") | length > 0) %}
+          {%   set __cert_file = logging_pki_files.0.cert_src | d(__rsyslog_default_pki_cert_name) | basename %}
+          {{- logging_pki_files.0.cert |
+             d(__rsyslog_default_pki_path + __rsyslog_default_pki_cert_dir + __cert_file) -}}
+          {% else %}
+          {{- "" -}}
+          {% endif %}
+        key_path: |-
+          {% if logging_pki_files | d([]) | length > 0 and
+             (logging_pki_files.0.private_key_src | d("") | length > 0 or
+              logging_pki_files.0.private_key | d("") | length > 0) %}
+          {%   set __key_file = logging_pki_files.0.private_key_src | d(__rsyslog_default_pki_key_name) | basename %}
+          {{- logging_pki_files.0.private_key |
+             d(__rsyslog_default_pki_path + __rsyslog_default_pki_key_dir + __key_file) -}}
+          {% else %}
+          {{- "" -}}
+          {% endif %}
         __rsyslog_global_common_rule:
           - filename: '00-global.conf'
             comment: 'Global options'
@@ -139,10 +172,10 @@
         loop_var: inner_item
       when:
         - __rsyslog_enabled | bool
-        - rsyslog_inputs | d([])
-        - inner_item.filename | d() or inner_item.name | d()
+        - rsyslog_inputs | d([]) | length > 0
+        - inner_item.filename | d("") | length > 0 or inner_item.name | d("") | length > 0
         - inner_item.state is undefined or inner_item.state != 'absent'
-        - inner_item.options | d() or inner_item.sections | d()
+        - inner_item.options | d([]) | length > 0 or inner_item.sections | d([]) | length > 0
       notify: Restart rsyslogd
       register: __rsyslog_templates
 
@@ -154,7 +187,7 @@
       file:
         path: |-
           {{ __rsyslog_config_dir }}/{{ inner_item.filename |
-          d((inner_item.weight if inner_item.weight | d() else
+          d((inner_item.weight if inner_item.weight | d("") | length > 0 else
           rsyslog_weight_map[inner_item.type | d("rules")]) +
           "-" + (inner_item.name | d("rules")) + "." +
           (inner_item.suffix | d("conf"))) }}
@@ -164,8 +197,8 @@
         loop_var: inner_item
       when:
         - not __rsyslog_enabled | bool
-        - inner_item.filename | d() or inner_item.name | d()
-        - inner_item.options | d() or inner_item.sections | d()
+        - inner_item.filename | d("") | length > 0 or inner_item.name | d("") | length > 0
+        - inner_item.options | d([]) | length > 0 or inner_item.sections | d([]) | length > 0
       notify: Stop rsyslogd
 
     - name: Include input sub-vars
@@ -176,8 +209,7 @@
       loop: "{{ rsyslog_inputs }}"
       loop_control:
         loop_var: input_item
-      when:
-        - input_item | d([])
+      when: input_item | d([]) | length > 0
 
     - name: Run input sub-tasks
       include_tasks:
@@ -190,8 +222,8 @@
         extended: true
         loop_var: input_item
       when:
-        - input_item | d([])
-        - input_item.type | d()
+        - input_item | d([]) | length > 0
+        - input_item.type | d("") | length > 0
         - input_item.type != "basics" or (input_item.type == "basics" and (ansible_loop.previtem is not defined or (ansible_loop.previtem is defined and ansible_loop.previtem.type != 'basics')))
 
     - name: Include output sub-vars
@@ -203,8 +235,8 @@
       loop_control:
         loop_var: output_item
       when:
-        - output_item | d([])
-        - output_item.type | d()
+        - output_item | d([]) | length > 0
+        - output_item.type | d("") | length > 0
 
     - name: Run output sub-tasks
       include_tasks:
@@ -216,8 +248,7 @@
       loop: "{{ rsyslog_outputs }}"
       loop_control:
         loop_var: output_item
-      when:
-        - output_item | d([])
+      when: output_item | d([]) | length > 0
 
     - name: Get rsyslog config files not owned by any package
       shell: |
@@ -283,7 +314,8 @@
           loop: "{{ [__logging_forwards_tls, __logging_remote_tls] }}"
           when:
             - item | length > 0
-            - not (logging_pki_files.0.ca_cert_src | d() or logging_pki_files.0.ca_cert | d())
+            - logging_pki_files.0.ca_cert_src | d("") | length == 0
+            - logging_pki_files.0.ca_cert | d("") | length == 0
 
         - name: Copy local ca_cert file to the target if needed
           vars:
@@ -294,7 +326,7 @@
             mode: "0600"
           when:
             - __logging_forwards_tls | length > 0 or __logging_remote_tls | length > 0
-            - logging_pki_files.0.ca_cert_src | d("")
+            - logging_pki_files.0.ca_cert_src | d("") | length > 0
           notify: Restart rsyslogd
 
         - name: Copy local cert file to the target if needed
@@ -306,7 +338,7 @@
             mode: "0600"
           when:
             - __logging_forwards_tls | length > 0 or __logging_remote_tls | length > 0
-            - logging_pki_files.0.cert_src | d("")
+            - logging_pki_files.0.cert_src | d("") | length > 0
           notify: Restart rsyslogd
 
         - name: Copy local key file to the target if needed
@@ -318,7 +350,7 @@
             mode: "0400"
           when:
             - __logging_forwards_tls | length > 0 or __logging_remote_tls | length > 0
-            - logging_pki_files.0.private_key_src | d("")
+            - logging_pki_files.0.private_key_src | d("") | length > 0
           notify: Restart rsyslogd
 
     - name: Enable rsyslog service
@@ -333,7 +365,7 @@
       systemd:
         name: rsyslog.service
         enabled: false
-        state: stopped
+        state: "{{ 'stopped' if __logging_is_booted else omit }}"
       when:
         - not __rsyslog_enabled | bool
         - not rsyslog_in_image | default(false) | bool

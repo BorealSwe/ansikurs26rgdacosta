@@ -1,6 +1,78 @@
 Changelog
 =========
 
+[1.10.4] - 2025-08-18
+--------------------
+
+### Other Changes
+
+- test: restore selinux config file in proper context (#294)
+
+[1.10.3] - 2025-07-24
+--------------------
+
+### Other Changes
+
+- test: ensure disabled selinux test restores system state (#292)
+
+[1.10.2] - 2025-07-15
+--------------------
+
+### Bug Fixes
+
+- fix: tempdir path not defined in check mode; __selinux_item.path may be undefined (#289)
+
+[1.10.1] - 2025-06-25
+--------------------
+
+### Other Changes
+
+- test: use daemons_use_tcp_wrapper for seboolean tests (#285)
+
+[1.10.0] - 2025-06-23
+--------------------
+
+### New Features
+
+- feat: Support selinux_fcontexts during bootc builds (#283)
+- feat: Support selinux_modules during bootc builds (#284)
+
+[1.9.0] - 2025-06-16
+--------------------
+
+### New Features
+
+- feat: Partially support this role in container builds (#277)
+
+### Other Changes
+
+- ci: Add support for bootc end-to-end validation tests (#278)
+- tests: Add bootc end-to-end test (#279)
+- ci: Use ansible 2.19 for fedora 42 testing; support python 3.13 (#280)
+- refactor: Ansible 2.19 support (#281)
+
+[1.8.3] - 2025-05-30
+--------------------
+
+### Bug Fixes
+
+- fix: Set the kernel command line selinux parameter correctly when changing selinux state (#275)
+
+### Other Changes
+
+- ci: ansible-plugin-scan is disabled for now (#259)
+- ci: bump ansible-lint to v25; provide collection requirements for ansible-lint (#262)
+- ci: Check spelling with codespell (#263)
+- ci: Add test plan that runs CI tests and customize it for each role (#264)
+- ci: In test plans, prefix all relate variables with SR_ (#265)
+- ci: Fix bug with ARTIFACTS_URL after prefixing with SR_ (#266)
+- ci: several changes related to new qemu test, ansible-lint, python versions, ubuntu versions (#267)
+- ci: use tox-lsr 3.6.0; improve qemu test logging (#268)
+- ci: skip storage scsi, nvme tests in github qemu ci (#269)
+- ci: bump sclorg/testing-farm-as-github-action from 3 to 4 (#270)
+- ci: bump tox-lsr to 3.8.0; rename qemu/kvm tests (#272)
+- ci: Add Fedora 42; use tox-lsr 3.9.0; use lsr-report-errors for qemu tests (#273)
+
 [1.8.2] - 2025-01-09
 --------------------
 

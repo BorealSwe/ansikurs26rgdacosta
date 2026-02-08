@@ -1,6 +1,43 @@
 Changelog
 =========
 
+[1.6.0] - 2025-06-23
+--------------------
+
+### New Features
+
+- feat: Support this role in container environments and builds (#185)
+
+### Bug Fixes
+
+- fix: Avoid setting ansible_managed variable (#189)
+
+### Other Changes
+
+- ci: Bump sclorg/testing-farm-as-github-action from 3 to 4 (#182)
+- ci: bump tox-lsr to 3.8.0; rename qemu/kvm tests (#183)
+- ci: Add Fedora 42; use tox-lsr 3.9.0; use lsr-report-errors for qemu tests (#184)
+- ci: Add support for bootc end-to-end validation tests (#186)
+- tests: Update tests_all_options.yml to do bootc end-to-end validation (#187)
+- ci: Use ansible 2.19 for fedora 42 testing; support python 3.13 (#188)
+- refactor: Ansible 2.19 support (#191)
+
+[1.5.3] - 2025-04-23
+--------------------
+
+### Other Changes
+
+- ci: ansible-plugin-scan is disabled for now (#169)
+- ci: bump ansible-lint to v25; provide collection requirements for ansible-lint (#172)
+- ci: Check spelling with codespell (#173)
+- ci: Add test plan that runs CI tests and customize it for each role (#174)
+- ci: In test plans, prefix all relate variables with SR_ (#175)
+- ci: Fix bug with ARTIFACTS_URL after prefixing with SR_ (#176)
+- ci: several changes related to new qemu test, ansible-lint, python versions, ubuntu versions (#177)
+- ci: use tox-lsr 3.6.0; improve qemu test logging (#178)
+- tests: Add missing dependency on Fedora 42 (#179)
+- ci: skip storage scsi, nvme tests in github qemu ci (#180)
+
 [1.5.2] - 2025-01-09
 --------------------
 

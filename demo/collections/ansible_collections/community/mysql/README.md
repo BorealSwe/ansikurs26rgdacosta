@@ -1,5 +1,5 @@
-# MySQL collection for Ansible
-[![Plugins CI](https://github.com/ansible-collections/community.mysql/workflows/Plugins%20CI/badge.svg?event=push)](https://github.com/ansible-collections/community.mysql/actions?query=workflow%3A"Plugins+CI") [![Roles CI](https://github.com/ansible-collections/community.mysql/workflows/Roles%20CI/badge.svg?event=push)](https://github.com/ansible-collections/community.mysql/actions?query=workflow%3A"Roles+CI") [![Codecov](https://img.shields.io/codecov/c/github/ansible-collections/community.mysql)](https://codecov.io/gh/ansible-collections/community.mysql) [![Discuss on Matrix at #mysql:ansible.com](https://img.shields.io/matrix/mysql:ansible.com.svg?server_fqdn=ansible-accounts.ems.host&label=Discuss%20on%20Matrix%20at%20%23mysql:ansible.com&logo=matrix)](https://matrix.to/#/#mysql:ansible.com)
+# MySQL and MariaDB collection for Ansible
+[![Plugins CI](https://github.com/ansible-collections/community.mysql/workflows/Plugins%20CI/badge.svg?event=push)](https://github.com/ansible-collections/community.mysql/actions?query=workflow%3A"Plugins+CI") [![Codecov](https://img.shields.io/codecov/c/github/ansible-collections/community.mysql)](https://codecov.io/gh/ansible-collections/community.mysql) [![Discuss on Matrix at #mysql:ansible.com](https://img.shields.io/matrix/mysql:ansible.com.svg?server_fqdn=ansible-accounts.ems.host&label=Discuss%20on%20Matrix%20at%20%23mysql:ansible.com&logo=matrix)](https://matrix.to/#/#mysql:ansible.com)
 
 This collection is a part of the Ansible package.
 
@@ -14,6 +14,22 @@ providing good documentation for easy deployment and use.
 We follow the [Ansible Code of Conduct](https://docs.ansible.com/ansible/latest/community/code_of_conduct.html) in all our interactions within this project.
 
 If you encounter abusive behavior violating the [Ansible Code of Conduct](https://docs.ansible.com/ansible/latest/community/code_of_conduct.html), please refer to the [policy violations](https://docs.ansible.com/ansible/latest/community/code_of_conduct.html#policy-violations) section of the Code of Conduct for information on how to raise a complaint.
+
+## Communication
+
+* Join the Ansible forum:
+  * [Get Help](https://forum.ansible.com/c/help/6): get help or help others.
+  * [Posts tagged with 'mysql'](https://forum.ansible.com/tag/mysql): leverage tags to narrow the scope.
+  * [MySQL Team](https://forum.ansible.com/g/MySQLTeam): by joining the team you will automatically get subscribed to the posts tagged with [mysql](https://forum.ansible.com/tag/mysql).
+  * [Social Spaces](https://forum.ansible.com/c/chat/4): gather and interact with fellow enthusiasts.
+  * [News & Announcements](https://forum.ansible.com/c/news/5): track project-wide announcements including social events.
+
+* The Ansible [Bullhorn newsletter](https://docs.ansible.com/ansible/devel/community/communication.html#the-bullhorn): used to announce releases and important changes.
+
+* Matrix chat:
+  * [#mysql:ansible.com](https://matrix.to/#/#mysql:ansible.com) room: questions on how to contribute to this collection.
+
+For more information about communication, see the [Ansible communication guide](https://docs.ansible.com/ansible/devel/community/communication.html).
 
 ## Contributing
 
@@ -37,28 +53,6 @@ It is necessary for maintainers of this collection to be subscribed to:
 * The "Changes Impacting Collection Contributors and Maintainers" [issue](https://github.com/ansible-collections/overview/issues/45).
 
 They also should be subscribed to Ansible's [The Bullhorn newsletter](https://docs.ansible.com/ansible/devel/community/communication.html#the-bullhorn).
-
-## Communication
-
-> The `GitHub Discussions` feature is disabled in this repository. Use the `mysql` tag on the forum in the [Project Discussions](https://forum.ansible.com/new-topic?title=topic%20title&body=topic%20body&category=project&tags=mysql) or [Get Help](https://forum.ansible.com/new-topic?title=topic%20title&body=topic%20body&category=help&tags=mysql) category instead.
-
-We announce releases and important changes through Ansible's [The Bullhorn newsletter](https://eepurl.com/gZmiEP). Be sure you are subscribed.
-
-Join [our team](https://forum.ansible.com/g/MySQLTeam) on:
-* The Ansible forums:
-    * [News & Announcements](https://forum.ansible.com/c/news/5/none)
-    * [Get Help](https://forum.ansible.com/c/help/6/none)
-    * [Social Spaces](https://forum.ansible.com/c/chat/4)
-    * [Posts tagged 'mysql'](https://forum.ansible.com/tag/mysql)
-* Matrix:
-    * `#mysql:ansible.com` [room](https://matrix.to/#/#mysql:ansible.com): questions on how to contribute and use this collection.
-    * `#users:ansible.com` [room](https://matrix.to/#/#users:ansible.com): general use questions and support.
-    * `#ansible-community:ansible.com` [room](https://matrix.to/#/#community:ansible.com): community and collection development questions.
-    * other Matrix rooms; see the [Ansible Communication Guide](https://docs.ansible.com/ansible/devel/community/communication.html) for details.
-
-We take part in the global quarterly [Ansible Contributor Summit](https://github.com/ansible/community/wiki/Contributor-Summit) virtually or in-person. Track [The Bullhorn newsletter](https://eepurl.com/gZmiEP) and join us.
-
-For more information about communication, refer to the [Ansible Communication guide](https://docs.ansible.com/ansible/devel/community/communication.html).
 
 ## Governance
 
@@ -96,40 +90,46 @@ Here is the table for the support timeline:
 
 ### ansible-core
 
-- stable-2.14
-- stable-2.15
-- stable-2.16
+- stable-2.17
+- stable-2.18
+- stable-2.19
 - current development version
+
+### Python
+
+- 3.8 (Unit tests only)
+- 3.9 (Unit tests only)
+- 3.10 (Sanity, Units and integrations tests)
+- 3.11 (Unit tests only, collection version >= 3.10.0)
 
 ### Databases
 
-For MariaDB, only Long Term releases are tested.
+For MariaDB, only Long Term releases are tested. When multiple LTS are available, we test the oldest and the newest only. Usually breaking changes introduced in the versions in between are also present in the latest version.
 
-- mysql 5.7.40
-- mysql 8.0.31
-- mariadb:10.3.34 (only collection version <= 3.5.1)
-- mariadb:10.4.24 (only collection version >= 3.5.2)
-- mariadb:10.5.18 (only collection version >= 3.5.2)
-- mariadb:10.6.11 (only collection version >= 3.5.2)
-- mariadb:10.11.?? (waiting for release)
-
+- mysql 5.7.40 (collection version < 3.10.0)
+- mysql 8.0.31 (collection version < 3.10.0)
+- mysql 8.4.1 (collection version >= 3.10.0) !!! FAILING, no support yet !!!
+- mariadb:10.3.34 (collection version < 3.5.1)
+- mariadb:10.4.24 (collection version >= 3.5.2, < 3.10.0)
+- mariadb:10.5.18 (collection version >= 3.5.2, < 3.10.0)
+- mariadb:10.5.25 (collection version >= 3.10.0, <3.13.0)
+- mariadb:10.6.11 (collection version >= 3.5.2, < 3.10.0)
+- mariadb:10.11.8 (collection version >= 3.10.0)
+- mariadb:11.4.5 (collection version >= 3.13.0)
 
 ### Database connectors
 
-- pymysql 0.7.11 (Only tested with MySQL 5.7)
+- pymysql 0.7.11 (collection version < 3.10 and MySQL 5.7)
 - pymysql 0.9.3
-- pymysql 1.0.2 (only collection version >= 3.6.1)
-- mysqlclient 2.0.1
-- mysqlclient 2.0.3 (only collection version >= 3.5.2)
-- mysqlclient 2.1.1 (only collection version >= 3.5.2)
+- pymysql 0.10.1 (for RHEL8 context)
+- pymysql 1.0.2 (collection version >= 3.6.1)
+- pymysql 1.1.1 (collection version >= 3.10.0)
 
 ## External requirements
 
-The MySQL modules rely on a MySQL connector. The list of supported drivers is below:
+The MySQL modules rely on a [PyMySQL](https://github.com/PyMySQL/PyMySQL) connector.
 
-- [PyMySQL](https://github.com/PyMySQL/PyMySQL)
-- [mysqlclient](https://github.com/PyMySQL/mysqlclient)
-- Support for other Python MySQL connectors may be added in a future release.
+The `mysqlclient` connector support has been [deprecated](https://github.com/ansible-collections/community.mysql/issues/654) - use `PyMySQL` connector instead! We will stop testing against it in collection version 4.0.0 and remove the related code in 5.0.0.
 
 ## Using this collection
 

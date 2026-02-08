@@ -7,8 +7,8 @@ An Ansible role for managing High Availability Clustering.
 
 * Compatible OS
   * RHEL 8.3+, Fedora 31+
-  * SUSE Linux Enterprise Server 15 with HA extension
-  * SUSE Linux Enterprise Server for SAP Applications 15
+  * SUSE Linux Enterprise Server 15 and 16 with HA extension
+  * SUSE Linux Enterprise Server for SAP Applications 15 and 16
 * Systems running RHEL are expected to be registered and have High-Availability
   repositories accessible, and ResilientStorage repositories accessible if using
   `ha_cluster_enable_repos_resilient_storage`
@@ -35,6 +35,10 @@ An Ansible role for managing High Availability Clustering.
   * Corosync transport options including compression and encryption
   * Corosync totem options
   * Corosync quorum options
+  * Primitive resources (including stonith)
+  * Resource groups
+  * Resource clones
+  * Resource bundles
 
 ## Requirements
 
@@ -145,6 +149,10 @@ automatically by the role, for example custom resource agents.
 It is possible to specify fence agents here as well. However,
 [`ha_cluster_fence_agent_packages`](#ha_cluster_fence_agent_packages) is
 preferred for that, so that its default value is overridden.
+
+#### `ha_cluster_zypper_patterns`
+
+SUSE Specific, list of additional zypper patterns to be installed, default: no patterns
 
 #### `ha_cluster_use_latest_packages`
 
@@ -718,7 +726,7 @@ ha_cluster_resource_groups:
 This variable defines resource groups. The items are as follows:
 
 * `id` (mandatory) - ID of a group.
-* `resources` (mandatory) - List of the group's resources. Each resource is
+* `resource_ids` (mandatory) - List of the group's resources. Each resource is
   referenced by its ID and the resources must be defined in
   [`ha_cluster_resource_primitives`](#ha_cluster_resource_primitives). At least
   one resource must be listed.
@@ -1550,24 +1558,50 @@ Note that the dictionary of variables may not be complete and manual
 modification of it is expected. Most notably, you need to set
 [`ha_cluster_hacluster_password`](#ha_cluster_hacluster_password).
 
+Note that primitive resource operations are exported explicitly and
+`ha_cluster_resource_primitives.copy_operations_from_agent` is always set to
+false.
+
 Note that depending on pcs version installed on managed nodes, certain variables
 may not be present in the export.
 
 * Following variables are present in the export:
+  * [`ha_cluster_enable_repos`](#ha_cluster_enable_repos) - RHEL and CentOS only
+  * [`ha_cluster_enable_repos_resilient_storage`](#ha_cluster_enable_repos_resilient_storage) -
+    RHEL and CentOS only
+  * [`ha_cluster_manage_firewall`](#ha_cluster_manage_firewall) (requires
+    `python3-firewall` to be installed on managed nodes)
+  * [`ha_cluster_manage_selinux`](#ha_cluster_manage_selinux) (requires
+    `python3-policycoreutils` to be installed on managed nodes)
   * [`ha_cluster_cluster_present`](#ha_cluster_cluster_present)
   * [`ha_cluster_start_on_boot`](#ha_cluster_start_on_boot)
+  * [`ha_cluster_install_cloud_agents`](#ha_cluster_install_cloud_agents) -
+    RHEL and CentOS only
+  * [`ha_cluster_pcs_permission_list`](#ha_cluster_pcs_permission_list)
   * [`ha_cluster_cluster_name`](#ha_cluster_cluster_name)
   * [`ha_cluster_transport`](#ha_cluster_transport)
   * [`ha_cluster_totem`](#ha_cluster_totem)
   * [`ha_cluster_quorum`](#ha_cluster_quorum)
   * [`ha_cluster_node_options`](#ha_cluster_node_options) - currently only
     `node_name`, `corosync_addresses` and `pcs_address` are present
+  * [`ha_cluster_resource_primitives`](#ha_cluster_resource_primitives)
+  * [`ha_cluster_resource_groups`](#ha_cluster_resource_groups)
+  * [`ha_cluster_resource_clones`](#ha_cluster_resource_clones)
+  * [`ha_cluster_resource_bundles`](#ha_cluster_resource_bundles)
 
 * Following variables are never present in the export (consult the role
   documentation for impact of the variables missing when running the role):
   * [`ha_cluster_hacluster_password`](#ha_cluster_hacluster_password) - This is
     a mandatory variable for the role but it cannot be extracted from existing
     clusters.
+  * [`ha_cluster_hacluster_qdevice_password`](#ha_cluster_hacluster_qdevice_password) -
+    Cannot be extracted from existing clusters.
+  * [`ha_cluster_fence_agent_packages`](#ha_cluster_fence_agent_packages)
+  * [`ha_cluster_extra_packages`](#ha_cluster_extra_packages) - Cannot be
+    extracted from existing clusters.
+  * [`ha_cluster_use_latest_packages`](#ha_cluster_use_latest_packages) - It is
+    your responsibility to decide if you want to upgrade cluster packages to
+    their latest version.
   * [`ha_cluster_corosync_key_src`](#ha_cluster_corosync_key_src),
     [`ha_cluster_pacemaker_key_src`](#ha_cluster_pacemaker_key_src) and
     [`ha_cluster_fence_virt_key_src`](#ha_cluster_fence_virt_key_src) - These
@@ -1575,6 +1609,14 @@ may not be present in the export.
     themselves are not exported, these variables are not present in the export
     either. Corosync and pacemaker keys are supposed to be unique for each
     cluster.
+  * [`ha_cluster_pcsd_public_key_src` and `ha_cluster_pcsd_private_key_src`](#ha_cluster_pcsd_public_key_src-ha_cluster_pcsd_private_key_src) -
+    These are supposed to contain paths to files with TLS certificate and
+    private key for pcsd. Since the certificate and key themselves are not
+    exported, these variables are not present in the export either.
+  * [`ha_cluster_pcsd_certificates`](#ha_cluster_pcsd_certificates) - The value
+    of this variable is set to the variable `certificate_requests` in the
+    `certificate` role. See the `certificate` role documentation to check if it
+    provides any means for exporting configuration.
   * [`ha_cluster_regenerate_keys`](#ha_cluster_regenerate_keys) - It is your
     responsibility to decide if you want to use existing keys or generate new
     ones.

@@ -1,0 +1,26 @@
+- name: Manage sudo
+  hosts: "{{ my_host | default('servera') }}"
+  become: true
+  gather_facts: false
+
+  tasks:
+
+    - name: Ensure user can use sudo
+      when: my_user is defined
+      ansible.builtin.lineinfile:
+        path: /etc/sudoers.d/ansible_managed_users
+        state: "{{ my_state | default('present') }}"
+        create: true
+        mode: '0440'
+        line: "{{ my_user }} ALL=(ALL) NOPASSWD:ALL"
+        validate: /usr/sbin/visudo -cf %s
+
+    - name: Ensure group can use sudo
+      when: my_group is defined
+      ansible.builtin.lineinfile:
+        path: /etc/sudoers.d/ansible_managed_groups
+        state: "{{ my_state | default('present') }}"
+        create: true
+        mode: '0440'
+        line: "%{{ my_group }} ALL=(ALL) NOPASSWD:ALL"
+        validate: /usr/sbin/visudo -cf %s

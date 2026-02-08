@@ -32,6 +32,8 @@ galaxy_info:
   galaxy_tags:
     - centos
     - client
+    - container
+    - containerbuild
     - debianbuster
     - debianjessie
     - debianstretch

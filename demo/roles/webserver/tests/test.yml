@@ -1,5 +1,6 @@
 ---
-- hosts: localhost
+- name: Example playbook
+  hosts: localhost
   remote_user: root
   roles:
-    - rgdacosta.foo
+    - rgdacosta.general.webserver

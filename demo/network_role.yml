@@ -1,8 +1,6 @@
 ---
 - name: Setup networking
-  hosts:
-    - servera
-    - serverb
+  hosts: "{{ my_host | default('all') }}"
   become: true
 
   vars:
@@ -10,7 +8,7 @@
     network_connections:
       - name: datacenter
         type: ethernet
-        interface_name: eth1
+        interface_name: ens4
         state: up
         ip:
           dhcp4: no

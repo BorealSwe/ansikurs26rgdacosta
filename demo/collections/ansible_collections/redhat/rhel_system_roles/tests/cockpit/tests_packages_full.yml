@@ -2,6 +2,9 @@
 - name: "Test cockpit_packages: full"
   hosts: all
   gather_facts: true
+  vars:
+    cockpit_manage_firewall: true
+    cockpit_manage_selinux: false
   tasks:
     - name: Tests
       block:
@@ -11,8 +14,6 @@
             public: true
           vars:
             cockpit_packages: full
-            cockpit_manage_firewall: true
-            cockpit_manage_selinux: false
 
         - name: Flush handlers
           meta: flush_handlers

@@ -34,7 +34,7 @@
           (
             __nodes_from_options != (__nodes_from_options | unique)
           ) or (
-            __nodes_from_options | difference(__ha_cluster_all_node_names)
+            __nodes_from_options | difference(__ha_cluster_all_node_names) | list | length > 0
           )
 
 - name: Extract node options
@@ -74,7 +74,7 @@
           | map('length') | unique | length > 1
       run_once: true
 
-  # Running a qnetd on a cluster node does't make sense, fencing would make
+  # Running a qnetd on a cluster node doesn't make sense, fencing would make
   # the qnetd unavailable, even if temporarily.
     - name: Fail if configuring qnetd on a cluster node
       fail:
@@ -146,7 +146,7 @@
   when:
     - ha_cluster_pcsd_public_key_src is not none
     - ha_cluster_pcsd_private_key_src is not none
-    - ha_cluster_pcsd_certificates | d([])
+    - ha_cluster_pcsd_certificates | d([]) | length > 0
 
 - name: Fetch pcs capabilities
   command:
@@ -185,4 +185,4 @@
       Installed pcs doesn't support configuring resources and operations
       defaults. Please, upgrade pcs.
   when:
-    - ( ha_cluster_resource_defaults and not 'pcmk.properties.resource-defaults.multiple' in __ha_cluster_pcs_capabilities ) or ( ha_cluster_resource_operation_defaults and not 'pcmk.properties.operation-defaults.multiple' in __ha_cluster_pcs_capabilities )
+    - ( ha_cluster_resource_defaults | length > 0 and not 'pcmk.properties.resource-defaults.multiple' in __ha_cluster_pcs_capabilities ) or ( ha_cluster_resource_operation_defaults | length > 0 and not 'pcmk.properties.operation-defaults.multiple' in __ha_cluster_pcs_capabilities )

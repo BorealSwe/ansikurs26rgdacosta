@@ -41,11 +41,12 @@
             prefix: linux_system_role.selinux
           register: tempdir
 
-        - name: Copy module file {{ __selinux_item.path }}
+        - name: Copy module file {{ __selinux_item.path | d("EMPTY") }}
           copy:
             dest: "{{ tempdir.path }}"
             src: "{{ __selinux_item.path }}"
             mode: preserve
+          when: tempdir.path is defined
 
         - name: Install the module
           redhat.rhel_system_roles.local_semodule:
@@ -53,11 +54,13 @@
             priority: "{{ priority }}"
             state: enabled
           notify: __selinux_reload_policy
+          when: tempdir.path is defined
       always:
-        - name: Clean temporary directory {{ tempdir.path }}
+        - name: Clean temporary directory {{ tempdir.path | d("EMPTY") }}
           file:
             path: "{{ tempdir.path }}"
             state: absent
+          when: tempdir.path is defined
 
 - name: Remove module
   redhat.rhel_system_roles.local_semodule:

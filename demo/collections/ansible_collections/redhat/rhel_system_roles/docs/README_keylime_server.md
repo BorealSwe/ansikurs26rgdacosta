@@ -7,6 +7,7 @@ Ansible role for configuring and deploying the server components for Keylime Rem
 
 * RHEL-9.1+, CentOS Stream 9.1+
 * Fedora 36+
+* SLES 15-SP6+, openSUSE Leap 15.6+
 
 ## Requirements
 

@@ -178,7 +178,7 @@
       ansible.builtin.include_role:
         name: redhat.rhel_system_roles.network
 
-    - name: Configure the ethernet device eth1 with dhcp4 configured
+    - name: Configure the ethernet device eth1 with dhcp4 configured again
       vars:
         network_state:
           interfaces:

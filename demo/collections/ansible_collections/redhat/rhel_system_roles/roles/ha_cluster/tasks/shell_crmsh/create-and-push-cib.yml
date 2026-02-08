@@ -162,7 +162,7 @@
   ## Stonith levels - fencing_topology
     - name: Configure stonith levels - fencing_topology
       ansible.builtin.include_tasks: crm-cib-stonith-level.yml
-      when: ha_cluster_stonith_levels
+      when: ha_cluster_stonith_levels | length > 0
 
   ## Constraints
     - name: Configure resource location constraints
@@ -174,7 +174,7 @@
 
     - name: Configure resource colocation constraints
       ansible.builtin.include_tasks: crm-cib-constraint-colocation.yml
-      when: not constraint.resource_sets | d()
+      when: constraint.resource_sets | d([]) | length == 0
       loop: "{{ ha_cluster_constraints_colocation }}"
       loop_control:
         index_var: constraint_index
@@ -184,7 +184,7 @@
       ansible.builtin.include_tasks: crm-cib-constraint-set.yml
       vars:
         constraint_type: colocation
-      when: constraint.resource_sets | d()
+      when: constraint.resource_sets | d([]) | length > 0
       loop: "{{ ha_cluster_constraints_colocation }}"
       loop_control:
         index_var: constraint_index
@@ -192,7 +192,7 @@
 
     - name: Configure resource order constraints
       ansible.builtin.include_tasks: crm-cib-constraint-order.yml
-      when: not constraint.resource_sets | d()
+      when: constraint.resource_sets | d([]) | length == 0
       loop: "{{ ha_cluster_constraints_order }}"
       loop_control:
         index_var: constraint_index
@@ -202,7 +202,7 @@
       ansible.builtin.include_tasks: crm-cib-constraint-set.yml
       vars:
         constraint_type: order
-      when: constraint.resource_sets | d()
+      when: constraint.resource_sets | d([]) | length > 0
       loop: "{{ ha_cluster_constraints_order }}"
       loop_control:
         index_var: constraint_index
@@ -210,7 +210,7 @@
 
     - name: Configure resource ticket constraints
       ansible.builtin.include_tasks: crm-cib-constraint-ticket.yml
-      when: not constraint.resource_sets | d()
+      when: constraint.resource_sets | d([]) | length == 0
       loop: "{{ ha_cluster_constraints_ticket }}"
       loop_control:
         index_var: constraint_index
@@ -220,7 +220,7 @@
       ansible.builtin.include_tasks: crm-cib-constraint-set.yml
       vars:
         constraint_type: ticket
-      when: constraint.resource_sets | d()
+      when: constraint.resource_sets | d([]) | length > 0
       loop: "{{ ha_cluster_constraints_ticket }}"
       loop_control:
         index_var: constraint_index
@@ -231,7 +231,9 @@
       ansible.builtin.include_tasks: crm-cluster-properties.yml
       vars:
         properties_set: "{{ ha_cluster_cluster_properties[0] }}"
-      when: ha_cluster_cluster_properties[0].attrs | d([])
+      when:
+        - ha_cluster_cluster_properties[0].attrs | d(none) is not none
+        - ha_cluster_cluster_properties[0].attrs | length > 0
 
   # Verify CIB to ensure that there are no errors before applying.
     - name: Verify shadow CIB

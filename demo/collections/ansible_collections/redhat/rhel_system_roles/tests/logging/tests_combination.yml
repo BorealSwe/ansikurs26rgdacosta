@@ -73,11 +73,30 @@
       include_role:
         name: redhat.rhel_system_roles.logging
         public: true
+      when: not __bootc_validation | d(false)
+
+  # role does not run during bootc QEMU validation, thus some variables are undefined
+    - name: Set __logging_is_booted for bootc validation tests
+      set_fact:
+        __logging_is_booted: true
+        logging_manage_firewall: false
+        logging_manage_selinux: false
+        logging_tcp_ports: []
+        logging_udp_ports: []
+        logging_tls_tcp_ports: []
+        logging_tls_udp_ports: []
+      when: __bootc_validation | d(false)
 
   # notify Restart rsyslogd is executed at the end of this test task.
   # thus we have to force to invoke handlers
     - name: "Force all notified handlers to run at this point, not waiting for normal sync points"
       meta: flush_handlers
+
+    - name: Create QEMU deployment during bootc end-to-end test
+      delegate_to: localhost
+      command: "{{ lsr_scriptdir }}/bootc-buildah-qcow.sh {{ ansible_host }}"
+      changed_when: true
+      when: ansible_connection == "buildah"
 
     - name: Ensure config file size and counts
       vars:
@@ -164,6 +183,7 @@
       command: >-
         /bin/grep '{{ __test_tag }} .*abcdefghijklmnopqrstuvwxyz$' {{ __default_system_log }}
       changed_when: false
+      when: __logging_is_booted
   # yamllint enable rule:line-length
 
   # yamllint disable rule:line-length
@@ -182,6 +202,7 @@
       register: __result
       changed_when: false
       failed_when: __result.rc != 1
+      when: __logging_is_booted
   # yamllint enable rule:line-length
 
     - name: Check ports managed by firewall and selinux
@@ -197,12 +218,17 @@
         name: redhat.rhel_system_roles.logging
         public: true
 
+  # do just one image/verify cycle for the bootc end-to-end test
+    - name: Skip remaining steps in bootc end-to-end validation
+      meta: end_play
+      when: __bootc_validation | d(false)
+
   # notify Restart rsyslogd is executed at the end of this test task.
   # thus we have to force to invoke handlers
-    - name: "Force all notified handlers to run at this point, not waiting for normal sync points"
+    - name: "Force all notified handlers to run at this point, not waiting for normal sync points - 2"
       meta: flush_handlers
 
-    - name: Check ports managed by firewall and selinux
+    - name: Check ports managed by firewall and selinux - 2
       include_tasks: tasks/check_firewall_selinux.yml
 
   # TEST CASE 1
@@ -259,10 +285,10 @@
 
   # notify Restart rsyslogd is executed at the end of this test task.
   # thus we have to force to invoke handlers
-    - name: "Force all notified handlers to run at this point, not waiting for normal sync points"
+    - name: "Force all notified handlers to run at this point, not waiting for normal sync points - 3"
       meta: flush_handlers
 
-    - name: Ensure config file size and counts
+    - name: Ensure config file size and counts - 2
       vars:
         __conf_count: 10
         __conf_size: less
@@ -288,7 +314,7 @@
       changed_when: false
   # yamllint enable rule:line-length
 
-    - name: Ensure logger message is logged in a file
+    - name: Ensure logger message is logged in a file - 2
       vars:
         __logging_index: 1
         __logging_file: "{{ __default_system_log }}"
@@ -300,7 +326,7 @@
       register: __result
       failed_when: not __result.stat.exists
 
-    - name: Generate a file to check severity_and_facility
+    - name: Generate a file to check severity_and_facility - 2
       copy:
         dest: /tmp/__testfile__
         content: |
@@ -319,17 +345,17 @@
           }
         mode: "0600"
 
-    - name: Check severity_and_facility
+    - name: Check severity_and_facility - 2
       command: diff -B /tmp/__testfile__ '{{ __test_forwards_conf_s_f }}'
       changed_when: false
 
-    - name: Check the files config stat
+    - name: Check the files config stat - 2
       stat:
         path: "{{ __test_inputfiles_conf }}"
       register: __result
       failed_when: not __result.stat.exists
 
-    - name: Check the input call with tag={{ __test_tag }}
+    - name: Check again the input call with tag={{ __test_tag }}
       lineinfile:
         path: "{{ __test_inputfiles_conf }}"
         line: "  {{ item }}"
@@ -343,19 +369,20 @@
         - tag="{{ __test_tag }}"
 
   # yamllint disable rule:line-length
-    - name: "Create a test log file with a log message in {{ __test_inputfiles_dir }}"
+    - name: "Create again a test log file with a log message in {{ __test_inputfiles_dir }}"
       shell: |-
         set -euo pipefail
         echo '<167>Dec 26 01:00:00 11.22.33.44 tag msgnum:00000001:26:ABCDEFGHIJKLMNOPQRSTUVWXYZ' >> {{ __test_inputfiles_dir }}/test.log
       changed_when: false
 
-    - name: Check the fake test log message in {{ __default_system_log }}
+    - name: Check again the fake test log message in {{ __default_system_log }}
       command: >-
         /bin/grep '{{ __test_tag }} .*ABCDEFGHIJKLMNOPQRSTUVWXYZ$' {{ __default_system_log }}
       changed_when: false
+      when: __logging_is_booted
   # yamllint enable rule:line-length
 
-    - name: Check ports managed by firewall and selinux
+    - name: Check ports managed by firewall and selinux - 3
       include_tasks: tasks/check_firewall_selinux.yml
 
     - name: END TEST CASE 1; Clean up the deployed config
@@ -370,10 +397,10 @@
 
   # notify Restart rsyslogd is executed at the end of this test task.
   # thus we have to force to invoke handlers
-    - name: "Force all notified handlers to run at this point, not waiting for normal sync points"
+    - name: "Force all notified handlers to run at this point, not waiting for normal sync points - 4"
       meta: flush_handlers
 
-    - name: Check ports managed by firewall and selinux
+    - name: Check ports managed by firewall and selinux - 4
       include_tasks: tasks/check_firewall_selinux.yml
 
   # TEST CASE 2
@@ -428,10 +455,10 @@
 
   # notify Restart rsyslogd is executed at the end of this test task.
   # thus we have to force to invoke handlers
-    - name: "Force all notified handlers to run at this point, not waiting for normal sync points"
+    - name: "Force all notified handlers to run at this point, not waiting for normal sync points - 5"
       meta: flush_handlers
 
-    - name: Ensure config file size and counts
+    - name: Ensure config file size and counts - 3
       vars:
         __conf_count: 10
         __conf_size: less
@@ -463,7 +490,7 @@
           }
         mode: "0644"
 
-    - name: Check ports managed by firewall and selinux
+    - name: Check ports managed by firewall and selinux - 5
       include_tasks: tasks/check_firewall_selinux.yml
 
     - name: Deploy reduced config to output into local files
@@ -514,10 +541,10 @@
 
   # notify Restart rsyslogd is executed at the end of this test task.
   # thus we have to force to invoke handlers
-    - name: "Force all notified handlers to run at this point, not waiting for normal sync points"
+    - name: "Force all notified handlers to run at this point, not waiting for normal sync points - 7"
       meta: flush_handlers
 
-    - name: Ensure config file size and counts
+    - name: Ensure config file size and counts - 4
       vars:
         __conf_count: 6
         __conf_size: less
@@ -540,8 +567,9 @@
       register: __result
       changed_when: false
       failed_when: "'error' in __result.stdout or __result is failed"
+      when: __logging_is_booted
 
-    - name: Check ports managed by firewall and selinux
+    - name: Check ports managed by firewall and selinux - 6
       include_tasks: tasks/check_firewall_selinux.yml
 
     - name: END TEST CASE 2; Clean up the deployed config
@@ -559,12 +587,12 @@
         path: "/tmp/__testfile__"
         state: absent
 
-    - name: Check ports managed by firewall and selinux
+    - name: Check ports managed by firewall and selinux - 7
       include_tasks: tasks/check_firewall_selinux.yml
 
   # notify Restart rsyslogd is executed at the end of this test task.
   # thus we have to force to invoke handlers
-    - name: "Force all notified handlers to run at this point, not waiting for normal sync points"
+    - name: "Force all notified handlers to run at this point, not waiting for normal sync points - 6"
       meta: flush_handlers
 
     - name: Assert {{ __default_system_log }}

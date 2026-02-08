@@ -89,7 +89,9 @@
     # ha_cluster_cluster_properties
       vars:
         properties_set: "{{ ha_cluster_cluster_properties[0] }}"
-      when: ha_cluster_cluster_properties[0].attrs | d([])
+      when:
+        - ha_cluster_cluster_properties[0].attrs | d(none) is not none
+        - ha_cluster_cluster_properties[0].attrs | length > 0
 
   ## Node attributes
     - name: Configure node attributes
@@ -181,7 +183,7 @@
 
     - name: Configure resource colocation constraints
       include_tasks: pcs-cib-constraint-colocation.yml
-      when: not constraint.resource_sets | d()
+      when: constraint.resource_sets | d([]) | length == 0
       loop: "{{ ha_cluster_constraints_colocation }}"
       loop_control:
         index_var: constraint_index
@@ -191,7 +193,7 @@
       include_tasks: pcs-cib-constraint-set.yml
       vars:
         constraint_type: colocation
-      when: constraint.resource_sets | d()
+      when: constraint.resource_sets | d([]) | length > 0
       loop: "{{ ha_cluster_constraints_colocation }}"
       loop_control:
         index_var: constraint_index
@@ -199,7 +201,7 @@
 
     - name: Configure resource order constraints
       include_tasks: pcs-cib-constraint-order.yml
-      when: not constraint.resource_sets | d()
+      when: constraint.resource_sets | d([]) | length == 0
       loop: "{{ ha_cluster_constraints_order }}"
       loop_control:
         index_var: constraint_index
@@ -209,7 +211,7 @@
       include_tasks: pcs-cib-constraint-set.yml
       vars:
         constraint_type: order
-      when: constraint.resource_sets | d()
+      when: constraint.resource_sets | d([]) | length > 0
       loop: "{{ ha_cluster_constraints_order }}"
       loop_control:
         index_var: constraint_index
@@ -217,7 +219,7 @@
 
     - name: Configure resource ticket constraints
       include_tasks: pcs-cib-constraint-ticket.yml
-      when: not constraint.resource_sets | d()
+      when: constraint.resource_sets | d([]) | length == 0
       loop: "{{ ha_cluster_constraints_ticket }}"
       loop_control:
         index_var: constraint_index
@@ -227,7 +229,7 @@
       include_tasks: pcs-cib-constraint-set.yml
       vars:
         constraint_type: ticket
-      when: constraint.resource_sets | d()
+      when: constraint.resource_sets | d([]) | length > 0
       loop: "{{ ha_cluster_constraints_ticket }}"
       loop_control:
         index_var: constraint_index

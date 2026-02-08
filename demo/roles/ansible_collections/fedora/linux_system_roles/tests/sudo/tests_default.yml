@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: MIT
+---
+- name: Ensure that the role runs with default parameters
+  hosts: all
+  gather_facts: false # test that role works in this case
+  tasks:
+    - name: Run tests
+      block:
+        - name: Test setup
+          include_tasks: tasks/setup.yml
+          when: not __bootc_validation | d(false)
+
+        - name: Run the role
+          include_role:
+            name: fedora.linux_system_roles.sudo
+          vars:
+            sudo_check_if_configured: false
+          when: not __bootc_validation | d(false)
+
+        - name: Create QEMU deployment during bootc end-to-end test
+          delegate_to: localhost
+          command: "{{ lsr_scriptdir }}/bootc-buildah-qcow.sh {{ ansible_host }}"
+          changed_when: true
+          when: ansible_connection == "buildah"
+
+        - name: Check header for ansible_managed, fingerprint
+          include_tasks: tasks/check_present_header.yml
+          vars:
+            __file: /etc/sudoers
+            __fingerprint: system_role:sudo
+
+      always:
+        - name: Test cleanup
+          include_tasks: tasks/cleanup.yml
+          when: not __bootc_validation | d(false)

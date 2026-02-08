@@ -47,8 +47,8 @@
     # Verify mysql_variable successfully updates a variable (issue:4568)
     #
     - set_fact:
-         set_name: 'delay_key_write'
-         set_value: 'ON'
+        set_name: 'delay_key_write'
+        set_value: 'ON'
 
     - name: set mysql variable
       mysql_variables:
@@ -74,8 +74,8 @@
     # Verify mysql_variable successfully updates a variable using single quotes
     #
     - set_fact:
-         set_name: 'wait_timeout'
-         set_value: '300'
+        set_name: 'wait_timeout'
+        set_value: '300'
 
     - name: set mysql variable to a temp value
       mysql_variables:
@@ -92,7 +92,9 @@
 
     - assert:
         that:
-        - result.queries == ["SET GLOBAL `{{ set_name }}` = {{ set_value }}"]
+        - result.queries == expected_queries
+      vars:
+        expected_queries: ["SET GLOBAL `{{ set_name }}` = {{ set_value }}"]
 
     - include_tasks: assert_var.yml
       vars:
@@ -105,8 +107,8 @@
     # Verify mysql_variable successfully updates a variable using double quotes
     #
     - set_fact:
-         set_name: "wait_timeout"
-         set_value: "400"
+        set_name: "wait_timeout"
+        set_value: "400"
 
     - name: set mysql variable to a temp value
       mysql_variables:
@@ -132,8 +134,8 @@
     # Verify mysql_variable successfully updates a variable using no quotes
     #
     - set_fact:
-         set_name: wait_timeout
-         set_value: 500
+        set_name: wait_timeout
+        set_value: 500
 
     - name: set mysql variable to a temp value
       mysql_variables:
@@ -181,16 +183,6 @@
         value: '-1'
       register: oor_result
       ignore_errors: true
-
-    - include_tasks: assert_var.yml
-      vars:
-        changed: true
-        output: "{{ oor_result }}"
-        var_name: max_connect_errors
-        var_value: 1
-      when:
-        - connector_name == 'mysqlclient'
-        - db_engine == 'mysql'  # mysqlclient returns "changed" with MariaDB
 
     - include_tasks: assert_fail_msg.yml
       vars:
@@ -251,8 +243,8 @@
     # Verify mysql_variable works with the login_user and login_password parameters
     #
     - set_fact:
-         set_name: wait_timeout
-         set_value: 77
+        set_name: wait_timeout
+        set_value: 77
 
     - name: query mysql_variable using login_user and password_password
       mysql_variables:
@@ -287,12 +279,109 @@
         var_name: "{{set_name}}"
         var_value: '{{set_value}}'
 
+    #=========================================================================
+    # Bugfix https://github.com/ansible-collections/community.mysql/issues/652
+
+    - name: Get server version
+      mysql_info:
+        <<: *mysql_params
+      register: result
+
+    - name: Set variable name when running on MySQL
+      set_fact:
+        log_slow_statements: log_slow_replica_statements
+      when: result.server_engine == 'MySQL'
+
+    - name: Set variable name when running on MariaDB
+      set_fact:
+        log_slow_statements: log_slow_slave_statements
+      when: result.server_engine == 'MariaDB'
+
+    - name: Set a boolean value using ON
+      mysql_variables:
+        <<: *mysql_params
+        variable: "{{ log_slow_statements }}"
+        value: "ON"
+      register: result
+
+    - name: Check that it changed
+      assert:
+        that:
+        - result is changed or result.msg == "Variable is already set to requested value."
+        - result.msg == "Variable is already set to requested value." or result.queries == expected_queries
+      vars:
+        expected_queries: ["SET GLOBAL `{{ log_slow_statements }}` = ON"]
+
+    - name: Set a boolean value again using ON
+      mysql_variables:
+        <<: *mysql_params
+        variable: "{{ log_slow_statements }}"
+        value: "ON"
+      register: result
+
+    - name: Check that it didn't change
+      assert:
+        that:
+        - result is not changed
+
+    - name: Set a boolean value again using 1
+      mysql_variables:
+        <<: *mysql_params
+        variable: "{{ log_slow_statements }}"
+        value: 1
+      register: result
+
+    - name: Check that it didn't change
+      assert:
+        that:
+        - result is not changed
+
+    - name: Set a boolean value using OFF
+      mysql_variables:
+        <<: *mysql_params
+        variable: "{{ log_slow_statements }}"
+        value: "OFF"
+      register: result
+
+    - name: Check that it changed
+      assert:
+        that:
+        - result is changed
+        - result.queries == ["SET GLOBAL `{{ log_slow_statements }}` = OFF"]
+
+    - name: Set a boolean value again using 0
+      mysql_variables:
+        <<: *mysql_params
+        variable: "{{ log_slow_statements }}"
+        value: 0
+      register: result
+
+    - name: Check that it didn't change
+      assert:
+        that:
+        - result is not changed
+
+    - name: Set a boolean value using on
+      mysql_variables:
+        <<: *mysql_params
+        variable: "{{ log_slow_statements }}"
+        value: "on"
+      register: result
+
+    - name: Check that it changed
+      assert:
+        that:
+        - result is changed
+        - result.queries == expected_queries
+      vars:
+        expected_queries: ["SET GLOBAL `{{ log_slow_statements }}` = ON"]
+
     #============================================================
     # Verify mysql_variable fails with an incorrect login_password parameter
     #
     - set_fact:
-         set_name: connect_timeout
-         set_value: 10
+        set_name: connect_timeout
+        set_value: 10
 
     - name: query mysql_variable using incorrect login_password
       mysql_variables:
@@ -359,7 +448,9 @@
 
         - assert:
             that:
-            - result.queries == ["SET PERSIST `{{ set_name }}` = {{ set_value }}"]
+            - result.queries == expected_queries
+          vars:
+            expected_queries: ["SET PERSIST `{{ set_name }}` = {{ set_value }}"]
 
         - include_tasks: assert_var.yml
           vars:
@@ -401,7 +492,9 @@
         - assert:
             that:
             - result is changed
-            - result.queries == ["SET PERSIST_ONLY `{{ set_name }}` = {{ set_value }}"]
+            - result.queries == expected_queries
+          vars:
+            expected_queries: ["SET PERSIST_ONLY `{{ set_name }}` = {{ set_value }}"]
 
         - name: try to update mysql variable value (expect changed=false) in persist_only mode again
           mysql_variables:

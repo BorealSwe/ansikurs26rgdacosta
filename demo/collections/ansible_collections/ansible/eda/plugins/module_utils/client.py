@@ -47,20 +47,23 @@ class Client:
         host: str,
         username: Optional[str] = None,
         password: Optional[str] = None,
+        token: Optional[str] = None,
         timeout: Optional[Any] = None,
         validate_certs: Optional[Any] = None,
     ) -> None:
-        if not (host or "").startswith(("https://", "http://")):
-            raise EDAHTTPError(
-                f"Invalid instance host value: '{host}'. "
-                "Value must start with 'https://' or 'http://'"
-            )
+        if not host:
+            raise ValueError("Host must be a non-empty string.")
 
-        self.host = host
+        if not host.startswith(("https://", "http://")):
+            self.host = f"https://{host}"
+        else:
+            self.host = host
+
         self.username = username
         self.password = password
         self.timeout = timeout
         self.validate_certs = validate_certs
+        self.token = token
 
         # Try to parse the hostname as a url
         try:
@@ -86,8 +89,8 @@ class Client:
                 method,
                 path,
                 data=data,
-                url_password=self.password,
-                url_username=self.username,
+                url_password=self.password if not self.token else None,
+                url_username=self.username if not self.token else None,
                 headers=headers,
                 timeout=self.timeout,
                 validate_certs=self.validate_certs,
@@ -151,6 +154,9 @@ class Client:
 
         # Extract the headers, this will be used in a couple of places
         headers: dict[str, str] = kwargs.get("headers", {})
+
+        if self.token:
+            headers.setdefault("Authorization", f"Bearer {self.token}")
 
         if method in ["POST", "PUT", "PATCH"]:
             headers.setdefault("Content-Type", "application/json")

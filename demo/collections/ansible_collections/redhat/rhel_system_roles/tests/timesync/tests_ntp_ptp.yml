@@ -30,6 +30,7 @@
         - name: Run role
           include_role:
             name: redhat.rhel_system_roles.timesync
+            public: true
 
         - name: Flush handlers
           meta: flush_handlers
@@ -65,3 +66,10 @@
                   - "'172.16.123.2' in sources.stdout"
                   - "'PTP0' in sources.stdout"
                   - "'PTP1' in sources.stdout"
+
+      always:
+        - name: Cleanup after tests
+          include_tasks: tasks/cleanup.yml
+          vars:
+            timesync_ntp_servers: []
+            timesync_ptp_domains: []

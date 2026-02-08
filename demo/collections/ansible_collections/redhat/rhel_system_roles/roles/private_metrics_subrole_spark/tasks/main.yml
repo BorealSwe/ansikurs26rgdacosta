@@ -43,16 +43,17 @@
     name: "{{ __spark_packages_extra }}"
     state: present
     use: "{{ (__ansible_pcp_is_ostree | d(false)) | ternary('redhat.rhel_system_roles.rhel_rpm_ostree', omit) }}"
-  when: __spark_packages_extra | d([])
+  when: __spark_packages_extra | d([]) | length > 0
 
 - name: Ensure PCP OpenMetrics agent is configured for Spark
   template:
     src: spark.url.j2
     dest: "{{ __spark_metrics_conf }}"
-    mode: "0600"
+    mode: "0644"
   when:
     - spark_metrics_provider == 'pcp'
     - spark_metrics_agent | d(false) | bool
+    - "'pcp-pmda-openmetrics' in __spark_packages_pcp"
 
 - name: Ensure PCP OpenMetrics agent is enabled with Spark endpoint
   file:
@@ -62,6 +63,7 @@
   when:
     - spark_metrics_provider == 'pcp'
     - spark_metrics_agent | d(false) | bool
+    - "'pcp-pmda-openmetrics' in __spark_packages_pcp"
 
 - name: Ensure correct service path for ostree systems
   when:
@@ -79,10 +81,23 @@
     - spark_metrics_provider == 'pcp'
     - spark_export_metrics | d(false) | bool
 
+- name: Determine if host is booted
+# noqa command-instead-of-module
+  command: systemctl is-system-running
+  register: __system_running
+  changed_when: false
+  check_mode: false
+  failed_when: false
+
+- name: Require installed systemd
+  fail:
+    msg: "Error: This role requires systemd to be installed."
+  when: '"No such file or directory" in __system_running.msg | d("")'
+
 - name: Ensure PCP Spark export is running and enabled on boot
   service:
     name: pcp2spark
-    state: started
+    state: "{{ 'started' if __system_running.stdout != 'offline' else omit }}"
     enabled: true
 # A given Spark server may be running remotely or presently down
 # but since a playbook has explicitly asked us for it, we end up

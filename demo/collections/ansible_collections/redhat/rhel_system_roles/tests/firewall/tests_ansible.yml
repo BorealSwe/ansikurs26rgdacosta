@@ -9,7 +9,7 @@
         name: redhat.rhel_system_roles.firewall
 
     - name: Get default zone
-      command: firewall-cmd --get-default-zone
+      command: firewall-offline-cmd --get-default-zone
       register: __default_zone
       changed_when: false
 
@@ -19,37 +19,37 @@
       # INIT TEST
 
         - name: Remove custom zone
-          command: firewall-cmd --permanent --delete-zone=custom
+          command: firewall-offline-cmd --delete-zone=custom
           register: result
           failed_when: result.failed and "INVALID_ZONE" not in result.stderr
           changed_when: false
 
         - name: Reset internal zone to defaults
-          command: firewall-cmd --permanent --load-zone-defaults=internal
+          command: firewall-offline-cmd --load-zone-defaults=internal
           register: result
           failed_when: result.failed and "NO_DEFAULTS" not in result.stderr
           changed_when: false
 
         - name: Reset trusted zone to defaults
-          command: firewall-cmd --permanent --load-zone-defaults=trusted
+          command: firewall-offline-cmd --load-zone-defaults=trusted
           register: result
           failed_when: result.failed and "NO_DEFAULTS" not in result.stderr
           changed_when: false
 
         - name: Reset dmz zone to defaults
-          command: firewall-cmd --permanent --load-zone-defaults=dmz
+          command: firewall-offline-cmd --load-zone-defaults=dmz
           register: result
           failed_when: result.failed and "NO_DEFAULTS" not in result.stderr
           changed_when: false
 
         - name: Reset drop zone to defaults
-          command: firewall-cmd --permanent --load-zone-defaults=drop
+          command: firewall-offline-cmd --load-zone-defaults=drop
           register: result
           failed_when: result.failed and "NO_DEFAULTS" not in result.stderr
           changed_when: false
 
         - name: Reset public zone to defaults
-          command: firewall-cmd --permanent --load-zone-defaults=public
+          command: firewall-offline-cmd --load-zone-defaults=public
           register: result
           failed_when: result.failed and "NO_DEFAULTS" not in result.stderr
           changed_when: false
@@ -57,15 +57,15 @@
         - name: Reset default zone to defaults
           shell:
             cmd: |
-              zone=$(firewall-cmd --get-default-zone)
-              firewall-cmd --permanent --load-zone-defaults=$zone
+              zone=$(firewall-offline-cmd --get-default-zone)
+              firewall-offline-cmd --load-zone-defaults=$zone
           register: result
           failed_when: result.failed and "NO_DEFAULTS" not in result.stderr
           changed_when: false
 
         - name: Create custom zone
         # noqa no-changed-when
-          command: firewall-cmd --permanent --new-zone=custom
+          command: firewall-offline-cmd --new-zone=custom
           register: result
           failed_when: result.failed or not result.changed
 
@@ -74,6 +74,7 @@
           command: firewall-cmd --reload
           register: result
           failed_when: result.failed or not result.changed
+          when: __firewall_is_booted
 
       # TEST
 
@@ -82,6 +83,7 @@
             service: https
             permanent: true
             state: enabled
+            online: "{{ __firewall_is_booted }}"
           register: result
           failed_when: result.failed or not result.changed
 
@@ -90,6 +92,7 @@
             service: https
             permanent: true
             state: enabled
+            online: "{{ __firewall_is_booted }}"
           register: result
           failed_when: result.failed or result.changed
 
@@ -98,6 +101,7 @@
             port: 8081/tcp
             permanent: true
             state: enabled
+            online: "{{ __firewall_is_booted }}"
           register: result
           failed_when: result.failed or not result.changed
 
@@ -106,6 +110,7 @@
             port: 8081/tcp
             permanent: true
             state: enabled
+            online: "{{ __firewall_is_booted }}"
           register: result
           failed_when: result.failed or result.changed
 
@@ -114,6 +119,7 @@
             port: 161-162/udp
             permanent: true
             state: enabled
+            online: "{{ __firewall_is_booted }}"
           register: result
           failed_when: result.failed or not result.changed
 
@@ -122,6 +128,7 @@
             port: 161-162/udp
             permanent: true
             state: enabled
+            online: "{{ __firewall_is_booted }}"
           register: result
           failed_when: result.failed or result.changed
 
@@ -130,6 +137,7 @@
             port: 8081/tcp
             permanent: true
             state: disabled
+            online: "{{ __firewall_is_booted }}"
           register: result
           failed_when: result.failed or not result.changed
 
@@ -138,6 +146,7 @@
             port: 8081/tcp
             permanent: true
             state: disabled
+            online: "{{ __firewall_is_booted }}"
           register: result
           failed_when: result.failed or result.changed
 
@@ -147,6 +156,7 @@
             service: http
             permanent: true
             state: enabled
+            online: "{{ __firewall_is_booted }}"
           register: result
           failed_when: result.failed or not result.changed
 
@@ -156,6 +166,7 @@
             service: http
             permanent: true
             state: enabled
+            online: "{{ __firewall_is_booted }}"
           register: result
           failed_when: result.failed or result.changed
 
@@ -164,6 +175,7 @@
             rich_rule: rule service name="ftp" audit limit value="1/m" accept
             permanent: true
             state: enabled
+            online: "{{ __firewall_is_booted }}"
           register: result
           failed_when: result.failed or not result.changed
 
@@ -172,6 +184,7 @@
             rich_rule: rule service name="ftp" audit limit value="1/m" accept
             permanent: true
             state: enabled
+            online: "{{ __firewall_is_booted }}"
           register: result
           failed_when: result.failed or result.changed
 
@@ -181,6 +194,7 @@
             zone: internal
             permanent: true
             state: enabled
+            online: "{{ __firewall_is_booted }}"
           register: result
           failed_when: result.failed or not result.changed
 
@@ -190,6 +204,7 @@
             permanent: true
             zone: internal
             state: enabled
+            online: "{{ __firewall_is_booted }}"
           register: result
           failed_when: result.failed or result.changed
 
@@ -199,6 +214,7 @@
             interface: eth0
             permanent: true
             state: enabled
+            online: "{{ __firewall_is_booted }}"
           register: result
           failed_when: result.failed or not result.changed
 
@@ -208,6 +224,7 @@
             interface: eth0
             permanent: true
             state: enabled
+            online: "{{ __firewall_is_booted }}"
           register: result
           failed_when: result.failed or result.changed
 
@@ -217,6 +234,7 @@
             interface: eth0
             permanent: true
             state: disabled
+            online: "{{ __firewall_is_booted }}"
           register: result
           failed_when: result.failed or not result.changed
 
@@ -226,6 +244,7 @@
             interface: eth0
             permanent: true
             state: disabled
+            online: "{{ __firewall_is_booted }}"
           register: result
           failed_when: result.failed or result.changed
 
@@ -235,6 +254,7 @@
             interface: eth2
             permanent: true
             state: enabled
+            online: "{{ __firewall_is_booted }}"
           register: result
           failed_when: result.failed or not result.changed
 
@@ -244,22 +264,25 @@
             interface: eth2
             permanent: true
             state: enabled
+            online: "{{ __firewall_is_booted }}"
           register: result
           failed_when: result.failed or result.changed
 
-        - name: Allow masquerading in permament dmz zone
+        - name: Allow masquerading in permanent dmz zone
           redhat.rhel_system_roles.firewall_lib:
             masquerade: true
             permanent: true
             zone: dmz
+            online: "{{ __firewall_is_booted }}"
           register: result
           failed_when: result.failed or not result.changed
 
-        - name: Allow masquerading in permament dmz zone, again
+        - name: Allow masquerading in permanent dmz zone, again
           redhat.rhel_system_roles.firewall_lib:
             masquerade: true
             permanent: true
             zone: dmz
+            online: "{{ __firewall_is_booted }}"
           register: result
           failed_when: result.failed or result.changed
 
@@ -268,6 +291,7 @@
             zone: custom
             state: enabled
             permanent: true
+            online: "{{ __firewall_is_booted }}"
           register: result
           failed_when: result.failed or result.changed
 
@@ -276,6 +300,7 @@
             zone: drop
             permanent: true
             icmp_block_inversion: true
+            online: "{{ __firewall_is_booted }}"
           register: result
           failed_when: result.failed or not result.changed
 
@@ -284,6 +309,7 @@
             zone: drop
             permanent: true
             icmp_block_inversion: true
+            online: "{{ __firewall_is_booted }}"
           register: result
           failed_when: result.failed or result.changed
 
@@ -293,6 +319,7 @@
             state: enabled
             permanent: true
             icmp_block: echo-request
+            online: "{{ __firewall_is_booted }}"
           register: result
           failed_when: result.failed or not result.changed
 
@@ -302,6 +329,7 @@
             state: enabled
             permanent: true
             icmp_block: echo-request
+            online: "{{ __firewall_is_booted }}"
           register: result
           failed_when: result.failed or result.changed
 
@@ -311,6 +339,7 @@
             state: enabled
             permanent: true
             target: default
+            online: "{{ __firewall_is_booted }}"
           register: result
           failed_when: result.failed or result.changed
 
@@ -320,6 +349,7 @@
             state: enabled
             permanent: true
             target: ACCEPT
+            online: "{{ __firewall_is_booted }}"
           register: result
           failed_when: result.failed or not result.changed
 
@@ -329,6 +359,7 @@
             state: enabled
             permanent: true
             target: ACCEPT
+            online: "{{ __firewall_is_booted }}"
           register: result
           failed_when: result.failed or result.changed
 
@@ -338,6 +369,7 @@
             state: enabled
             permanent: true
             target: default
+            online: "{{ __firewall_is_booted }}"
           register: result
           failed_when: result.failed or not result.changed
 
@@ -347,6 +379,7 @@
             state: enabled
             permanent: true
             target: default
+            online: "{{ __firewall_is_booted }}"
           register: result
           failed_when: result.failed or result.changed
 
@@ -359,6 +392,8 @@
             state: enabled
           register: result
           failed_when: result.failed or not result.changed
+        # runtime not supported with offline backend
+          when: __firewall_is_booted
 
         - name: Redirect port 443 to 8443 with Rich Rule in permanent and runtime public zone, again
           redhat.rhel_system_roles.firewall_lib:
@@ -369,6 +404,8 @@
             state: enabled
           register: result
           failed_when: result.failed or result.changed
+        # runtime not supported with offline backend
+          when: __firewall_is_booted
 
         - name: Firewalld custom zone
           redhat.rhel_system_roles.firewall_lib:
@@ -377,11 +414,15 @@
             permanent: true
             runtime: true
           register: result
+        # runtime not supported with offline backend
+          when: __firewall_is_booted
 
         - name: Assert firewalld custom zone
           assert:
             that:
               - result is changed
+        # runtime not supported with offline backend
+          when: __firewall_is_booted
 
         - name: Add masquerade to custom zone
           redhat.rhel_system_roles.firewall_lib:
@@ -392,6 +433,8 @@
             runtime: true
           register: result
           failed_when: result is failed or result is not changed
+        # runtime not supported with offline backend
+          when: __firewall_is_booted
 
         - name: Add masquerade to custom zone, again
           redhat.rhel_system_roles.firewall_lib:
@@ -402,24 +445,35 @@
             runtime: true
           register: result
           failed_when: result is failed or result is changed
+        # runtime not supported with offline backend
+          when: __firewall_is_booted
 
         - name: Set the default zone to something other than dmz
-          command: firewall-cmd --set-default-zone public
+        # --set-default-zone not idempotent: https://bugzilla.redhat.com/show_bug.cgi?id=2363037
+          shell: |
+            cur_zone=$(firewall-offline-cmd --get-default-zone)
+            if [ "$cur_zone" != public ]; then
+              firewall-offline-cmd --set-default-zone public
+            fi
           changed_when: false
 
-        - name: Set default zone
+        - name: Set default zone (runtime)
           redhat.rhel_system_roles.firewall_lib:
             set_default_zone: dmz
             state: enabled
           register: result
           failed_when: result is failed or result is not changed
+        # runtime not supported with offline backend
+          when: __firewall_is_booted
 
-        - name: Set default zone, again
+        - name: Set default zone, again (runtime)
           redhat.rhel_system_roles.firewall_lib:
             set_default_zone: dmz
             state: enabled
           register: result
           failed_when: result is failed or result is changed
+        # runtime not supported with offline backend
+          when: __firewall_is_booted
 
         - name: Add multiple custom services
           redhat.rhel_system_roles.firewall_lib:
@@ -428,6 +482,7 @@
               - another_custom
             permanent: true
             state: present
+            online: "{{ __firewall_is_booted }}"
           register: result
           failed_when: result is not failed or result is changed
 
@@ -436,6 +491,7 @@
             service: customservice
             permanent: true
             state: present
+            online: "{{ __firewall_is_booted }}"
           register: result
           failed_when: result is failed or result is not changed
 
@@ -444,6 +500,7 @@
             service: customservice
             permanent: true
             state: present
+            online: "{{ __firewall_is_booted }}"
           register: result
           failed_when: result is failed or result is changed
 
@@ -453,6 +510,7 @@
             description: "This is a custom service that does absolutely nothing"
             permanent: true
             state: present
+            online: "{{ __firewall_is_booted }}"
           register: result
           failed_when: result is failed or result is not changed
 
@@ -462,6 +520,7 @@
             short: "custom service"
             permanent: true
             state: present
+            online: "{{ __firewall_is_booted }}"
           register: result
           failed_when: result is failed or result is not changed
 
@@ -471,6 +530,7 @@
             source_port: 333/tcp
             permanent: true
             state: present
+            online: "{{ __firewall_is_booted }}"
           register: result
           failed_when: result is failed or result is not changed
 
@@ -480,6 +540,7 @@
             source_port: 333/tcp
             permanent: true
             state: present
+            online: "{{ __firewall_is_booted }}"
           register: result
           failed_when: result is failed or result is changed
 
@@ -489,6 +550,7 @@
             protocol: nonexistentprotocol
             permanent: true
             state: present
+            online: "{{ __firewall_is_booted }}"
           register: result
           failed_when: result is not failed or result is changed
 
@@ -498,6 +560,7 @@
             protocol: icmp
             permanent: true
             state: present
+            online: "{{ __firewall_is_booted }}"
           register: result
           failed_when: result is failed or result is not changed
 
@@ -507,6 +570,7 @@
             protocol: icmp
             permanent: true
             state: absent
+            online: "{{ __firewall_is_booted }}"
           register: result
           failed_when: result is failed or result is not changed
 
@@ -516,6 +580,7 @@
             source_port: 333/tcp
             permanent: true
             state: absent
+            online: "{{ __firewall_is_booted }}"
           register: result
           failed_when: result is failed or result is not changed
 
@@ -527,14 +592,46 @@
               - "aaaa:aaaa:aaaa:aaaa::"
             state: present
             permanent: true
+            online: "{{ __firewall_is_booted }}"
           register: result
           failed_when: result is failed or result is not changed
+
+        - name: Add includes
+          redhat.rhel_system_roles.firewall_lib:
+            service: customservice
+            includes:
+              - https
+              - ldaps
+            state: present
+            permanent: true
+            online: "{{ __firewall_is_booted }}"
+          register: result
+          failed_when: result is failed or result is not changed
+          when:
+            - ansible_distribution in ["RedHat", "CentOS", "Fedora"]
+            - ansible_distribution_major_version is version("8", ">=")
+
+        - name: Add includes again to check idempotence
+          redhat.rhel_system_roles.firewall_lib:
+            service: customservice
+            includes:
+              - https
+              - ldaps
+            state: present
+            permanent: true
+            online: "{{ __firewall_is_booted }}"
+          register: result
+          failed_when: result is failed or result is changed
+          when:
+            - ansible_distribution in ["RedHat", "CentOS", "Fedora"]
+            - ansible_distribution_major_version is version("8", ">=")
 
         - name: Delete custom service
           redhat.rhel_system_roles.firewall_lib:
             service: customservice
             permanent: true
             state: absent
+            online: "{{ __firewall_is_booted }}"
           register: result
           failed_when: result is failed or result is not changed
 
@@ -543,25 +640,48 @@
             service: customservice
             permanent: true
             state: absent
+            online: "{{ __firewall_is_booted }}"
           register: result
           failed_when: result is failed or result is changed
 
         - name: Add custom service with all the elements at once
           redhat.rhel_system_roles.firewall_lib:
+            permanent: true
+            state: present
             service: customservice
             short: Custom service
             port: 333/tcp
             source_port: 333/tcp
             protocol: ipv6
-            helper_module: nf_conntrack_ftp
             description: Custom Service that does not do a single thing
             destination:
               - 123.45.6.78
               - "aaaa:aaaa:aaaa:aaa:aaaa:aaaa:aaaa::"
-            permanent: true
-            state: present
+          # these two don't exist yet in RHEL 7
+            helper_module: "{{ 'nf_conntrack_ftp' if ansible_distribution in ['RedHat', 'CentOS', 'Fedora'] and ansible_distribution_major_version is version('8', '>=') else omit }}"
+            includes: "{{ ['https', 'ldaps'] if ansible_distribution in ['RedHat', 'CentOS', 'Fedora'] and ansible_distribution_major_version is version('8', '>=') else omit }}"
+            online: "{{ __firewall_is_booted }}"
           register: result
           failed_when: result is failed or result is not changed
+
+        - name: Verify service settings
+          command: firewall-offline-cmd --info-service customservice
+          register: info
+          changed_when: false
+          failed_when: >
+            info.failed
+            or "ports: 333/tcp" not in info.stdout
+            or "source-ports: 333/tcp" not in info.stdout
+            or "protocols: ipv6" not in info.stdout
+            or "destination: ipv4:123.45.6.78 ipv6:aaaa:aaaa:aaaa:aaa:aaaa:aaaa:aaaa::"
+               not in info.stdout
+
+        - name: Verify includes and helper service settings
+          assert:
+            that:
+              - '"includes: https ldaps" in info.stdout'
+              - '"helpers: nf_conntrack_ftp" in info.stdout'
+          when: ansible_distribution in ['RedHat', 'CentOS', 'Fedora'] and ansible_distribution_major_version is version('8', '>=')
 
         - name: Add helper module that already is on customservice
           redhat.rhel_system_roles.firewall_lib:
@@ -569,8 +689,10 @@
             helper_module: nf_conntrack_ftp
             permanent: true
             state: present
+            online: "{{ __firewall_is_booted }}"
           register: result
           failed_when: result is failed or result is changed
+          when: ansible_distribution in ['RedHat', 'CentOS', 'Fedora'] and ansible_distribution_major_version is version('8', '>=')
 
         - name: Forward port 40 to 0.0.0.0:8080 (string)
           redhat.rhel_system_roles.firewall_lib:
@@ -578,6 +700,8 @@
             state: enabled
           register: result
           failed_when: result is failed or result is not changed
+        # runtime not supported with offline backend
+          when: __firewall_is_booted
 
         - name: Forward same port again (string)
           redhat.rhel_system_roles.firewall_lib:
@@ -585,6 +709,8 @@
             state: enabled
           register: result
           failed_when: result is failed or result is changed
+        # runtime not supported with offline backend
+          when: __firewall_is_booted
 
         - name: Disable forward port (string)
           redhat.rhel_system_roles.firewall_lib:
@@ -592,6 +718,8 @@
             state: disabled
           register: result
           failed_when: result is failed or result is not changed
+        # runtime not supported with offline backend
+          when: __firewall_is_booted
 
         - name: Forward port (dict form)
           redhat.rhel_system_roles.firewall_lib:
@@ -603,6 +731,8 @@
             state: enabled
           register: result
           failed_when: result is failed or result is not changed
+        # runtime not supported with offline backend
+          when: __firewall_is_booted
 
         - name: Forward port again (dict form)
           redhat.rhel_system_roles.firewall_lib:
@@ -614,6 +744,8 @@
             state: enabled
           register: result
           failed_when: result is failed or result is changed
+        # runtime not supported with offline backend
+          when: __firewall_is_booted
 
         - name: Disable forward port (dict form)
           redhat.rhel_system_roles.firewall_lib:
@@ -625,6 +757,26 @@
             state: disabled
           register: result
           failed_when: result is failed or result is not changed
+        # runtime not supported with offline backend
+          when: __firewall_is_booted
+
+        - name: Forward port 40 to 0.0.0.0:8080 (permanent)
+          redhat.rhel_system_roles.firewall_lib:
+            forward_port: 40/tcp;8080;0.0.0.0
+            permanent: true
+            state: enabled
+            online: "{{ __firewall_is_booted }}"
+          register: result
+          failed_when: result is failed or result is not changed
+
+        - name: Forward same port again (permanent)
+          redhat.rhel_system_roles.firewall_lib:
+            forward_port: 40/tcp;8080;0.0.0.0
+            permanent: true
+            state: enabled
+            online: "{{ __firewall_is_booted }}"
+          register: result
+          failed_when: result is failed or result is changed
 
       always:
 
@@ -635,57 +787,60 @@
           # CLEANUP: RESET TO ZONE DEFAULTS
 
             - name: Remove custom zone
-              command: firewall-cmd --permanent --delete-zone=custom
+              command: firewall-offline-cmd --delete-zone=custom
               register: result
               failed_when: result.failed and "INVALID_ZONE" not in result.stderr
               changed_when: false
 
             - name: Remove customzone zone
-              command: firewall-cmd --permanent --delete-zone=customzone
+              command: firewall-offline-cmd --delete-zone=customzone
               register: result
               failed_when: result.failed and "INVALID_ZONE" not in result.stderr
               changed_when: false
 
             - name: Reset internal zone to defaults
-              command: firewall-cmd --permanent --load-zone-defaults=internal
+              command: firewall-offline-cmd --load-zone-defaults=internal
               register: result
               failed_when: result.failed and "NO_DEFAULTS" not in result.stderr
               changed_when: false
 
             - name: Reset trusted zone to defaults
-              command: firewall-cmd --permanent --load-zone-defaults=trusted
+              command: firewall-offline-cmd --load-zone-defaults=trusted
               register: result
               failed_when: result.failed and "NO_DEFAULTS" not in result.stderr
               changed_when: false
 
             - name: Reset dmz zone to defaults
-              command: firewall-cmd --permanent --load-zone-defaults=dmz
+              command: firewall-offline-cmd --load-zone-defaults=dmz
               register: result
               failed_when: result.failed and "NO_DEFAULTS" not in result.stderr
               changed_when: false
 
             - name: Reset drop zone to defaults
-              command: firewall-cmd --permanent --load-zone-defaults=drop
+              command: firewall-offline-cmd --load-zone-defaults=drop
               register: result
               failed_when: result.failed and "NO_DEFAULTS" not in result.stderr
               changed_when: false
 
             - name: Reset public zone to defaults
-              command: firewall-cmd --permanent --load-zone-defaults=public
+              command: firewall-offline-cmd --load-zone-defaults=public
               register: result
               failed_when: result.failed and "NO_DEFAULTS" not in result.stderr
               changed_when: false
 
             - name: Reset default zone to defaults
-              command: firewall-cmd --permanent --load-zone-defaults=public
+              command: firewall-offline-cmd --load-zone-defaults=public
               register: result
               failed_when: result.failed and "NO_DEFAULTS" not in result.stderr
               changed_when: false
 
             - name: Reset default zone
-              command: >-
-                firewall-cmd
-                --set-default-zone={{ __default_zone.stdout | quote }}
+            # --set-default-zone not idempotent: https://bugzilla.redhat.com/show_bug.cgi?id=2363037
+              shell: |
+                cur_zone=$(firewall-offline-cmd --get-default-zone)
+                if [ "$cur_zone" != {{ __default_zone.stdout | quote }} ]; then
+                  firewall-offline-cmd --set-default-zone={{ __default_zone.stdout | quote }}
+                fi
               changed_when: false
 
             - name: Reload firewalld
@@ -693,3 +848,4 @@
               command: firewall-cmd --reload
               register: result
               failed_when: result.failed or not result.changed
+              when: __firewall_is_booted

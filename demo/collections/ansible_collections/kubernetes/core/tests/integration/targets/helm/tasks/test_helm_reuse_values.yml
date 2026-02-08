@@ -17,8 +17,7 @@
     - name: Initial chart installation
       helm:
         binary_path: "{{ helm_binary }}"
-        chart_ref: redis
-        chart_repo_url: https://charts.bitnami.com/bitnami
+        chart_ref: oci://registry-1.docker.io/bitnamicharts/redis
         release_name: test-redis
         release_namespace: "{{ helm_namespace }}"
         create_namespace: true
@@ -37,13 +36,12 @@
         that:
           - install is changed
           - '"--reuse-values=True" not in install.command'
-          - release_value["status"]["values"] == chart_release_values
+          - release_value["status"]["release_values"] == chart_release_values
 
     - name: Upgrade chart using reuse_values=true
       helm:
         binary_path: "{{ helm_binary }}"
-        chart_ref: redis
-        chart_repo_url: https://charts.bitnami.com/bitnami
+        chart_ref: oci://registry-1.docker.io/bitnamicharts/redis
         release_name: test-redis
         release_namespace: "{{ helm_namespace }}"
         reuse_values: true
@@ -64,7 +62,7 @@
           - upgrade is changed
           - '"--reuse-values=True" in upgrade.command'
           - '"--reset-values" not in upgrade.command'
-          - release_value["status"]["values"] == chart_release_values | combine(chart_reuse_values, recursive=true)
+          - release_value["status"]["release_values"] == chart_release_values | combine(chart_reuse_values, recursive=true)
 
   always:
     - name: Remove helm namespace

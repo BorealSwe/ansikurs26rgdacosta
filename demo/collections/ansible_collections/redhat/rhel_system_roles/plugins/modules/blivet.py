@@ -40,7 +40,7 @@ options:
                 description: encryption_cipher
                 type: str
             encryption_key:
-                description: encryption_key
+                description: encryption_key file, not the actual key
                 type: str
             encryption_key_size:
                 description: encryption_key_size
@@ -105,7 +105,7 @@ options:
                         description: encryption_cipher
                         type: str
                     encryption_key:
-                        description: encryption_key
+                        description: encryption_key file, not the actual key
                         type: str
                     encryption_key_size:
                         description: encryption_key_size
@@ -210,7 +210,7 @@ options:
                 description: encryption_cipher
                 type: str
             encryption_key:
-                description: encryption_key
+                description: encryption_key file, not the actual key
                 type: str
             encryption_key_size:
                 description: encryption_key_size
@@ -389,6 +389,7 @@ try:
     from blivet3 import devices
     from blivet3.deviceaction import ActionConfigureFormat, ActionResizeFormat, ActionAddMember, ActionRemoveMember
     from blivet3.devicefactory import DEFAULT_THPOOL_RESERVE
+    from blivet3.errors import RaidError
     from blivet3.flags import flags as blivet_flags
     from blivet3.formats import fslib, get_format
     from blivet3.partitioning import do_partitioning
@@ -405,6 +406,7 @@ except ImportError:
         from blivet import devices
         from blivet.deviceaction import ActionConfigureFormat, ActionResizeFormat, ActionAddMember, ActionRemoveMember
         from blivet.devicefactory import DEFAULT_THPOOL_RESERVE
+        from blivet.errors import RaidError
         from blivet.flags import flags as blivet_flags
         from blivet.formats import fslib, get_format
         from blivet.partitioning import do_partitioning
@@ -538,6 +540,16 @@ class BlivetBase(object):
         if raid_name == "":
             raid_name = self._spec_dict["name"]
 
+        raid_level = self._spec_dict["raid_level"]
+        try:
+            blivet_level = devicelibs.raid.get_raid_level(raid_level)
+        except RaidError:
+            raise BlivetAnsibleError("%s is not a valid RAID level" % raid_level)
+        else:
+            if len(members) < blivet_level.min_members:
+                raise BlivetAnsibleError("not enough disks selected to create %s array, at least %d "
+                                         "disks needed" % (raid_level, blivet_level.min_members))
+
         # calculate and verify active and spare devices counts
         active_count = len(members)
         spare_count = 0
@@ -571,7 +583,7 @@ class BlivetBase(object):
 
         try:
             raid_array = self._blivet.new_mdarray(name=raid_name,
-                                                  level=self._spec_dict["raid_level"],
+                                                  level=raid_level,
                                                   member_devices=active_count,
                                                   total_devices=len(members),
                                                   parents=members,
@@ -785,16 +797,28 @@ class BlivetVolume(BlivetBase):
             if not self._device.resizable:
                 return
 
-            trim_percent = (1.0 - float(self._device.max_size / size)) * 100
-            log.debug("resize: size=%s->%s ; trim=%s", self._device.size, size, trim_percent)
-            if size > self._device.max_size and trim_percent <= MAX_TRIM_PERCENT:
-                log.info("adjusting %s resize target from %s to %s to fit in free space",
-                         self._volume['name'],
-                         size,
-                         self._device.max_size)
-                size = self._device.max_size
-                if size == self._device.size:
-                    return
+            if size > self._device.size:
+                trim_percent = abs((1.0 - float(self._device.max_size / size)) * 100)
+                log.debug("resize: size=%s->%s ; trim=%s", self._device.size, size, trim_percent)
+                if size > self._device.max_size and trim_percent <= MAX_TRIM_PERCENT:
+                    log.info("adjusting %s resize target from %s to %s to fit in free space",
+                             self._volume['name'],
+                             size,
+                             self._device.max_size)
+                    size = self._device.max_size
+                    if size == self._device.size:
+                        return
+            elif size < self._device.size:
+                trim_percent = abs((1.0 - float(self._device.min_size / size)) * 100)
+                log.debug("resize: size=%s->%s ; trim=%s", self._device.size, size, trim_percent)
+                if size < self._device.min_size and trim_percent <= MAX_TRIM_PERCENT:
+                    log.info("adjusting %s resize target from %s to %s match device min size",
+                             self._volume['name'],
+                             size,
+                             self._device.min_size)
+                    size = self._device.min_size
+                    if size == self._device.size:
+                        return
 
             if not self._device.min_size <= size <= self._device.max_size:
                 raise BlivetAnsibleError("volume '%s' cannot be resized to '%s'" % (self._volume['name'], size))
@@ -1079,9 +1103,16 @@ class BlivetLVMVolume(BlivetVolume):
 
             for path in self._volume['raid_disks']:
                 disk = self._blivet.devicetree.resolve_device(path)
-                for pv in parent_device.pvs:
-                    if disk in pv.parents:
-                        pvs.append(pv)
+                if disk:
+                    for pv in parent_device.pvs:
+                        if pv == disk or disk in pv.ancestors:
+                            pvs.append(pv)
+                            break
+                    else:
+                        raise BlivetAnsibleError("Disk %s specified in raid_disks doesn't seem "
+                                                 "to be a PV of %s" % (path, parent_device.name))
+                else:
+                    raise BlivetAnsibleError("disk %s specified in raid_disks not found" % path)
 
         else:
             pvs = parent_device.pvs
@@ -1175,6 +1206,9 @@ class BlivetLVMVolume(BlivetVolume):
         if self._device:
             return
 
+        if self._blivet_pool._device and self._blivet_pool._device.type != "lvmvg":
+            raise BlivetAnsibleError("LVM volume can be placed only on LVM pool")
+
         thin_pool = self._volume.get('thin')
         use_vdo = self._volume['deduplication'] or self._volume['compression']
         use_lvmraid = self._volume['raid_level']
@@ -1226,29 +1260,6 @@ class BlivetLVMVolume(BlivetVolume):
 
 
 class BlivetMDRaidVolume(BlivetVolume):
-
-    def _process_device_numbers(self, members_count, requested_actives, requested_spares):
-
-        active_count = members_count
-        spare_count = 0
-
-        if requested_actives is not None and requested_spares is not None:
-            if (requested_actives + requested_spares != members_count
-                or requested_actives < 0 or requested_spares < 0):  # noqa: E129
-                raise BlivetAnsibleError("failed to set up volume '%s': cannot create RAID "
-                                         "with %s members (%s active and %s spare)"
-                                         % (self._volume['name'], members_count,
-                                            requested_actives, requested_spares))
-
-        if requested_actives is not None:
-            active_count = requested_actives
-            spare_count = members_count - active_count
-
-        if requested_spares is not None:
-            spare_count = requested_spares
-            active_count = members_count - spare_count
-
-        return members_count, active_count
 
     def _create_raid_members(self, member_names):
         members = list()
@@ -1854,17 +1865,16 @@ class BlivetLVMPool(BlivetPool):
             grow_pv_candidates = [pv for pv in self._device.pvs if pv not in remove_pvs and pv not in add_disks]
 
             for pv in grow_pv_candidates:
-                if abs(self._device.size - self._device.current_size) < 2 * self._device.pe_size:
-                    continue
-
                 pv.format.update_size_info()  # set pv to be resizable
 
-                if pv.format.resizable:
+                if not pv.format.resizable:
+                    log.warning("cannot grow/resize PV '%s', format is not resizable", pv.name)
+                    continue
+
+                if abs(pv.size - pv.format.size) > 2 * self._device.pe_size:
                     pv.format.grow_to_fill = True
                     ac = ActionResizeFormat(pv, pv.size)
                     self._blivet.devicetree.actions.add(ac)
-                else:
-                    log.warning("cannot grow/resize PV '%s', format is not resizable", pv.name)
 
         if not (add_disks or remove_pvs):
             return
@@ -2310,9 +2320,16 @@ def generate_module_doc(module_args, input="", indent=4):
 
 def run_module():
     # available arguments/parameters that a user can pass
+    # NOTE: The encryption_key parameter is the name of the key file, not the
+    # actual key.  This is confusing because it is also referred to as "password"
+    # in the crypts dict.  Since this is just a filename, it does not need to
+    # be marked as no_log - however, since the name is "encryption_key", Ansible
+    # thinks that it should be marked as no_log, so we have to explicitly mark
+    # it as no_log=False for ansible-test.
+    # see https://github.com/linux-system-roles/storage/pull/546
     common_volume_opts = dict(encryption=dict(type='bool'),
                               encryption_cipher=dict(type='str'),
-                              encryption_key=dict(type='str', no_log=True),
+                              encryption_key=dict(type='str', no_log=False),
                               encryption_key_size=dict(type='int'),
                               encryption_luks_version=dict(type='str'),
                               encryption_password=dict(type='str', no_log=True),
@@ -2356,7 +2373,7 @@ def run_module():
                    options=dict(disks=dict(type='list', elements='str', default=list()),
                                 encryption=dict(type='bool'),
                                 encryption_cipher=dict(type='str'),
-                                encryption_key=dict(type='str', no_log=True),
+                                encryption_key=dict(type='str', no_log=False),
                                 encryption_key_size=dict(type='int'),
                                 encryption_luks_version=dict(type='str'),
                                 encryption_password=dict(type='str', no_log=True),

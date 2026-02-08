@@ -169,7 +169,7 @@
         host_all: yes
         password: '{{ user_password_1 }}'
       register: result
-      ignore_errors: yes
+      ignore_errors: true
 
     - name: check fail message
       assert:
@@ -282,6 +282,12 @@
     - import_tasks: issue-64560.yaml
       tags:
         - issue-64560
+    
+    - name: Test ANSI_QUOTES
+      ansible.builtin.import_tasks:
+        file: issue-671.yaml
+      tags:
+        - issue-671  
 
     # Test that mysql_user still works with force_context enabled (database set to "mysql")
     # (https://github.com/ansible-collections/community.mysql/issues/265)
@@ -295,3 +301,20 @@
     - name: Mysql_user - test column case sensitive
       ansible.builtin.import_tasks:
         file: test_column_case_sensitive.yml
+
+    - name: Mysql_user - test update_password
+      ansible.builtin.import_tasks:
+        file: test_update_password.yml
+
+    - name: Mysql_user - test user_locking
+      ansible.builtin.import_tasks:
+        file: test_user_locking.yml
+
+      # Test that mysql_user still works with default role set
+      # (https://github.com/ansible-collections/community.mysql/issues/710)
+    - include_tasks: issue-710.yml
+
+    # Test for bug with revoking GRANT OPTION when user has only USAGE
+    # (https://github.com/ansible-collections/community.mysql/issues/664)
+    # (https://github.com/ansible-collections/community.mysql/pull/744)
+    - include_tasks: issue-744.yml

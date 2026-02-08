@@ -148,8 +148,14 @@ You can use a defined `host_alias` name as well as host names.
 You can use a defined `runas_alias` name as well as user names.
 
 4. `selinux_role` - Optional selinux role to apply to the specification.
+   **NOTE** - only a single value is supported.  However, due to historical
+   reasons, the value can be a list - if a list is given, only the first value
+   is used.  Please use a `string` value.
 
 5. `selinux_type` - Optional selinux type to apply to the specification.
+   **NOTE** - only a single value is supported.  However, due to historical
+   reasons, the value can be a list - if a list is given, only the first value
+   is used.  Please use a `string` value.
 
 6. `solaris_privs` - Optional Solaris privset to apply to the specification.
 
@@ -182,6 +188,8 @@ sudo_sudoers_files:
           - ALL
         commands:
           - ALL
+        selinux_role: sysadm_r
+        selinux_type: sysadm_t
 ```
 
 #### default_overrides
@@ -453,4 +461,4 @@ See README-ostree.md
 MIT
 
 Based on [Ansible-sudoers](https://github.com/ahuffman/ansible-sudoers).
-[![ansible-lint.yml](https://github.com/linux-system-roles/sudo/actions/workflows/ansible-lint.yml/badge.svg)](https://github.com/linux-system-roles/sudo/actions/workflows/ansible-lint.yml) [![ansible-test.yml](https://github.com/linux-system-roles/sudo/actions/workflows/ansible-test.yml/badge.svg)](https://github.com/linux-system-roles/sudo/actions/workflows/ansible-test.yml) [![codeql.yml](https://github.com/linux-system-roles/sudo/actions/workflows/codeql.yml/badge.svg)](https://github.com/linux-system-roles/sudo/actions/workflows/codeql.yml) [![markdownlint.yml](https://github.com/linux-system-roles/sudo/actions/workflows/markdownlint.yml/badge.svg)](https://github.com/linux-system-roles/sudo/actions/workflows/markdownlint.yml) [![python-unit-test.yml](https://github.com/linux-system-roles/sudo/actions/workflows/python-unit-test.yml/badge.svg)](https://github.com/linux-system-roles/sudo/actions/workflows/python-unit-test.yml) [![shellcheck.yml](https://github.com/linux-system-roles/sudo/actions/workflows/shellcheck.yml/badge.svg)](https://github.com/linux-system-roles/sudo/actions/workflows/shellcheck.yml) [![tft.yml](https://github.com/linux-system-roles/sudo/actions/workflows/tft.yml/badge.svg)](https://github.com/linux-system-roles/sudo/actions/workflows/tft.yml) [![tft_citest_bad.yml](https://github.com/linux-system-roles/sudo/actions/workflows/tft_citest_bad.yml/badge.svg)](https://github.com/linux-system-roles/sudo/actions/workflows/tft_citest_bad.yml) [![woke.yml](https://github.com/linux-system-roles/sudo/actions/workflows/woke.yml/badge.svg)](https://github.com/linux-system-roles/sudo/actions/workflows/woke.yml)
+[![ansible-lint.yml](https://github.com/linux-system-roles/sudo/actions/workflows/ansible-lint.yml/badge.svg)](https://github.com/linux-system-roles/sudo/actions/workflows/ansible-lint.yml) [![ansible-test.yml](https://github.com/linux-system-roles/sudo/actions/workflows/ansible-test.yml/badge.svg)](https://github.com/linux-system-roles/sudo/actions/workflows/ansible-test.yml) [![codeql.yml](https://github.com/linux-system-roles/sudo/actions/workflows/codeql.yml/badge.svg)](https://github.com/linux-system-roles/sudo/actions/workflows/codeql.yml) [![codespell.yml](https://github.com/linux-system-roles/sudo/actions/workflows/codespell.yml/badge.svg)](https://github.com/linux-system-roles/sudo/actions/workflows/codespell.yml) [![markdownlint.yml](https://github.com/linux-system-roles/sudo/actions/workflows/markdownlint.yml/badge.svg)](https://github.com/linux-system-roles/sudo/actions/workflows/markdownlint.yml) [![python-unit-test.yml](https://github.com/linux-system-roles/sudo/actions/workflows/python-unit-test.yml/badge.svg)](https://github.com/linux-system-roles/sudo/actions/workflows/python-unit-test.yml) [![qemu-kvm-integration-tests.yml](https://github.com/linux-system-roles/sudo/actions/workflows/qemu-kvm-integration-tests.yml/badge.svg)](https://github.com/linux-system-roles/sudo/actions/workflows/qemu-kvm-integration-tests.yml) [![shellcheck.yml](https://github.com/linux-system-roles/sudo/actions/workflows/shellcheck.yml/badge.svg)](https://github.com/linux-system-roles/sudo/actions/workflows/shellcheck.yml) [![tft.yml](https://github.com/linux-system-roles/sudo/actions/workflows/tft.yml/badge.svg)](https://github.com/linux-system-roles/sudo/actions/workflows/tft.yml) [![tft_citest_bad.yml](https://github.com/linux-system-roles/sudo/actions/workflows/tft_citest_bad.yml/badge.svg)](https://github.com/linux-system-roles/sudo/actions/workflows/tft_citest_bad.yml) [![woke.yml](https://github.com/linux-system-roles/sudo/actions/workflows/woke.yml/badge.svg)](https://github.com/linux-system-roles/sudo/actions/workflows/woke.yml)
