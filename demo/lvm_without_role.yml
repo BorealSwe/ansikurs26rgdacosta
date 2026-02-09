@@ -1,17 +1,13 @@
 ---
 - name: Manage LVM
-  hosts: 
-    - serverb
-    - serverc
-    - serverd
+  hosts: "{{ my_host | default('rhel') }}"
   become: true
   gather_facts: true
-
 
   vars:
 
     my_disks:
-      - /dev/vdb
+      - /dev/sdb
     my_vg: vg_db
     my_lv: lv_mysql
     my_dev: /dev/{{ my_vg }}/{{ my_lv }}
@@ -22,31 +18,31 @@
   tasks:
 
     - name: Ensure VG exists with PVs defined
-      lvg:
+      ansible.builtin.lvg:
         vg: "{{ my_vg }}"
         pvs: "{{ my_disks }}"
 
     - name: Ensure LV exists
-      lvol:
+      ansible.builtin.lvol:
         vg: "{{ my_vg }}"
         lv: "{{ my_lv }}"
         size: "{{ my_size | int }}"
 
     - name: Ensure Filesystem exists
-      filesystem:
+      ansible.builtin.filesystem:
         fstype: "{{ my_fs }}"
         dev: "{{ my_dev }}"
 
     - name: Ensure mountpoint exists
-      file:
+      ansible.builtin.file:
         path: "{{ my_mount }}"
         state: directory
 
     - name: Ensure LV is mounted
-      mount:
+      ansible.builtin.mount:
         path: "{{ my_mount }}"
         src: "{{ my_dev }}"
-        fstype: "{{ my_fs }}" 
+        fstype: "{{ my_fs }}"
         state: mounted
 
 

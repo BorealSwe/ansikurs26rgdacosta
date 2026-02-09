@@ -1,0 +1,7 @@
+- name: Manage LVM
+  hosts: "{{ my_host | default('all') }}"
+  become: true
+
+  roles:
+    - redhat.rhel_system_roles.storage
+

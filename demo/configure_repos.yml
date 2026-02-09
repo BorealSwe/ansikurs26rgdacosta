@@ -1,0 +1,32 @@
+---
+- name: Ensure that yum repositories are configured
+  hosts: "{{ my_host | default('all') }}"
+  gather_facts: false
+  become: true
+
+  vars:
+    repos:
+      baseos:
+        url: http://content.example.com/rhel10.0/x86_64/dvd/BaseOS
+      appstream:
+        url: http://content.example.com/rhel10.0/x86_64/dvd/AppStream
+
+  tasks:
+
+    - name: Ensure my_ticket_number is defined
+      ansible.builtin.assert:
+        that:
+          - my_ticket_number is defined
+        fail_msg: |
+
+          🤡 You need to set a ticket number in order for this to proceed 🤡
+
+    - name: Ensure that yum repositories are defined
+      loop: "{{ repos | dict2items }}"
+      ansible.builtin.yum_repository:
+        name: "{{ item['key'] }}"
+        file: "ansible_{{ my_ticket_number }}"
+        description: "Ansible Defined repo for {{ item['key'] }}"
+        baseurl: "{{ item['value']['url'] }}"
+        enabled: "{{ my_state | default('true') }}"
+        gpgcheck: false
