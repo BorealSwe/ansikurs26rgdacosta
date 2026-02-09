@@ -1,0 +1,13 @@
+- name: Manage user ssh keys
+  hosts: "{{ my_host | default(localhost) }}"
+  become: true
+  gather_facts: false
+
+  tasks:
+
+     - name: Add ssh key for user
+       ansible.builtin.authorized_key:
+         user: "{{ my_user }}"
+         state: "{{ my_state | default('present') }}"
+         manage_dir: true
+         key: "{{ my_pubkey}}"
