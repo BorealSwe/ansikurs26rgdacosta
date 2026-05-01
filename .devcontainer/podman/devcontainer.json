@@ -1,0 +1,28 @@
+{
+  "name": "Ansible (AAP EE)",
+  "image": "registry.redhat.io/ansible-automation-platform-25/ansible-dev-tools-rhel8:latest",
+  "remoteUser": "root",
+
+  "runArgs": [
+    "--dns=172.25.250.220",
+    "--dns=192.168.2.1",
+    "--dns-search=lab.example.com",
+    "--dns-search=example.com"
+  ],
+
+  "mounts": [
+    "type=bind,source=${env:HOME}/.ssh/lab_rsa,target=/tmp/lab_rsa_host,readonly",
+    "type=bind,source=${env:HOME}/.ssh/config,target=/tmp/ssh_config_host,readonly"
+  ],
+
+  "postCreateCommand": "set -e; mkdir -p /root/.ssh; chmod 700 /root/.ssh; cp /tmp/ssh_config_host /root/.ssh/config; cp /tmp/lab_rsa_host /root/.ssh/lab_rsa; chmod 600 /root/.ssh/config /root/.ssh/lab_rsa; chown -R root:root /root/.ssh; rm -f /tmp/ssh_config_host /tmp/lab_rsa_host || true",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "redhat.ansible",
+        "ms-azuretools.vscode-docker"
+      ]
+    }
+  }
+}

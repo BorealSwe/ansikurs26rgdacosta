@@ -6,15 +6,11 @@ serverc
 serverb
 serverd
 
-[dbservers:vars]
-ansible_user=devops
-
 [rhel10]
 server[a:d]
 
 [rhel:children]
 rhel10
-
 [dev]
 servera
 serverb

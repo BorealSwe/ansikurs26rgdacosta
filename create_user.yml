@@ -12,7 +12,6 @@
     my_password: redhat123
 
   tasks:
-
     - name: Ensure user is managed
       ansible.builtin.user:
         name: "{{ my_user }}"
@@ -22,3 +21,4 @@
         update_password: on_create
         groups: "{{ my_group | default(omit) }}"
         generate_ssh_key: "{{ my_keygen | default(false) }}"
+        shell: "{{ my_shell | default(omit) }}"
