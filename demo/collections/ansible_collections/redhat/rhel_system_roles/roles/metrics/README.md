@@ -55,7 +55,7 @@ Enabling this starts PCP and Valkey or Redis servers for querying any
 recorded PCP metrics.
 This option requires either Valkey or Redis v5+ which is available on
 Fedora, CentOS 8, RHEL 8, or later versions of these platforms (Valkey
-is the prefered solution on Fedora, Centos 10, RHEL 10 and later).
+is the preferred solution on Fedora, Centos 10, RHEL 10 and later).
 
 ### metrics_into_elasticsearch: false
 
@@ -64,6 +64,14 @@ Boolean flag allowing metric values to be exported into Elasticsearch.
 ### metrics_from_elasticsearch: false
 
 Boolean flag allowing metrics from Elasticsearch to be made available.
+
+### metrics_into_spark: false
+
+Boolean flag allowing metric values to be exported into Spark.
+
+### metrics_from_spark: false
+
+Boolean flag allowing metrics from Spark to be made available.
 
 ### metrics_from_postfix: false
 
@@ -136,6 +144,26 @@ NOTE: `metrics_manage_selinux` is limited to *adding* policy.
 It cannot be used for *removing* policy.
 If you want to remove policy, you will need to use the selinux system
 role directly.
+
+### metrics_optional_domains: []
+
+List of optional metrics domains to enable.  The role will enable the domains
+for components you are managing.  For example, if you use
+`metrics_from_elasticsearch: true`, the role will enable the elasticsearch
+domain automatically.  This variable is for additional domains.
+
+```yaml
+metrics_optional_domains: [apache]
+```
+
+### metrics_optional_packages: []
+
+Additional metrics packages that should be installed, beyond the default set, to
+enable additional metrics, export to alternate data sinks, and so on.
+
+```yaml
+metrics_optional_packages: [pcp-pmda-apache]
+```
 
 ## Example Playbook
 

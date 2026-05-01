@@ -11,7 +11,7 @@
       when: "'RedHat' in ansible_facts['distribution']"
       ansible.builtin.set_fact:
         my_webserver: httpd
-          
+
     - name: Ensure fact controller learns for SUSE
       when: "'SUSE' in ansible_facts['distribution']"
       ansible.builtin.set_fact:

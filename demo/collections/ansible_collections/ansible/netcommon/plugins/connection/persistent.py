@@ -20,7 +20,7 @@ extends_documentation_fragment:
 - ansible.netcommon.connection_persistent
 """
 from ansible.executor.task_executor import start_connection
-from ansible.module_utils._text import to_text
+from ansible.module_utils.common.text.converters import to_text
 from ansible.module_utils.connection import Connection as SocketConnection
 from ansible.plugins.connection import ConnectionBase
 from ansible.utils.display import Display
@@ -71,6 +71,11 @@ class Connection(ConnectionBase):
         display.vvvv(
             "starting connection from persistent connection plugin",
             host=self._play_context.remote_addr,
+        )
+        display.deprecated(
+            msg="support for connection local has been deprecated",
+            date="2027-01-01",
+            collection_name="ansible.netcommon",
         )
         variables = {"ansible_command_timeout": self.get_option("persistent_command_timeout")}
         socket_path = start_connection(self._play_context, variables, self._task_uuid)

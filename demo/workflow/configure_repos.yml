@@ -7,9 +7,9 @@
   vars:
     repos:
       baseos:
-        url: http://content.example.com/rhel8.6/x86_64/dvd/BaseOS
+        url: http://content.example.com/rhel10.0/x86_64/dvd/BaseOS
       appstream:
-        url: http://content.example.com/rhel8.6/x86_64/dvd/AppStream
+        url: http://content.example.com/rhel10.0/x86_64/dvd/AppStream
 
   tasks:
 

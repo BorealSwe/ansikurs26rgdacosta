@@ -1,0 +1,17 @@
+---
+- name: Demonstrate jinja2
+  hosts: "{{ my_host | default('servera') }}"
+  become: true
+  gather_facts: true
+
+  vars_files:
+    - motd_vars.yml
+
+  tasks:
+    - name: Deploy /etc/motd from Jinja2 template
+      ansible.builtin.template:
+        src: motd.j2
+        dest: /etc/motd
+        owner: root
+        group: root
+        mode: "0644"

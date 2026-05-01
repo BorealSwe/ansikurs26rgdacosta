@@ -1,5 +1,5 @@
 - name: Post provision datacenter servers
-  hosts: prod
+  hosts: "{{ my_host | default('all') }}"
   become: true
 
   vars:

@@ -25,11 +25,11 @@
     - name: Ensure backup of {{ backup_target }} exists
       ansible.builtin.archive:
         path: "{{ backup_target }}"
-        dest: "{{ backup_file }}" 
+        dest: "{{ backup_file }}"
         format: "{{ backup_format }}"
 
     - name: Ensure backup is stored on controller
       ansible.builtin.fetch:
-        src: "{{ backup_file }}" 
+        src: "{{ backup_file }}"
         dest: "{{ backup_store }}/{{ inventory_hostname }}/"
         flat: true

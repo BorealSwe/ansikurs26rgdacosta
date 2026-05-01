@@ -37,6 +37,7 @@ GatewayPorts
 GSSAPIAuthentication
 GSSAPICleanupCredentials
 GSSAPIEnablek5users
+GSSAPIIndicators
 GSSAPIKeyExchange
 GSSAPIKexAlgorithms
 GSSAPIStoreCredentialsOnRekey
@@ -106,6 +107,7 @@ SecurityKeyProvider
 SetEnv
 ServerKeyBits
 ShowPatchLevel
+SshdAuthPath
 SshdSessionPath
 StreamLocalBindMask
 StreamLocalBindUnlink

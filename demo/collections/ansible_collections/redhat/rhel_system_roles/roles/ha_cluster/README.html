@@ -58,8 +58,9 @@ SOFTWARE.
   </style>
   <style type="text/css">code{white-space: pre;}</style>
   <style type="text/css">
+html { -webkit-text-size-adjust: 100%; }
 pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
 pre > code.sourceCode > span:empty { height: 1.2em; }
 .sourceCode { overflow: visible; }
 code.sourceCode > span { color: inherit; text-decoration: inherit; }
@@ -70,7 +71,7 @@ div.sourceCode { overflow: auto; }
 }
 @media print {
 pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
 }
 pre.numberSource code
   { counter-reset: source-line 0; }
@@ -163,6 +164,8 @@ id="toc-ha_cluster_install_cloud_agents"><code>ha_cluster_install_cloud_agents</
 id="toc-ha_cluster_fence_agent_packages"><code>ha_cluster_fence_agent_packages</code></a></li>
 <li><a href="#ha_cluster_extra_packages"
 id="toc-ha_cluster_extra_packages"><code>ha_cluster_extra_packages</code></a></li>
+<li><a href="#ha_cluster_zypper_patterns"
+id="toc-ha_cluster_zypper_patterns"><code>ha_cluster_zypper_patterns</code></a></li>
 <li><a href="#ha_cluster_use_latest_packages"
 id="toc-ha_cluster_use_latest_packages"><code>ha_cluster_use_latest_packages</code></a></li>
 <li><a href="#ha_cluster_hacluster_password"
@@ -320,8 +323,8 @@ Information</a></li>
 <li>Compatible OS
 <ul>
 <li>RHEL 8.3+, Fedora 31+</li>
-<li>SUSE Linux Enterprise Server 15 with HA extension</li>
-<li>SUSE Linux Enterprise Server for SAP Applications 15</li>
+<li>SUSE Linux Enterprise Server 15 and 16 with HA extension</li>
+<li>SUSE Linux Enterprise Server for SAP Applications 15 and 16</li>
 </ul></li>
 <li>Systems running RHEL are expected to be registered and have
 High-Availability repositories accessible, and ResilientStorage
@@ -354,6 +357,10 @@ lost.</li>
 <li>Corosync transport options including compression and encryption</li>
 <li>Corosync totem options</li>
 <li>Corosync quorum options</li>
+<li>Primitive resources (including stonith)</li>
+<li>Resource groups</li>
+<li>Resource clones</li>
+<li>Resource bundles</li>
 </ul></li>
 </ul>
 <h1 id="requirements">Requirements</h1>
@@ -452,6 +459,10 @@ agents.</p>
 <p>It is possible to specify fence agents here as well. However, <a
 href="#ha_cluster_fence_agent_packages"><code>ha_cluster_fence_agent_packages</code></a>
 is preferred for that, so that its default value is overridden.</p>
+<h3
+id="ha_cluster_zypper_patterns"><code>ha_cluster_zypper_patterns</code></h3>
+<p>SUSE Specific, list of additional zypper patterns to be installed,
+default: no patterns</p>
 <h3
 id="ha_cluster_use_latest_packages"><code>ha_cluster_use_latest_packages</code></h3>
 <p>boolean, default: <code>false</code></p>
@@ -1032,9 +1043,9 @@ class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb9-1"><a href="
 <p>This variable defines resource groups. The items are as follows:</p>
 <ul>
 <li><code>id</code> (mandatory) - ID of a group.</li>
-<li><code>resources</code> (mandatory) - List of the group's resources.
-Each resource is referenced by its ID and the resources must be defined
-in <a
+<li><code>resource_ids</code> (mandatory) - List of the group's
+resources. Each resource is referenced by its ID and the resources must
+be defined in <a
 href="#ha_cluster_resource_primitives"><code>ha_cluster_resource_primitives</code></a>.
 At least one resource must be listed.</li>
 <li><code>meta_attrs</code> (optional) - List of sets of the group's
@@ -1868,15 +1879,37 @@ recreates the same cluster.</p>
 <p>Note that the dictionary of variables may not be complete and manual
 modification of it is expected. Most notably, you need to set <a
 href="#ha_cluster_hacluster_password"><code>ha_cluster_hacluster_password</code></a>.</p>
+<p>Note that primitive resource operations are exported explicitly and
+<code>ha_cluster_resource_primitives.copy_operations_from_agent</code>
+is always set to false.</p>
 <p>Note that depending on pcs version installed on managed nodes,
 certain variables may not be present in the export.</p>
 <ul>
 <li><p>Following variables are present in the export:</p>
 <ul>
 <li><a
+href="#ha_cluster_enable_repos"><code>ha_cluster_enable_repos</code></a>
+- RHEL and CentOS only</li>
+<li><a
+href="#ha_cluster_enable_repos_resilient_storage"><code>ha_cluster_enable_repos_resilient_storage</code></a>
+- RHEL and CentOS only</li>
+<li><a
+href="#ha_cluster_manage_firewall"><code>ha_cluster_manage_firewall</code></a>
+(requires <code>python3-firewall</code> to be installed on managed
+nodes)</li>
+<li><a
+href="#ha_cluster_manage_selinux"><code>ha_cluster_manage_selinux</code></a>
+(requires <code>python3-policycoreutils</code> to be installed on
+managed nodes)</li>
+<li><a
 href="#ha_cluster_cluster_present"><code>ha_cluster_cluster_present</code></a></li>
 <li><a
 href="#ha_cluster_start_on_boot"><code>ha_cluster_start_on_boot</code></a></li>
+<li><a
+href="#ha_cluster_install_cloud_agents"><code>ha_cluster_install_cloud_agents</code></a>
+- RHEL and CentOS only</li>
+<li><a
+href="#ha_cluster_pcs_permission_list"><code>ha_cluster_pcs_permission_list</code></a></li>
 <li><a
 href="#ha_cluster_cluster_name"><code>ha_cluster_cluster_name</code></a></li>
 <li><a
@@ -1887,6 +1920,14 @@ href="#ha_cluster_transport"><code>ha_cluster_transport</code></a></li>
 href="#ha_cluster_node_options"><code>ha_cluster_node_options</code></a>
 - currently only <code>node_name</code>, <code>corosync_addresses</code>
 and <code>pcs_address</code> are present</li>
+<li><a
+href="#ha_cluster_resource_primitives"><code>ha_cluster_resource_primitives</code></a></li>
+<li><a
+href="#ha_cluster_resource_groups"><code>ha_cluster_resource_groups</code></a></li>
+<li><a
+href="#ha_cluster_resource_clones"><code>ha_cluster_resource_clones</code></a></li>
+<li><a
+href="#ha_cluster_resource_bundles"><code>ha_cluster_resource_bundles</code></a></li>
 </ul></li>
 <li><p>Following variables are never present in the export (consult the
 role documentation for impact of the variables missing when running the
@@ -1897,6 +1938,18 @@ href="#ha_cluster_hacluster_password"><code>ha_cluster_hacluster_password</code>
 - This is a mandatory variable for the role but it cannot be extracted
 from existing clusters.</li>
 <li><a
+href="#ha_cluster_hacluster_qdevice_password"><code>ha_cluster_hacluster_qdevice_password</code></a>
+- Cannot be extracted from existing clusters.</li>
+<li><a
+href="#ha_cluster_fence_agent_packages"><code>ha_cluster_fence_agent_packages</code></a></li>
+<li><a
+href="#ha_cluster_extra_packages"><code>ha_cluster_extra_packages</code></a>
+- Cannot be extracted from existing clusters.</li>
+<li><a
+href="#ha_cluster_use_latest_packages"><code>ha_cluster_use_latest_packages</code></a>
+- It is your responsibility to decide if you want to upgrade cluster
+packages to their latest version.</li>
+<li><a
 href="#ha_cluster_corosync_key_src"><code>ha_cluster_corosync_key_src</code></a>,
 <a
 href="#ha_cluster_pacemaker_key_src"><code>ha_cluster_pacemaker_key_src</code></a>
@@ -1906,6 +1959,18 @@ href="#ha_cluster_fence_virt_key_src"><code>ha_cluster_fence_virt_key_src</code>
 keys themselves are not exported, these variables are not present in the
 export either. Corosync and pacemaker keys are supposed to be unique for
 each cluster.</li>
+<li><a
+href="#ha_cluster_pcsd_public_key_src-ha_cluster_pcsd_private_key_src"><code>ha_cluster_pcsd_public_key_src</code>
+and <code>ha_cluster_pcsd_private_key_src</code></a> - These are
+supposed to contain paths to files with TLS certificate and private key
+for pcsd. Since the certificate and key themselves are not exported,
+these variables are not present in the export either.</li>
+<li><a
+href="#ha_cluster_pcsd_certificates"><code>ha_cluster_pcsd_certificates</code></a>
+- The value of this variable is set to the variable
+<code>certificate_requests</code> in the <code>certificate</code> role.
+See the <code>certificate</code> role documentation to check if it
+provides any means for exporting configuration.</li>
 <li><a
 href="#ha_cluster_regenerate_keys"><code>ha_cluster_regenerate_keys</code></a>
 - It is your responsibility to decide if you want to use existing keys

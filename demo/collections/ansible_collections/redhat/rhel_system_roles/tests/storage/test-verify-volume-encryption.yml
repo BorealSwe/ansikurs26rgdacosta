@@ -58,7 +58,8 @@
   when:
     - _storage_test_volume_present
     - storage_test_volume.encryption
-    - storage_test_volume.encryption_luks_version
+    - not storage_test_volume.encryption_luks_version is none
+    - storage_test_volume.encryption_luks_version | length > 0
 
 - name: Check LUKS key size
   assert:
@@ -70,7 +71,8 @@
   when:
     - _storage_test_volume_present
     - storage_test_volume.encryption
-    - storage_test_volume.encryption_key_size
+    - not storage_test_volume.encryption_key_size is none
+    - storage_test_volume.encryption_key_size > 0
 
 - name: Check LUKS cipher
   assert:
@@ -82,13 +84,14 @@
   when:
     - _storage_test_volume_present
     - storage_test_volume.encryption
-    - storage_test_volume.encryption_cipher
+    - not storage_test_volume.encryption_cipher is none
+    - storage_test_volume.encryption_cipher | length > 0
 
 - name: Set test variables
   set_fact:
     _storage_test_expected_crypttab_entries: "{{ (storage_test_volume.encryption and _storage_test_volume_present) | ternary(1, 0) }}"
     _storage_test_crypttab_entries: "{{ storage_test_crypttab.stdout_lines | map('regex_search', '^' + storage_test_volume._device | basename + ' .*$') | select('string') | list }}"
-    _storage_test_expected_crypttab_key_file: "{{ storage_test_volume.encryption_key or '-' }}"
+    _storage_test_expected_crypttab_key_file: "{{ __test_encryption_key | d(storage_test_volume.encryption_key or '-') }}"
 
 - name: Check for /etc/crypttab entry
   assert:

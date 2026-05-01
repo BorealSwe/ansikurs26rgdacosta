@@ -1,7 +1,14 @@
 ---
 - name: Run tests_default.yml in check_mode
   hosts: all
+# no ssh running in a container build env
+  tags:
+    - tests::booted
   tasks:
+    - name: Save connection method
+      set_fact:
+        __ansible_connection: "{{ ansible_connection }}"
+
     - name: Run test
       block:
         - name: Create temporary file
@@ -9,6 +16,7 @@
             state: file
             suffix: .yaml
           register: tempinventory
+          delegate_to: localhost
 
         - name: Create static inventory from hostvars
           template:

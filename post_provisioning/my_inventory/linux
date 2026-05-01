@@ -1,17 +1,17 @@
 [rhel:children]
-rhel9
+rhel10
 
 [webservers]
 servera
-serverc 
+serverc
 
 [dbservers]
 serverb
 serverd
 
-[rhel9]
+[rhel10]
 server[a:d]
 
 [prod]
-servera
-serverb
+server[a:d]
+

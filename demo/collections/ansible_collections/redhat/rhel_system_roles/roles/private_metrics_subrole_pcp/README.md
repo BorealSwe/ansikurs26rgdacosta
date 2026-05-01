@@ -89,6 +89,7 @@ Basic PCP setup with monitoring suited for a single host.
     - role: performancecopilot.metrics.redhat.rhel_system_roles.private_metrics_subrole_pcp
       vars:
         redhat.rhel_system_roles.private_metrics_subrole_pcp_pmlogger_interval: 10
+        # NOTE: No openmetrics on EL7
         redhat.rhel_system_roles.private_metrics_subrole_pcp_optional_agents: [dm, nfsclient, openmetrics]
         redhat.rhel_system_roles.private_metrics_subrole_pcp_explicit_labels:
           environment: production

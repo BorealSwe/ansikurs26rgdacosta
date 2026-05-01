@@ -1,6 +1,9 @@
 ---
 - name: Setup a vm with podman on it
   hosts: all
+  tags:
+  # this test does not work in container builds
+    - tests::booted
   gather_facts: true
   pre_tasks:
     - name: Test not supported on EL7
@@ -21,9 +24,12 @@
           set_fact:
             __firewall_is_ostree: "{{ __ostree_booted_stat.stat.exists }}"
 
-    - name: Install podman
+    - name: Install test dependencies
       package:
-        name: podman
+        name:
+          - podman
+        # for ping
+          - iputils
         state: present
         use: "{{ (__firewall_is_ostree | d(false)) | ternary('redhat.rhel_system_roles.rhel_rpm_ostree', omit) }}"
 

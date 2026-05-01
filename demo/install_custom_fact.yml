@@ -1,0 +1,35 @@
+- name: Install custom site facts
+  hosts: "{{ my_host | default('all') }}"
+  gather_facts: false
+
+  vars:
+    my_fact: /etc/ansible/facts.d/site.fact
+
+  tasks:
+    - name: Ensure facts.d directory exists
+      become: true
+      ansible.builtin.file:
+        path: /etc/ansible/facts.d
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Ensure fact is installed
+      become: true
+      ansible.builtin.copy:
+        dest: "{{ my_fact }}"
+        owner: root
+        group: root
+        mode: "0644"
+        content: |
+          [site]
+          environment={{ my_environment | default('production') }}
+          owner={{ my_owner | default('platform-team') }}
+
+    - name: Ensure facts are re-gathered
+      ansible.builtin.setup:
+
+    - name: Ensure custom fact is displayed
+      ansible.builtin.debug:
+        var: ansible_facts['ansible_local']['site']

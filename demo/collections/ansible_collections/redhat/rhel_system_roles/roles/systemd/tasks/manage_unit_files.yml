@@ -20,7 +20,7 @@
     - name: Manage files and templates
       when: __systemd_dict_list | length > 0
       vars:
-        __unit: "{{ item.item | regex_replace('[.]j2$', '') if __systemd_list_name in ['systemd_unit_file_templates', 'systemd_dropins'] else item.item }}"
+        __unit: "{{ item.item | basename | regex_replace('[.]j2$', '') if __systemd_list_name in ['systemd_unit_file_templates', 'systemd_dropins'] else item.item | basename }}"
         __file: "{{ '99-override.conf' if __systemd_list_name == 'systemd_dropins' else __unit }}"
         __path: "{{ item.units_dir ~ '/' ~ '.'.join(__unit.split('.')[:-1]) ~ '.d' if __systemd_list_name == 'systemd_dropins' else item.units_dir }}"
         __systemd_present: "{{ __systemd_dict_list | selectattr('state', 'match', '^present$') | list }}"

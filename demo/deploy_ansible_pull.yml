@@ -1,0 +1,101 @@
+---
+- name: Deploy ansible-pull timer
+  hosts: "{{ my_host | default('servera') }}"
+  become: true
+  gather_facts: true
+
+  vars:
+    my_url: "https://gitlab.com/rgdacosta/ansible"
+    my_branch: "master"
+
+    my_base: "/var/lib/ansible-pull"
+    my_repo: "{{ my_base }}/ansible"
+
+    my_playbook: "demo/sshd_syslog.yml"
+
+    my_service: "ansible-pull-sshd-syslog"
+    my_timer: "ansible-pull-sshd-syslog"
+
+    my_boot_delay: "5min"
+    my_schedule: "30min"
+
+    my_log: "/var/log/ansible-pull-sshd-syslog.log"
+
+  tasks:
+    - name: Ensure required packages are installed
+      ansible.builtin.package:
+        name:
+          - ansible-core
+          - git
+        state: present
+
+    - name: Ensure ansible-pull base directory exists
+      ansible.builtin.file:
+        path: "{{ my_base }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Ensure repository directory exists
+      ansible.builtin.file:
+        path: "{{ my_repo }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Ensure ansible-pull systemd service is installed
+      notify: Reload systemd
+      ansible.builtin.copy:
+        dest: "/etc/systemd/system/{{ my_service }}.service"
+        owner: root
+        group: root
+        mode: "0644"
+        content: |
+          [Unit]
+          Description=ansible-pull apply {{ my_playbook }} from {{ my_url }}
+          Wants=network-online.target
+          After=network-online.target
+
+          [Service]
+          Type=oneshot
+          ExecStart=/usr/bin/ansible-pull -U {{ my_url }} -C {{ my_branch }} -d {{ my_repo }} -i localhost, -o {{ my_playbook }}
+          StandardOutput=append:{{ my_log }}
+          StandardError=append:{{ my_log }}
+
+    - name: Install ansible-pull timer
+      notify: Reload systemd
+      ansible.builtin.copy:
+        dest: "/etc/systemd/system/{{ my_timer }}.timer"
+        owner: root
+        group: root
+        mode: "0644"
+        content: |
+          [Unit]
+          Description=Run {{ my_service }} every {{ my_schedule }}
+
+          [Timer]
+          OnBootSec={{ my_boot_delay }}
+          OnUnitActiveSec={{ my_schedule }}
+          Persistent=true
+          Unit={{ my_service }}.service
+
+          [Install]
+          WantedBy=timers.target
+
+    - name: Ensure timer is enabled and started
+      ansible.builtin.systemd:
+        name: "{{ my_timer }}.timer"
+        enabled: true
+        state: started
+
+    - name: Run ansible-pull once immediately
+      ansible.builtin.systemd:
+        name: "{{ my_service }}.service"
+        state: started
+
+  handlers:
+    - name: Reload systemd
+      ansible.builtin.systemd:
+        daemon_reload: true

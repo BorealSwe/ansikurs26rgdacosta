@@ -59,7 +59,7 @@
         that: not blivet_output.changed and blivet_output.volumes[0].raid_level == 'raid1' and blivet_output.volumes[0].raid_device_count == 2 and blivet_output.volumes[0].raid_spare_count == 1 and blivet_output.volumes[0].raid_metadata_version == '1.0'
         msg: "Failure to preserve RAID settings for preexisting volume."
 
-    - name: Verify role results
+    - name: Verify role results - 2
       include_tasks: verify-role-results.yml
 
     - name: Remove the disk device created above
@@ -77,10 +77,10 @@
             mount_point: "{{ mount_location }}"
             state: absent
 
-    - name: Verify role results
+    - name: Verify role results - 3
       include_tasks: verify-role-results.yml
 
-    - name: Create a RAID0 device mounted on "{{ mount_location }}"
+    - name: Create again a RAID0 device mounted on "{{ mount_location }}"
       include_role:
         name: redhat.rhel_system_roles.storage
       vars:
@@ -95,10 +95,10 @@
             mount_point: "{{ mount_location }}"
             state: present
 
-    - name: Verify role results
+    - name: Verify role results - 4
       include_tasks: verify-role-results.yml
 
-    - name: Remove the disk device created above
+    - name: Remove the disk device created above - 2
       include_role:
         name: redhat.rhel_system_roles.storage
       vars:
@@ -113,5 +113,5 @@
             mount_point: "{{ mount_location }}"
             state: absent
 
-    - name: Verify role results
+    - name: Verify role results - 5
       include_tasks: verify-role-results.yml

@@ -11,7 +11,7 @@ __metaclass__ = type
 
 DOCUMENTATION = """
 module: cli_command
-author: Nathaniel Case (@Qalthos)
+author: Katherine Case (@Qalthos)
 short_description: Run a cli command on cli-based network devices
 description:
 - Sends a command to a network device and returns the result read from the device.
@@ -111,6 +111,17 @@ EXAMPLES = """
       - y
       - <password>
       - y
+
+- name: Simple regexp match for multiple prompt, multiple answer(mandatory check for all prompts)
+  ansible.netcommon.cli_command:
+    command: reload in 5
+    check_all: true
+    prompt:
+      - Save\\?
+      - confirm
+    answer:
+      - n
+      - y
 """
 
 RETURN = """
@@ -134,8 +145,8 @@ json:
     }
 """
 
-from ansible.module_utils._text import to_text
 from ansible.module_utils.basic import AnsibleModule
+from ansible.module_utils.common.text.converters import to_text
 from ansible.module_utils.connection import Connection, ConnectionError
 
 

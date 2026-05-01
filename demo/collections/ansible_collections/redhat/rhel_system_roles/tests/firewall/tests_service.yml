@@ -18,7 +18,7 @@
       # Verify service states are as intended
 
         - name: Get all services
-          command: firewall-cmd --permanent --get-services
+          command: firewall-offline-cmd --get-services
           register: result
           changed_when: false
 
@@ -31,7 +31,7 @@
 
         - name: Fail if systemroletest present prior to test run
           fail:
-            msg: test service present after reseting defaults
+            msg: test service present after resetting defaults
           when: result.stdout.find("systemroletest") != -1
 
         - name: Ensure http has default configuration
@@ -69,6 +69,7 @@
                 destination:
                   - 1.1.1.1
                   - 1::1
+                includes: "{{ ['ssh', 'ldaps'] if ansible_distribution in ['RedHat', 'CentOS', 'Fedora'] and ansible_distribution_major_version is version('8', '>=') else [] }}"
                 permanent: true
                 state: present
 
@@ -88,6 +89,7 @@
                 destination:
                   - 1.1.1.1
                   - 1::1
+                includes: "{{ ['ssh', 'ldaps'] if ansible_distribution in ['RedHat', 'CentOS', 'Fedora'] and ansible_distribution_major_version is version('8', '>=') else [] }}"
                 permanent: true
                 state: present
 
@@ -116,15 +118,17 @@
                 destination:
                   - 1.1.1.1
                   - 1::1
-                helper_module: ftp
                 protocol: icmp
+              # these two don't exist yet in RHEL 7
+                helper_module: "{{ 'ftp' if ansible_distribution in ['RedHat', 'CentOS', 'Fedora'] and ansible_distribution_major_version is version('8', '>=') else omit }}"
+                includes: "{{ ['ssh', 'ldaps'] if ansible_distribution in ['RedHat', 'CentOS', 'Fedora'] and ansible_distribution_major_version is version('8', '>=') else [] }}"
                 permanent: true
                 state: present
 
       # Verify that custom service is added to permanent configuration
 
         - name: Get all services
-          command: firewall-cmd --permanent --get-services
+          command: firewall-offline-cmd --get-services
           register: result
           changed_when: false
 
@@ -156,8 +160,10 @@
                 destination:
                   - 1.1.1.1
                   - 1::1
-                helper_module: ftp
                 protocol: icmp
+              # these two don't exist yet in RHEL 7
+                helper_module: "{{ 'ftp' if ansible_distribution in ['RedHat', 'CentOS', 'Fedora'] and ansible_distribution_major_version is version('8', '>=') else omit }}"
+                includes: "{{ ['ssh', 'ldaps'] if ansible_distribution in ['RedHat', 'CentOS', 'Fedora'] and ansible_distribution_major_version is version('8', '>=') else [] }}"
                 permanent: true
                 state: present
 
@@ -169,7 +175,7 @@
       # Verify that custom service not a part of default zone for some reason
 
         - name: Query if default zone has custom service added
-          command: firewall-cmd --query-service systemroletest
+          command: firewall-offline-cmd --query-service systemroletest
           ignore_errors: true # noqa ignore-errors
           register: result
           changed_when: false
@@ -199,7 +205,7 @@
       # Verify that custom service in zone permanent configuration
 
         - name: Query if service has been added to default zone
-          command: firewall-cmd --query-service systemroletest
+          command: firewall-offline-cmd --query-service systemroletest
           register: result
           changed_when: false
 
@@ -231,9 +237,10 @@
                 destination:
                   - 1.1.1.1
                   - 1::1
-                helper_module: ftp
                 protocol: icmp
-                permament: true
+                helper_module: "{{ 'ftp' if ansible_distribution in ['RedHat', 'CentOS', 'Fedora'] and ansible_distribution_major_version is version('8', '>=') else omit }}"
+                includes: "{{ ['ssh', 'ldaps'] if ansible_distribution in ['RedHat', 'CentOS', 'Fedora'] and ansible_distribution_major_version is version('8', '>=') else [] }}"
+                permanent: true
                 state: absent
 
       # Verify nothing is removed in this case
@@ -254,9 +261,10 @@
                 destination:
                   - 1.1.1.1
                   - 1::1
-                helper_module: ftp
                 protocol: icmp
-                permament: true
+                helper_module: "{{ 'ftp' if ansible_distribution in ['RedHat', 'CentOS', 'Fedora'] and ansible_distribution_major_version is version('8', '>=') else omit }}"
+                includes: "{{ ['ssh', 'ldaps'] if ansible_distribution in ['RedHat', 'CentOS', 'Fedora'] and ansible_distribution_major_version is version('8', '>=') else [] }}"
+                permanent: true
                 state: absent
 
         - name: Fail if custom service elements changed
@@ -265,7 +273,7 @@
           when: firewall_lib_result.changed # noqa no-handler
 
         - name: Get all services
-          command: firewall-cmd --permanent --get-services
+          command: firewall-offline-cmd --get-services
           register: result
           changed_when: false
 
@@ -284,11 +292,11 @@
           vars:
             firewall:
               - service: systemroletest
-                permament: true
+                permanent: true
                 state: absent
 
         - name: Get all services
-          command: firewall-cmd --permanent --get-services
+          command: firewall-offline-cmd --get-services
           register: result
           changed_when: false
 
@@ -303,7 +311,7 @@
           vars:
             firewall:
               - service: systemroletest
-                permament: true
+                permanent: true
                 state: absent
 
         - name: Fail if second removal changes anything

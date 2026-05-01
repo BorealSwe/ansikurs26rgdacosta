@@ -2,7 +2,7 @@
  "collection_info": {
   "namespace": "redhat",
   "name": "rhel_system_roles",
-  "version": "1.95.7",
+  "version": "1.108.6",
   "authors": [
    "System Roles Owners <systemroles@lists.fedorahosted.org>"
   ],
@@ -29,7 +29,7 @@
   "license_file": null,
   "dependencies": {},
   "repository": "https://linux-system-roles.github.io",
-  "documentation": "https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/administration_and_configuration_tasks_using_system_roles_in_rhel",
+  "documentation": "https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/9/html/automating_system_administration_by_using_rhel_system_roles/index",
   "homepage": "https://access.redhat.com/articles/3050101",
   "issues": "https://issues.redhat.com/secure/CreateIssueDetails!init.jspa?pid=12332745&summary=Your%20request%20summary&issuetype=1&priority=10200&labels=Partner-Feature-Request&components=12380283"
  },
@@ -37,7 +37,7 @@
   "name": "FILES.json",
   "ftype": "file",
   "chksum_type": "sha256",
-  "chksum_sha256": "ef8330867c22b1baebbbcbeb78b9f8a840def223cb547c94bf4618059fe9ae59",
+  "chksum_sha256": "84fb9916ecd6cd39bfe1179cba68fed723a7c7bc4faff130a72dfcab72c3e74b",
   "format": 1
  },
  "format": 1

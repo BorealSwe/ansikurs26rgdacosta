@@ -2,22 +2,24 @@
 - name: Setup firewalld
   include_tasks: firewalld.yml
 
-- name: Collect service facts
-  service_facts:
+- name: Check which conflicting services are enabled
+# noqa command-instead-of-module
+  command: systemctl is-enabled "{{ item }}"
+  register: __firewall_conflicting_services_status
+  changed_when: false
+  failed_when: false
+  loop: "{{ __firewall_conflicting_services }}"
   when: firewall_disable_conflicting_services | bool
 
 - name: Attempt to stop and disable conflicting services
   service:
-    name: "{{ item }}"
-    state: stopped
+    name: "{{ item.item }}"
+    state: "{{ 'stopped' if __firewall_is_booted else omit }}"
     enabled: false
-  loop: "{{ __firewall_conflicting_services }}"
-  vars:
-    __service_name: "{{ (ansible_facts.service_mgr == 'systemd') | ternary(item ~ '.service', item) }}"
+  loop: "{{ __firewall_conflicting_services_status.results }}"
   when:
     - firewall_disable_conflicting_services | bool
-    - __service_name | string in ansible_facts.services
-    - ansible_facts.services[__service_name]["status"] == "enabled"
+    - item.rc == 0
 
 - name: Unmask firewalld service
   systemd:
@@ -28,8 +30,8 @@
 - name: Enable and start firewalld service
   service:
     name: "{{ __firewall_service }}"
-    state: started
     enabled: true
+    state: "{{ 'started' if __firewall_is_booted else omit }}"
 
 - name: Check if previous replaced is defined
   set_fact:
@@ -48,6 +50,7 @@
           {{ ansible_check_mode | ternary('false', 'true') }}
           {{ __firewall_package_with_conf | quote }}
           {{ __firewall_usr_lib_dir | quote }}
+          {{ "booted" if __firewall_is_booted else "" }}
       register: __firewall_config_files_before
       changed_when: false
       check_mode: false
@@ -91,6 +94,7 @@
     source: "{{ item.source | default(omit) }}"
     destination: "{{ item.destination | default(omit) }}"
     interface: "{{ item.interface | default(omit) }}"
+    interface_pci_id: "{{ item.interface_pci_id | default(omit) }}"
     icmp_block: "{{ item.icmp_block | default(omit) }}"
     icmp_block_inversion: "{{ item.icmp_block_inversion | default(omit) }}"
     timeout: "{{ item.timeout | default(omit) }}"
@@ -103,9 +107,11 @@
     protocol: "{{ item.protocol | default(omit) }}"
     helper_module: "{{ item.helper_module | default(omit) }}"
     permanent: "{{ item.permanent | default(True) }}"
-    runtime: "{{ item.runtime | default(True) }}"
+    runtime: "{{ item.runtime | default(__firewall_is_booted) }}"
     state: "{{ item.state | default(omit) }}"
+    includes: "{{ item.includes | default(omit) }}"
     __report_changed: "{{ __firewall_report_changed }}"
+    online: "{{ __firewall_is_booted }}"
   loop: "{{ firewall is mapping | ternary([firewall], firewall) | map('dict2items') | map('difference', __previous) | map('difference', __detailed) | select | map('items2dict') | list }}"
   register: firewall_lib_result
 
@@ -124,6 +130,7 @@
             value: replaced
       redhat.rhel_system_roles.firewall_lib_facts:
         detailed: "{{ item.detailed | default(False) }}"
+        online: "{{ __firewall_is_booted }}"
       loop: "{{ fw | map('dict2items') | map('difference', __previous) | select | map('items2dict') | list }}"
       register: __firewalld_facts
 
@@ -138,6 +145,7 @@
   block:
     - name: Gather firewall config if no arguments
       redhat.rhel_system_roles.firewall_lib_facts:
+        online: "{{ __firewall_is_booted }}"
         detailed: false
       register: __firewalld_facts
 
@@ -157,6 +165,7 @@
           {{ __firewall_firewalld_dir | quote }} false
           {{ __firewall_package_with_conf | quote }}
           {{ __firewall_usr_lib_dir | quote }}
+          {{ __firewall_is_booted | quote }}
       register: __firewall_config_files_after
       changed_when: false
 

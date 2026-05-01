@@ -1,6 +1,51 @@
 Changelog
 =========
 
+[1.13.0] - 2025-07-24
+--------------------
+
+### New Features
+
+- feat: add metrics_optional_domains and metrics_optional_packages for users to configure optional domains (#245)
+
+### Bug Fixes
+
+- fix: add missing Spark import/export support for metrics - part 2 (#246)
+
+[1.12.0] - 2025-07-02
+--------------------
+
+### New Features
+
+- feat: Support this role in container builds (#243)
+
+### Other Changes
+
+- ci: bump tox-lsr to 3.8.0; rename qemu/kvm tests (#238)
+- ci: Add Fedora 42; use tox-lsr 3.9.0; use lsr-report-errors for qemu tests (#239)
+- ci: Add support for bootc end-to-end validation tests (#240)
+- ci: Use ansible 2.19 for fedora 42 testing; support python 3.13 (#241)
+
+[1.11.0] - 2025-05-06
+--------------------
+
+### New Features
+
+- feat: add missing Spark import/export support for metrics (#233)
+
+### Other Changes
+
+- ci: ansible-plugin-scan is disabled for now (#224)
+- ci: bump ansible-lint to v25; provide collection requirements for ansible-lint (#227)
+- ci: Check spelling with codespell (#228)
+- ci: Add test plan that runs CI tests and customize it for each role (#229)
+- ci: In test plans, prefix all relate variables with SR_ (#230)
+- ci: Fix bug with ARTIFACTS_URL after prefixing with SR_ (#231)
+- ci: several changes related to new qemu test, ansible-lint, python versions, ubuntu versions (#232)
+- ci: use tox-lsr 3.6.0; improve qemu test logging (#234)
+- ci: skip storage scsi, nvme tests in github qemu ci (#235)
+- ci: bump sclorg/testing-farm-as-github-action from 3 to 4 (#236)
+
 [1.10.9] - 2025-01-09
 --------------------
 

@@ -56,6 +56,11 @@
     state: present
     use: "{{ (__certificate_is_ostree | d(false)) | ternary('redhat.rhel_system_roles.rhel_rpm_ostree', omit) }}"
 
+- name: Get hostname
+  command: hostname
+  changed_when: false
+  register: __saved_hostname
+
 - name: Set hostname
   hostname:
     name: ipaserver.test.local

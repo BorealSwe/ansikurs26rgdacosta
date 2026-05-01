@@ -39,7 +39,7 @@ signatures:
 
     -----END PGP SIGNATURE-----
 
-'
+    '
   signing_service: null
 version: 1.0.0
 version_url: /api/automation-hub/content/published/v3/plugin/ansible/content/published/collections/index/redhat/ai/versions/1.0.0/

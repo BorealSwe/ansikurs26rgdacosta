@@ -72,6 +72,10 @@
             - not item.startswith("Description=")
           loop: "{{ service_old.splitlines() }}"
 
+        - name: Print the generated service file
+          ansible.builtin.debug:
+            msg: "{{ service.content | b64decode }}"
+
         - name: Test options in sshd.service are kept
           ansible.builtin.assert:
             that:
@@ -100,6 +104,10 @@
             - not item.startswith("Before=")
             - not item.startswith("Description=")
           loop: "{{ socket_old.splitlines() }}"
+
+        - name: Print the generated socket file
+          ansible.builtin.debug:
+            msg: "{{ socket.content | b64decode }}"
 
         - name: Test options in sshd.socket are kept
           ansible.builtin.assert:
@@ -137,6 +145,10 @@
             - not item.startswith("#")
             - not item.startswith("Description=")
           loop: "{{ service_inst_old.splitlines() }}"
+
+        - name: Print the instantiated generated socket file
+          ansible.builtin.debug:
+            msg: "{{ service_inst.content | b64decode }}"
 
         - name: Test options in sshd@.service are kept
           ansible.builtin.assert:

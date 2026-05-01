@@ -312,9 +312,8 @@ from functools import wraps
 from io import BytesIO
 
 from ansible.errors import AnsibleConnectionFailure, AnsibleError
-from ansible.module_utils._text import to_bytes, to_text
 from ansible.module_utils.basic import missing_required_lib
-from ansible.module_utils.six import PY3
+from ansible.module_utils.common.text.converters import to_bytes, to_text
 from ansible.module_utils.six.moves import cPickle
 from ansible.playbook.play_context import PlayContext
 from ansible.plugins.loader import cache_loader, cliconf_loader, connection_loader, terminal_loader
@@ -490,10 +489,8 @@ class Connection(NetworkConnectionBase):
         return self._matched_prompt
 
     def exec_command(self, cmd, in_data=None, sudoable=True):
-        # this try..except block is just to handle the transition to supporting
-        # network_cli as a toplevel connection.  Once connection=local is gone,
-        # this block can be removed as well and all calls passed directly to
-        # the local connection
+        # not accessible code alert can be taken out at around  01-01-2027,
+        # when connection local is removed
         if self._ssh_shell:
             try:
                 cmd = json.loads(to_text(cmd, errors="surrogate_or_strict"))
@@ -555,10 +552,8 @@ class Connection(NetworkConnectionBase):
     def update_play_context(self, pc_data):
         """Updates the play context information for the connection"""
         pc_data = to_bytes(pc_data)
-        if PY3:
-            pc_data = cPickle.loads(pc_data, encoding="bytes")
-        else:
-            pc_data = cPickle.loads(pc_data)
+        pc_data = cPickle.loads(pc_data, encoding="bytes")
+
         play_context = PlayContext()
         play_context.deserialize(pc_data)
 

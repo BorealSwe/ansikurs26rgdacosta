@@ -1,0 +1,43 @@
+download_url: https://console.redhat.com/api/automation-hub/v3/plugin/ansible/content/published/collections/artifacts/ansible-eda-2.10.0.tar.gz
+format_version: 1.0.0
+name: eda
+namespace: ansible
+server: https://console.redhat.com/api/automation-hub/content/published/
+signatures:
+- pubkey_fingerprint: 39B5D759361A97464C564A8FE1A4BD708A828AAD
+  pulp_created: '2025-09-12T19:25:56.541513Z'
+  signature: '-----BEGIN PGP SIGNATURE-----
+
+
+    iQIcBAABCAAGBQJoxHObAAoJEOGkvXCKgoqtDGkP/Rh5drMSgicgktN1wenhn5bC
+
+    ekQ5+fmNerlSrQ5HQEt4rdtUsOvaUNp905C0E+Vf9slLOWhjFWzh8t/9PfJl3u8h
+
+    +OayflHSGKxwJLnyAs2TotBm385gzhBxCIAc50mYtNBUfTuuTChfqn/9D1xvnRpa
+
+    0Crvg6LyoXL17piNpmiyNsHSM0vhVze7Umlvq6LwRVcQnjvhXa8/ruX/FCz7FOix
+
+    I7LWfuztrF8BKatSSxVE0Geyk+v201VHmHociJjTznSud/AlflxVkAEWJGpjXu0Z
+
+    pXYOoXLyaZD4W1OeY3JWhuI4oy1tOn4TyMBwaAWlu3s7PG7vY2Ny5nSP4hpT7URR
+
+    w0uupoECucg3QP/qmuKHb21sKtlP0SDJ8h4JS50+G4to0lifIKNPpHnx1JVTgMZZ
+
+    /Zrt33WTuKM+x71B1icmAvKXypvRYQ3S9Mo1j5hjRIhOm1MhHFjOKmZoqz+JAQMQ
+
+    zHVeGUW0r2lIynzrCKntADXvXJSb/eahhzZLEvqqxq8QyQQnUsN1oqNuzTS/qXx6
+
+    yomZkGWVsTLdTxztzJUcNToV3b8d9LKgssPl61/XSWUJzwhbeIEm9YfsjRHeArBg
+
+    6pcW7JLMjTv9SAqKXi2Mq8MaqIhfmPLHJKUbyw+2DgXAZgFUpNR0xgOzAjSFNHj3
+
+    Tk92nbe+fOU/dhO0fbSe
+
+    =iudG
+
+    -----END PGP SIGNATURE-----
+
+    '
+  signing_service: null
+version: 2.10.0
+version_url: /api/automation-hub/content/published/v3/plugin/ansible/content/published/collections/index/ansible/eda/versions/2.10.0/

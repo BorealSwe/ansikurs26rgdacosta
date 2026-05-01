@@ -207,7 +207,7 @@ permanent change was made to each setting:
 ### firewall_disable_conflicting_services
 
 By default, the firewall role does not attempt to disable conflicting services due to the
-overhead associated with enumerating the services when disabling services is potentially unecessary.
+overhead associated with enumerating the services when disabling services is potentially unnecessary.
 To enable this feature, set the variable `firewall_disable_conflicting_services` to `true`:
 
 ```yaml
@@ -437,7 +437,7 @@ firewall:
 ### port
 
 Port or port range or a list of them to add or remove inbound access to. It
-needs to be in the format ```<port>[-<port>]/<protocol>```.
+needs to be in the format `<port>[-<port>]/<protocol>`.
 
 ```yaml
 port: '443/tcp'
@@ -464,7 +464,7 @@ See `ipset` for more usage information
 List of addresses to add or remove from an ipset
 Used with `ipset`
 
-Entrys must be compatible with the ipset type of the `ipset`
+Entries must be compatible with the ipset type of the `ipset`
 being created or modified.
 
 ```yaml
@@ -478,7 +478,7 @@ See `ipset` for more usage information
 ### source_port
 
 Port or port range or a list of them to add or remove source port access to. It
-needs to be in the format ```<port>[-<port>]/<protocol>```.
+needs to be in the format `<port>[-<port>]/<protocol>`.
 
 ```yaml
 source_port: '443/tcp'
@@ -617,6 +617,9 @@ A list of PCI devices with their IDs can be retrieved using `lcpci -nn`.
 For more information on PCI device IDs, see the linux man page at:
 <https://man7.org/linux/man-pages/man5/pci.ids.5.html>
 
+This option requires running the role on the actual target machine, i.e. it is
+not supported during container builds.
+
 ### icmp_block
 
 String or list of ICMP type strings to block.  The ICMP type names needs to be
@@ -685,6 +688,20 @@ Name of a connection tracking helper supported by firewalld.
 # Both properly specify nf_conntrack_ftp
 helper_module: ftp
 helper_module: nf_conntrack_ftp
+```
+
+### includes
+
+Name of one or more services to specify in an `includes` in a
+service definition.  The `includes` directive is described in the
+[service manpage](https://firewalld.org/documentation/man-pages/firewalld.service.html)
+This can only be used when managing service definitions.
+NOTE: `includes` support is only available in EL8 and higher.
+
+```yaml
+includes:
+  - https
+  - ldaps
 ```
 
 ### timeout

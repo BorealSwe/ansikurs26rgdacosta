@@ -1,0 +1,31 @@
+---
+- name: Derive service-specific settings
+  ansible.builtin.set_fact:
+    my_docroot: >-
+      {{ '/var/www/html' if my_webservice == 'httpd' else '/usr/share/nginx/html' }}
+
+- name: Ensure software is installed
+  ansible.builtin.dnf:
+    name: "{{ my_webservice }}"
+    state: present
+
+- name: Ensure webserver is configured with systemd
+  ansible.builtin.service:
+    name: "{{ my_webservice }}"
+    state: started
+    enabled: true
+
+- name: Ensure ports are open in firewalld
+  loop:
+    - http
+    - https
+  ansible.posix.firewalld:
+    service: "{{ item }}"
+    state: enabled
+    permanent: true
+    immediate: true
+
+- name: Ensure stub content is deployed
+  ansible.builtin.template:
+    src: index.j2
+    dest: "{{ my_docroot }}/index.html"

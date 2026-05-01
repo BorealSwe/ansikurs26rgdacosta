@@ -32,10 +32,10 @@
           Conditions satisfied - proceeding
           **********************************
 
-    - name: Set RHEL release 
+    - name: Set RHEL release
       become: true
       community.general.rhsm_release:
-        release: "{{ redhat_release | default('9.6') }}"
+        release: "{{ redhat_release | default('9.7') }}"
 
     - name: Update packages for new release
       become: true

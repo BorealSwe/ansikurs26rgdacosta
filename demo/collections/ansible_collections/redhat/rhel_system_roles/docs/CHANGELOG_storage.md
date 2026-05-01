@@ -1,6 +1,83 @@
 Changelog
 =========
 
+[1.18.20] - 2025-08-01
+--------------------
+
+### Other Changes
+
+- tests: Fix verification for LVM pool on top encrypted MD RAID (#549)
+- test: fix error string checking for raid failures (#550)
+
+[1.18.19] - 2025-07-24
+--------------------
+
+### Bug Fixes
+
+- fix: Show better error when trying to create RAID without enough disks  (#545)
+- fix: the encryption_key parameter should not be marked as no_log (#546)
+
+### Other Changes
+
+- test: test luks encryption key (#547)
+
+[1.18.18] - 2025-07-09
+--------------------
+
+### Other Changes
+
+- refactor: make task names unique; fix indentation (#542)
+- refactor: correct volume names changed by previous fix (#543)
+
+[1.18.17] - 2025-06-16
+--------------------
+
+### Bug Fixes
+
+- fix: Fix getting PVs from raid_disks for RAID LVs (#536)
+
+### Other Changes
+
+- ci: Add Fedora 42; use tox-lsr 3.9.0; use lsr-report-errors for qemu tests (#534)
+- ci: Add support for bootc end-to-end validation tests (#537)
+- ci: Use ansible 2.19 for fedora 42 testing; support python 3.13 (#538)
+- refactor: Ansible 2.19 support (#540)
+
+[1.18.16] - 2025-05-16
+--------------------
+
+### Bug Fixes
+
+- fix: Allow small size differences to match the device min size (#526)
+- fix: Show error when trying to put LVM volume on partition pool (#531)
+
+### Other Changes
+
+- ci: bump tox-lsr to 3.8.0; rename qemu/kvm tests (#527)
+
+[1.18.15] - 2025-05-02
+--------------------
+
+### Bug Fixes
+
+- fix: Correctly check PVs for grow_to_fill feature (#523)
+
+### Other Changes
+
+- tests: Add a custom script for getting info about Stratis pools (#522)
+- ci: bump sclorg/testing-farm-as-github-action from 3 to 4 (#524)
+
+[1.18.14] - 2025-04-23
+--------------------
+
+### Other Changes
+
+- ci: In test plans, prefix all relate variables with SR_ (#516)
+- ci: Fix bug with ARTIFACTS_URL after prefixing with SR_ (#517)
+- ci: several changes related to new qemu test, ansible-lint, python versions, ubuntu versions (#518)
+- tests: Fix more cleanups; ci: Attach batch.txt and batch.report on failures (#519)
+- ci: use tox-lsr 3.6.0; improve qemu test logging (#520)
+
 [1.18.13] - 2025-03-06
 --------------------
 

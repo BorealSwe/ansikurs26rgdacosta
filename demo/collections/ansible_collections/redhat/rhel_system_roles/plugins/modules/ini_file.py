@@ -40,7 +40,7 @@ options:
   section:
     description:
       - Section name in INI file. This is added if O(state=present) automatically when a single value is being set.
-      - If being omitted, the O(option) will be placed before the first O(section).
+      - If being omitted, the O(option) is placed before the first O(section).
       - Omitting O(section) is also required if the config format does not support sections.
     type: str
   section_has_values:
@@ -64,7 +64,7 @@ options:
         elements: str
     description:
       - Among possibly multiple sections of the same name, select the first one that contains matching options and values.
-      - With O(state=present), if a suitable section is not found, a new section will be added, including the required options.
+      - With O(state=present), if a suitable section is not found, a new section is added, including the required options.
       - With O(state=absent), at most one O(section) is removed if it contains the values.
     version_added: 8.6.0
   option:
@@ -101,8 +101,8 @@ options:
         O(option)s with the same name are not touched.
       - If set to V(present) and O(exclusive) set to V(false) the specified O(option=values) lines are added, but the other
         O(option)s with the same name are not touched.
-      - If set to V(present) and O(exclusive) set to V(true) all given O(option=values) lines will be added and the other
-        O(option)s with the same name are removed.
+      - If set to V(present) and O(exclusive) set to V(true) all given O(option=values) lines are added and the other O(option)s
+        with the same name are removed.
     type: str
     choices: [absent, present]
     default: present
@@ -127,8 +127,8 @@ options:
     version_added: 7.5.0
   create:
     description:
-      - If set to V(false), the module will fail if the file does not already exist.
-      - By default it will create the file if it is missing.
+      - If set to V(false), the module fails if the file does not already exist.
+      - By default it creates the file if it is missing.
     type: bool
     default: true
   allow_no_value:
@@ -269,21 +269,21 @@ from ansible.module_utils.common.text.converters import to_bytes, to_text
 
 def match_opt(option, line):
     option = re.escape(option)
-    return re.match('([#;]?)( |\t)*(%s)( |\t)*(=|$)( |\t)*(.*)' % option, line)
+    return re.match('( |\t)*([#;]?)( |\t)*(%s)( |\t)*(=|$)( |\t)*(.*)' % option, line)
 
 
 def match_active_opt(option, line):
     option = re.escape(option)
-    return re.match('()( |\t)*(%s)( |\t)*(=|$)( |\t)*(.*)' % option, line)
+    return re.match('()()( |\t)*(%s)( |\t)*(=|$)( |\t)*(.*)' % option, line)
 
 
 def update_section_line(option, changed, section_lines, index, changed_lines, ignore_spaces, newline, msg):
     option_changed = None
     if ignore_spaces:
         old_match = match_opt(option, section_lines[index])
-        if not old_match.group(1):
+        if not old_match.group(2):
             new_match = match_opt(option, newline)
-            option_changed = old_match.group(7) != new_match.group(7)
+            option_changed = old_match.group(8) != new_match.group(8)
     if option_changed is None:
         option_changed = section_lines[index] != newline
     if option_changed:
@@ -300,7 +300,7 @@ def check_section_has_values(section_has_values, section_lines):
         for condition in section_has_values:
             for line in section_lines:
                 match = match_opt(condition["option"], line)
-                if match and (len(condition["values"]) == 0 or match.group(7) in condition["values"]):
+                if match and (len(condition["values"]) == 0 or match.group(8) in condition["values"]):
                     break
             else:
                 return False
@@ -433,8 +433,8 @@ def do_ini(module, filename, section=None, section_has_values=None, option=None,
         for index, line in enumerate(section_lines):
             if match_function(option, line):
                 match = match_function(option, line)
-                if values and match.group(7) in values:
-                    matched_value = match.group(7)
+                if values and match.group(8) in values:
+                    matched_value = match.group(8)
                     if not matched_value and allow_no_value:
                         # replace existing option with no value line(s)
                         newline = u'%s\n' % option
@@ -506,7 +506,7 @@ def do_ini(module, filename, section=None, section_has_values=None, option=None,
                     section_lines = new_section_lines
             elif not exclusive and len(values) > 0:
                 # delete specified option=value line(s)
-                new_section_lines = [i for i in section_lines if not (match_active_opt(option, i) and match_active_opt(option, i).group(7) in values)]
+                new_section_lines = [i for i in section_lines if not (match_active_opt(option, i) and match_active_opt(option, i).group(8) in values)]
                 if section_lines != new_section_lines:
                     changed = True
                     msg = 'option changed'
@@ -585,7 +585,7 @@ def main():
                 option=dict(type='str', required=True),
                 value=dict(type='str'),
                 values=dict(type='list', elements='str')
-            ), default=None, mutually_exclusive=[['value', 'values']]),
+            ), mutually_exclusive=[['value', 'values']]),
             option=dict(type='str'),
             value=dict(type='str'),
             values=dict(type='list', elements='str'),

@@ -1,9 +1,6 @@
-servere
-serverf
-
 [webservers]
 servera
-serverc 
+serverc
 
 [dbservers]
 serverb

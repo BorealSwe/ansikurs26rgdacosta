@@ -55,29 +55,31 @@
       when:
         - ansible_facts['distribution'] == "Alpine"
 
-    - name: Make sure manual pages and bash are installed on RedHat 7+
+    - name: Make sure manual pages, gawk and bash are installed on RedHat 7+
       ansible.builtin.package:
         name:
           - man-db
           - bash
+          - gawk
         state: present
         use: "{{ (__sshd_is_ostree | d(false)) | ternary('redhat.rhel_system_roles.rhel_rpm_ostree', omit) }}"
       when:
         - ansible_facts['os_family'] == "RedHat"
         - ansible_facts['distribution_major_version'] | int > 6
 
-    - name: Make sure manual pages and bash are installed elsewhere
+    - name: Make sure manual pages, gawk and bash are installed elsewhere
       ansible.builtin.package:
         name:
           - man
           - bash
+          - gawk
         state: present
         use: "{{ (__sshd_is_ostree | d(false)) | ternary('redhat.rhel_system_roles.rhel_rpm_ostree', omit) }}"
       when:
         - ansible_facts['distribution'] != "Alpine"
         - ansible_facts['os_family'] != "RedHat" or ansible_facts['distribution_major_version'] | int == 6
 
-    - name: Get list of options from manual page
+    - name: Show list of options from manual page
       ansible.builtin.shell: >-
         set -eu; set -o | grep -q pipefail && set -o pipefail; man sshd_config | cat
       changed_when: false

@@ -1,10 +1,11 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2016,2017,2020,2021 Red Hat, Inc.
+# Copyright (C) 2016 - 2025 Red Hat, Inc.
 # Reusing some firewalld code
 # Authors:
 # Thomas Woerner <twoerner@redhat.com>
+# Martin Pitt <mpitt@redhat.com>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -37,7 +38,7 @@ requirements:
   - python3-firewall or python-firewall
 description:
   Manage firewall with firewalld on Fedora and RHEL-7+.
-author: "Thomas Woerner (@t-woerner)"
+author: "Thomas Woerner (@t-woerner), Martin Pitt (@martinpitt)"
 options:
   firewalld_conf:
     description:
@@ -119,7 +120,7 @@ options:
     default: []
   interface_pci_id:
     description:
-      List of inteface PCI device ID strings.
+      List of interface PCI device ID strings.
       PCI device ID needs to correspond to a named network interface.
     required: false
     type: list
@@ -250,11 +251,26 @@ options:
     type: list
     elements: str
     default: []
+  includes:
+    description:
+      Services to include in this one.
+    required: false
+    type: list
+    elements: str
+    default: []
   __report_changed:
     description:
       If false, do not report changed true even if changed.
     required: false
     type: bool
+    default: true
+  online:
+    description:
+      When true, use the D-Bus API to query the status from the running system.
+      Otherwise, use firewall-offline-cmd(1). Offline mode is
+      incompatible with "runtime" mode.
+    type: bool
+    required: false
     default: true
 """
 
@@ -299,25 +315,6 @@ except ImportError:
     NM_IMPORTED = False
 
 
-PCI_REGEX = re.compile("[0-9a-fA-F]{4}:[0-9a-fA-F]{4}")
-
-
-# NOTE: Because of PEP632, we cannot use distutils.
-# In addition, because of the wide range of python
-# versions we have to support, there isn't a good
-# version parser across all of them, that is provided
-# with Ansible.
-def lsr_parse_version(v_str):
-    v_ary = v_str.split(".")
-    v = []
-    for v_ary_str in v_ary:
-        try:
-            v.append(int(v_ary_str))
-        except ValueError:
-            v.append(0)
-    return v
-
-
 def try_get_connection_of_interface(interface):
     try:
         return nm_get_connection_of_interface(interface)
@@ -349,65 +346,1139 @@ def try_set_zone_of_interface(module, _zone, interface):
 # Above: adapted from firewall-cmd source code
 
 
-def create_service(module, fw, service):
-    if not module.check_mode:
-        fw.config().addService(service, FirewallClientServiceSettings())
-        fw_service = fw.config().getServiceByName(service)
-        fw_service_settings = fw_service.getSettings()
-    else:
-        fw_service = None
-        fw_service_settings = FirewallClientServiceSettings()
-    return fw_service, fw_service_settings
+class OnlineAPIBackend:
+    """Implement operations with the FirewallClient() API.
 
+    This requires firewalld to be running.
+    """
 
-def create_ipset(module, fw, ipset, ipset_type):
-    if not ipset_type:
-        module.fail_json(msg="ipset_type needed when creating a new ipset")
+    def __init__(
+        self, module, permanent, runtime, zone_operation, zone, state, timeout
+    ):
+        self.module = module
+        self.state = state
+        self.permanent = permanent
+        self.runtime = runtime
+        self.zone = zone
+        self.timeout = timeout
 
-    fw_ipset = None
-    fw_ipset_settings = FirewallClientIPSetSettings()
-    fw_ipset_settings.setType(ipset_type)
-    if not module.check_mode:
-        fw.config().addIPSet(ipset, fw_ipset_settings)
-        fw_ipset = fw.config().getIPSetByName(ipset)
-        fw_ipset_settings = fw_ipset.getSettings()
+        self.fw = FirewallClient()
 
-    return fw_ipset, fw_ipset_settings
+        # Set exception handler
+        def exception_handler(exception_message):
+            module.fail_json(msg=exception_message)
 
+        self.fw.setExceptionHandler(exception_handler)
 
-def handle_interface_permanent(
-    zone, item, fw_zone, fw_settings, fw, fw_offline, module
-):
-    if fw_offline:
-        iface_zone_objs = []
-        for zone in fw.config.get_zones():
-            old_zone_obj = fw.config.get_zone(zone)
-            if item in old_zone_obj.interfaces:
-                old_zone_settings = FirewallClientZoneSettings(
-                    fw.config.get_zone_config(old_zone_obj)
-                )
-                old_zone_settings.removeInterface(item)
-                fw.config.set_zone_config(old_zone_obj, old_zone_settings.settings)
-                iface_zone_objs.append(old_zone_obj)
+        self.changed = False
+        self.need_reload = False
 
-        old_zone_obj = iface_zone_objs[0]
-        if old_zone_obj.name != zone:
-            old_zone_settings = FirewallClientZoneSettings(
-                fw.config.get_zone_config(old_zone_obj)
+        # Get default zone, the permanent zone and settings
+        zone_exists = False
+        if runtime:
+            zone_exists = zone_exists or zone is None or zone in self.fw.getZones()
+            err_str = "Runtime"
+        if permanent:
+            zone_exists = (
+                zone_exists or zone is None or zone in self.fw.config().getZoneNames()
             )
-            old_zone_settings.removeInterface(item)
-            fw.config.set_zone_config(old_zone_obj, old_zone_settings.settings)
-            fw_settings.addInterface(item)
-            fw.config.set_zone_config(fw_zone, fw_settings.settings)
-    else:
-        old_zone_name = fw.config().getZoneOfInterface(item)
-        if old_zone_name != zone:
-            if old_zone_name:
-                old_zone_obj = fw.config().getZoneByName(old_zone_name)
-                old_zone_settings = old_zone_obj.getSettings()
-                old_zone_settings.removeInterface(item)
-                old_zone_obj.update(old_zone_settings)
-            fw_settings.addInterface(item)
+            err_str = "Permanent"
+
+        if not zone_exists and not zone_operation:
+            module.fail_json(msg="%s zone '%s' does not exist." % (err_str, zone))
+
+        if zone_exists:
+            self.zone = self.zone or self.fw.getDefaultZone()
+            self.fw_zone = self.fw.config().getZoneByName(self.zone)
+            self.fw_settings = self.fw_zone.getSettings()
+        else:
+            self.fw_zone = None
+            self.fw_settings = None
+            zone_exists = False
+
+        self.zone_exists = zone_exists
+
+    def finalize(self):
+        if self.fw_zone and self.fw_settings:
+            self.fw_zone.update(self.fw_settings)
+        if self.need_reload:
+            self.fw.reload()
+
+    def set_firewalld_conf(self, firewalld_conf, allow_zone_drifting_deprecated):
+        fw_config = self.fw.config()
+        if not allow_zone_drifting_deprecated and firewalld_conf.get(
+            "allow_zone_drifting"
+        ) != fw_config.get_property("AllowZoneDrifting"):
+            if not self.module.check_mode:
+                fw_config.set_property(
+                    "AllowZoneDrifting", firewalld_conf.get("allow_zone_drifting")
+                )
+            self.changed = True
+            self.need_reload = True
+
+    def set_zone(self):
+        if self.state == "present" and not self.zone_exists:
+            if not self.module.check_mode:
+                self.fw.config().addZone(self.zone, FirewallClientZoneSettings())
+                self.need_reload = True
+                self.changed = True
+        elif self.state == "absent" and self.zone_exists:
+            if not self.module.check_mode:
+                self.fw_zone.remove()
+                self.need_reload = True
+            self.changed = True
+            self.fw_zone = None
+            self.fw_settings = None
+
+    def set_default_zone(self, zone):
+        if self.fw.getDefaultZone() != zone:
+            self.fw.setDefaultZone(zone)
+            self.changed = True
+
+    def _create_service(self, service):
+        if not self.module.check_mode:
+            self.fw.config().addService(service, FirewallClientServiceSettings())
+            fw_service = self.fw.config().getServiceByName(service)
+            fw_service_settings = fw_service.getSettings()
+        else:
+            fw_service = None
+            fw_service_settings = FirewallClientServiceSettings()
+        return fw_service, fw_service_settings
+
+    def set_service(
+        self,
+        service_operation,
+        service,
+        description,
+        short,
+        port,
+        protocol,
+        source_port,
+        helper_module,
+        destination_ipv4,
+        destination_ipv6,
+        includes,
+    ):
+        if service_operation and self.permanent:
+            service_exists = service in self.fw.config().getServiceNames()
+            if service_exists:
+                fw_service = self.fw.config().getServiceByName(service)
+                fw_service_settings = fw_service.getSettings()
+            elif self.state == "present":
+                fw_service, fw_service_settings = self._create_service(service)
+                self.changed = True
+                service_exists = True
+
+            if self.state == "present":
+                if (
+                    description is not None
+                    and description != fw_service_settings.getDescription()
+                ):
+                    if not self.module.check_mode:
+                        fw_service_settings.setDescription(description)
+                    self.changed = True
+                if short is not None and short != fw_service_settings.getShort():
+                    if not self.module.check_mode:
+                        fw_service_settings.setShort(short)
+                    self.changed = True
+                for _port, _protocol in port:
+                    if not fw_service_settings.queryPort(_port, _protocol):
+                        if not self.module.check_mode:
+                            fw_service_settings.addPort(_port, _protocol)
+                        self.changed = True
+                for _protocol in protocol:
+                    if not fw_service_settings.queryProtocol(_protocol):
+                        if not self.module.check_mode:
+                            fw_service_settings.addProtocol(_protocol)
+                        self.changed = True
+                for _port, _protocol in source_port:
+                    if not fw_service_settings.querySourcePort(_port, _protocol):
+                        if not self.module.check_mode:
+                            fw_service_settings.addSourcePort(_port, _protocol)
+                        self.changed = True
+                for _module in helper_module:
+                    if not fw_service_settings.queryHelper(_module):
+                        if not self.module.check_mode:
+                            fw_service_settings.addHelper(_module)
+                        self.changed = True
+                if destination_ipv4:
+                    if not fw_service_settings.queryDestination(
+                        "ipv4", destination_ipv4
+                    ):
+                        if not self.module.check_mode:
+                            fw_service_settings.setDestination("ipv4", destination_ipv4)
+                        self.changed = True
+                if destination_ipv6:
+                    if not fw_service_settings.queryDestination(
+                        "ipv6", destination_ipv6
+                    ):
+                        if not self.module.check_mode:
+                            fw_service_settings.setDestination("ipv6", destination_ipv6)
+                        self.changed = True
+                for _include in includes:
+                    if not fw_service_settings.queryInclude(_include):
+                        if not self.module.check_mode:
+                            fw_service_settings.addInclude(_include)
+                        self.changed = True
+            if self.state == "absent" and service_exists:
+                if port:
+                    for _port, _protocol in port:
+                        if fw_service_settings.queryPort(_port, _protocol):
+                            if not self.module.check_mode:
+                                fw_service_settings.removePort(_port, _protocol)
+                            self.changed = True
+                if source_port:
+                    for _port, _protocol in source_port:
+                        if fw_service_settings.querySourcePort(_port, _protocol):
+                            if not self.module.check_mode:
+                                fw_service_settings.removeSourcePort(_port, _protocol)
+                            self.changed = True
+                if protocol:
+                    for _protocol in protocol:
+                        if fw_service_settings.queryProtocol(_protocol):
+                            if not self.module.check_mode:
+                                fw_service_settings.removeProtocol(_protocol)
+                            self.changed = True
+                if helper_module:
+                    for _module in helper_module:
+                        if fw_service_settings.queryModule(_module):
+                            if not self.module.check_mode:
+                                fw_service_settings.removeModule(_module)
+                            self.changed = True
+                if destination_ipv4:
+                    if fw_service_settings.queryDestination("ipv4", destination_ipv4):
+                        if not self.module.check_mode:
+                            fw_service_settings.removeDestination(
+                                "ipv4", destination_ipv4
+                            )
+                        self.changed = True
+                if destination_ipv6:
+                    if fw_service_settings.queryDestination("ipv6", destination_ipv6):
+                        if not self.module.check_mode:
+                            fw_service_settings.removeDestination(
+                                "ipv6", destination_ipv6
+                            )
+                        self.changed = True
+                for _include in includes:
+                    if fw_service_settings.queryInclude(_include):
+                        if not self.module.check_mode:
+                            fw_service_settings.removeInclude(_include)
+                        self.changed = True
+                if not any(
+                    (
+                        port,
+                        source_port,
+                        protocol,
+                        helper_module,
+                        destination_ipv4,
+                        destination_ipv6,
+                    )
+                ):
+                    if not self.module.check_mode:
+                        fw_service.remove()
+                        service_exists = False
+                    self.changed = True
+            # If service operation occurs, this should be the only instruction executed by the script
+            if self.changed and not self.module.check_mode:
+                if service_exists:
+                    fw_service.update(fw_service_settings)
+                self.need_reload = True
+        else:
+            for item in service:
+                service_exists = item in self.fw.config().getServiceNames()
+                if self.state == "enabled" and service_exists:
+                    if self.runtime and not self.fw.queryService(self.zone, item):
+                        if not self.module.check_mode:
+                            self.fw.addService(self.zone, item, self.timeout)
+                        self.changed = True
+                    if self.permanent and not self.fw_settings.queryService(item):
+                        if not self.module.check_mode:
+                            self.fw_settings.addService(item)
+                        self.changed = True
+                elif self.state == "disabled" and service_exists:
+                    if self.runtime and self.fw.queryService(self.zone, item):
+                        if not self.module.check_mode:
+                            self.fw.removeService(self.zone, item)
+                    if self.permanent and self.fw_settings.queryService(item):
+                        if not self.module.check_mode:
+                            self.fw_settings.removeService(item)
+                        self.changed = True
+                else:
+                    if self.module.check_mode:
+                        self.module.warn(
+                            "Service does not exist - "
+                            + item
+                            + ". Ensure that you define the service in the playbook before running it in diff mode"
+                        )
+                    else:
+                        self.module.fail_json(msg="INVALID SERVICE - " + item)
+
+    def _create_ipset(self, ipset, ipset_type):
+        if not ipset_type:
+            self.module.fail_json(msg="ipset_type needed when creating a new ipset")
+
+        fw_ipset = None
+        fw_ipset_settings = FirewallClientIPSetSettings()
+        fw_ipset_settings.setType(ipset_type)
+        if not self.module.check_mode:
+            self.fw.config().addIPSet(ipset, fw_ipset_settings)
+            fw_ipset = self.fw.config().getIPSetByName(ipset)
+            fw_ipset_settings = fw_ipset.getSettings()
+
+        return fw_ipset, fw_ipset_settings
+
+    def set_ipset(self, ipset, description, short, ipset_type, ipset_entries):
+        ipset_exists = ipset in self.fw.config().getIPSetNames()
+        fw_ipset = None
+        fw_ipset_settings = None
+        if ipset_exists:
+            fw_ipset = self.fw.config().getIPSetByName(ipset)
+            fw_ipset_settings = fw_ipset.getSettings()
+            if ipset_type and ipset_type != fw_ipset_settings.getType():
+                self.module.fail_json(
+                    msg="Name conflict when creating ipset - "
+                    "ipset %s of type %s already exists"
+                    % (ipset, fw_ipset_settings.getType())
+                )
+        elif self.state == "present":
+            fw_ipset, fw_ipset_settings = self._create_ipset(ipset, ipset_type)
+            self.changed = True
+            ipset_exists = True
+        if self.state == "present":
+            if (
+                description is not None
+                and description != fw_ipset_settings.getDescription()
+            ):
+                if not self.module.check_mode:
+                    fw_ipset_settings.setDescription(description)
+                self.changed = True
+            if short is not None and short != fw_ipset_settings.getShort():
+                if not self.module.check_mode:
+                    fw_ipset_settings.setShort(short)
+                self.changed = True
+            for entry in ipset_entries:
+                if not fw_ipset_settings.queryEntry(entry):
+                    if not self.module.check_mode:
+                        fw_ipset_settings.addEntry(entry)
+                    self.changed = True
+        elif ipset_exists:
+            if ipset_entries:
+                for entry in ipset_entries:
+                    if fw_ipset_settings.queryEntry(entry):
+                        if not self.module.check_mode:
+                            fw_ipset_settings.removeEntry(entry)
+                        self.changed = True
+            else:
+                ipset_source_name = "ipset:%s" % ipset
+                bound_zone_permanent = self.fw.config().getZoneOfSource(
+                    ipset_source_name
+                )
+                if bound_zone_permanent:
+                    bound_zone_permanent = "permanent - %s" % bound_zone_permanent
+                bound_zone_runtime = self.fw.getZoneOfSource(ipset_source_name)
+                if bound_zone_runtime:
+                    bound_zone_runtime = "runtime - %s" % bound_zone_runtime
+                if bound_zone_permanent or bound_zone_runtime:
+                    bound_zones = " | ".join(
+                        [
+                            i
+                            for i in [bound_zone_permanent, bound_zone_runtime]
+                            if i != ""
+                        ]
+                    )
+                    if self.module.check_mode:
+                        self.module.warn(
+                            "Ensure %s is removed from all zones before attempting to remove it. Enabled zones: %s"
+                            % (ipset_source_name, bound_zones)
+                        )
+                    else:
+                        self.module.fail_json(
+                            msg="Remove %s from all permanent and runtime zones before attempting to remove it"
+                            % ipset_source_name
+                        )
+                elif ipset_exists:
+                    if not self.module.check_mode:
+                        fw_ipset.remove()
+                        ipset_exists = False
+                    self.changed = True
+
+        if self.changed and not self.module.check_mode:
+            if ipset_exists:
+                fw_ipset.update(fw_ipset_settings)
+            self.need_reload = True
+
+    def set_port(self, port):
+        for _port, _protocol in port:
+            if self.state == "enabled":
+                if self.runtime and not self.fw.queryPort(self.zone, _port, _protocol):
+                    if not self.module.check_mode:
+                        self.fw.addPort(self.zone, _port, _protocol, self.timeout)
+                    self.changed = True
+                if self.permanent and not self.fw_settings.queryPort(_port, _protocol):
+                    if not self.module.check_mode:
+                        self.fw_settings.addPort(_port, _protocol)
+                    self.changed = True
+            elif self.state == "disabled":
+                if self.runtime and self.fw.queryPort(self.zone, _port, _protocol):
+                    if not self.module.check_mode:
+                        self.fw.removePort(self.zone, _port, _protocol)
+                    self.changed = True
+                if self.permanent and self.fw_settings.queryPort(_port, _protocol):
+                    if not self.module.check_mode:
+                        self.fw_settings.removePort(_port, _protocol)
+                    self.changed = True
+
+    def set_source_port(self, source_port):
+        for _port, _protocol in source_port:
+            if self.state == "enabled":
+                if self.runtime and not self.fw.querySourcePort(
+                    self.zone, _port, _protocol
+                ):
+                    if not self.module.check_mode:
+                        self.fw.addSourcePort(self.zone, _port, _protocol, self.timeout)
+                    self.changed = True
+                if self.permanent and not self.fw_settings.querySourcePort(
+                    _port, _protocol
+                ):
+                    if not self.module.check_mode:
+                        self.fw_settings.addSourcePort(_port, _protocol)
+                    self.changed = True
+            elif self.state == "disabled":
+                if self.runtime and self.fw.querySourcePort(
+                    self.zone, _port, _protocol
+                ):
+                    if not self.module.check_mode:
+                        self.fw.removeSourcePort(self.zone, _port, _protocol)
+                    self.changed = True
+                if self.permanent and self.fw_settings.querySourcePort(
+                    _port, _protocol
+                ):
+                    if not self.module.check_mode:
+                        self.fw_settings.removeSourcePort(_port, _protocol)
+                    self.changed = True
+
+    def set_forward_port(self, forward_port):
+        for _port, _protocol, _to_port, _to_addr in forward_port:
+            if self.state == "enabled":
+                if self.runtime and not self.fw.queryForwardPort(
+                    self.zone, _port, _protocol, _to_port, _to_addr
+                ):
+                    if not self.module.check_mode:
+                        self.fw.addForwardPort(
+                            self.zone,
+                            _port,
+                            _protocol,
+                            _to_port,
+                            _to_addr,
+                            self.timeout,
+                        )
+                    self.changed = True
+                if self.permanent and not self.fw_settings.queryForwardPort(
+                    _port, _protocol, _to_port, _to_addr
+                ):
+                    if not self.module.check_mode:
+                        self.fw_settings.addForwardPort(
+                            _port, _protocol, _to_port, _to_addr
+                        )
+                    self.changed = True
+            elif self.state == "disabled":
+                if self.runtime and self.fw.queryForwardPort(
+                    self.zone, _port, _protocol, _to_port, _to_addr
+                ):
+                    if not self.module.check_mode:
+                        self.fw.removeForwardPort(
+                            self.zone, _port, _protocol, _to_port, _to_addr
+                        )
+                    self.changed = True
+                if self.permanent and self.fw_settings.queryForwardPort(
+                    _port, _protocol, _to_port, _to_addr
+                ):
+                    if not self.module.check_mode:
+                        self.fw_settings.removeForwardPort(
+                            _port, _protocol, _to_port, _to_addr
+                        )
+                    self.changed = True
+
+    def set_masquerade(self, masquerade):
+        if masquerade:
+            if self.runtime and not self.fw.queryMasquerade(self.zone):
+                if not self.module.check_mode:
+                    self.fw.addMasquerade(self.zone, self.timeout)
+                self.changed = True
+            if self.permanent and not self.fw_settings.queryMasquerade():
+                if not self.module.check_mode:
+                    self.fw_settings.addMasquerade()
+                self.changed = True
+        else:
+            if self.runtime and self.fw.queryMasquerade(self.zone):
+                if not self.module.check_mode:
+                    self.fw.removeMasquerade(self.zone)
+                self.changed = True
+            if self.permanent and self.fw_settings.queryMasquerade():
+                if not self.module.check_mode:
+                    self.fw_settings.removeMasquerade()
+                self.changed = True
+
+    def set_rich_rule(self, rich_rule):
+        for item in rich_rule:
+            if self.state == "enabled":
+                if self.runtime and not self.fw.queryRichRule(self.zone, item):
+                    if not self.module.check_mode:
+                        self.fw.addRichRule(self.zone, item, self.timeout)
+                    self.changed = True
+                if self.permanent and not self.fw_settings.queryRichRule(item):
+                    if not self.module.check_mode:
+                        self.fw_settings.addRichRule(item)
+                    self.changed = True
+            elif self.state == "disabled":
+                if self.runtime and self.fw.queryRichRule(self.zone, item):
+                    if not self.module.check_mode:
+                        self.fw.removeRichRule(self.zone, item)
+                    self.changed = True
+                if self.permanent and self.fw_settings.queryRichRule(item):
+                    if not self.module.check_mode:
+                        self.fw_settings.removeRichRule(item)
+                    self.changed = True
+
+    def set_source(self, source):
+        for item in source:
+            # Error case handling for check mode
+            if (
+                self.module.check_mode
+                and item.startswith("ipset:")
+                and item.split(":")[1] not in self.fw.config().getIPSetNames()
+            ):
+                self.module.warn(
+                    "%s does not exist - ensure it is defined in a previous task before running play outside check mode"
+                    % item
+                )
+                self.changed = True
+            elif self.state == "enabled":
+                if self.runtime and not self.fw.querySource(self.zone, item):
+                    if not self.module.check_mode:
+                        self.fw.addSource(self.zone, item)
+                    self.changed = True
+                if self.permanent and not self.fw_settings.querySource(item):
+                    if not self.module.check_mode:
+                        self.fw_settings.addSource(item)
+                    self.changed = True
+            elif self.state == "disabled":
+                if self.runtime and self.fw.querySource(self.zone, item):
+                    if not self.module.check_mode:
+                        self.fw.removeSource(self.zone, item)
+                    self.changed = True
+                if self.permanent and self.fw_settings.querySource(item):
+                    if not self.module.check_mode:
+                        self.fw_settings.removeSource(item)
+                    self.changed = True
+
+    def set_interface(self, interface):
+        for item in interface:
+            if self.state == "enabled":
+                if self.runtime and not self.fw.queryInterface(self.zone, item):
+                    if not self.module.check_mode:
+                        self.fw.changeZoneOfInterface(self.zone, item)
+                    self.changed = True
+                if self.permanent:
+                    nm_used, if_changed = try_set_zone_of_interface(
+                        self.module, self.zone, item
+                    )
+                    if nm_used:
+                        if if_changed:
+                            self.changed = True
+                    elif not self.fw_settings.queryInterface(item):
+                        if not self.module.check_mode:
+                            old_zone_name = self.fw.config().getZoneOfInterface(item)
+                            if old_zone_name != self.zone:
+                                if old_zone_name:
+                                    old_zone_obj = self.fw.config().getZoneByName(
+                                        old_zone_name
+                                    )
+                                    old_zone_settings = old_zone_obj.getSettings()
+                                    old_zone_settings.removeInterface(item)
+                                    old_zone_obj.update(old_zone_settings)
+                                self.fw_settings.addInterface(item)
+                        self.changed = True
+            elif self.state == "disabled":
+                if self.runtime and self.fw.queryInterface(self.zone, item):
+                    if not self.module.check_mode:
+                        self.fw.removeInterface(self.zone, item)
+                    self.changed = True
+                if self.permanent:
+                    nm_used, if_changed = try_set_zone_of_interface(
+                        self.module, "", item
+                    )
+                    if nm_used:
+                        if if_changed:
+                            self.changed = True
+                    elif self.fw_settings.queryInterface(item):
+                        if not self.module.check_mode:
+                            self.fw_settings.removeInterface(item)
+                        self.changed = True
+
+    def set_icmp_block(self, icmp_block):
+        for item in icmp_block:
+            if self.state == "enabled":
+                if self.runtime and not self.fw.queryIcmpBlock(self.zone, item):
+                    if not self.module.check_mode:
+                        self.fw.addIcmpBlock(self.zone, item, self.timeout)
+                    self.changed = True
+                if self.permanent and not self.fw_settings.queryIcmpBlock(item):
+                    if not self.module.check_mode:
+                        self.fw_settings.addIcmpBlock(item)
+                    self.changed = True
+            elif self.state == "disabled":
+                if self.runtime and self.fw.queryIcmpBlock(self.zone, item):
+                    if not self.module.check_mode:
+                        self.fw.removeIcmpBlock(self.zone, item)
+                    self.changed = True
+                if self.permanent and self.fw_settings.queryIcmpBlock(item):
+                    if not self.module.check_mode:
+                        self.fw_settings.removeIcmpBlock(item)
+                    self.changed = True
+
+    def set_icmp_block_inversion(self, icmp_block_inversion):
+        if icmp_block_inversion:
+            if self.runtime and not self.fw.queryIcmpBlockInversion(self.zone):
+                if not self.module.check_mode:
+                    self.fw.addIcmpBlockInversion(self.zone)
+                self.changed = True
+            if self.permanent and not self.fw_settings.queryIcmpBlockInversion():
+                if not self.module.check_mode:
+                    self.fw_settings.addIcmpBlockInversion()
+                self.changed = True
+        else:
+            if self.runtime and self.fw.queryIcmpBlockInversion(self.zone):
+                if not self.module.check_mode:
+                    self.fw.removeIcmpBlockInversion(self.zone)
+                self.changed = True
+            if self.permanent and self.fw_settings.queryIcmpBlockInversion():
+                if not self.module.check_mode:
+                    self.fw_settings.removeIcmpBlockInversion()
+                self.changed = True
+
+    def set_target(self, target):
+        if self.state in ["enabled", "present"]:
+            if self.permanent and self.fw_settings.getTarget() != target:
+                if not self.module.check_mode:
+                    self.fw_settings.setTarget(target)
+                    self.need_reload = True
+                self.changed = True
+        elif self.state in ["absent", "disabled"]:
+            target = "default"
+            if self.permanent and self.fw_settings.getTarget() != target:
+                if not self.module.check_mode:
+                    self.fw_settings.setTarget(target)
+                    self.need_reload = True
+                self.changed = True
+
+
+class OfflineCLIBackend:
+    """Implement operations with firewall-offline-cmd.
+
+    This works during container builds and similar environments.
+    """
+
+    def __init__(
+        self, module, permanent, runtime, zone_operation, zone, state, timeout
+    ):
+        self.module = module
+        self.state = state
+        self.timeout = timeout
+
+        self.changed = False
+
+        if not permanent or runtime:
+            module.fail_json(
+                msg="runtime mode is not supported in offline environments"
+            )
+
+        # Get zone to operate on
+        if zone is None:
+            self.zone = self.cmd("--get-default-zone")
+            self.zone_exists = True
+        else:
+            self.zone = zone
+            zones = self.cmd("--get-zones").split()
+            self.zone_exists = zone in zones
+
+        if not self.zone_exists and not zone_operation:
+            module.fail_json(msg="Zone '%s' does not exist." % zone)
+
+    def _call_offline_cmd(self, args, check_rc=True):
+        argv = ["firewall-offline-cmd"] + list(args)
+        (rc, out, err) = self.module.run_command(argv, check_rc=check_rc)
+        out = out.strip()
+        self.module.debug("OfflineCLIBackend: %r -> exit %i, out: %s" % (argv, rc, out))
+        return (rc, out)
+
+    def cmd(self, *args):
+        """Call firewall-offline-cmd with given arguments, expecting success."""
+
+        return self._call_offline_cmd(args)[1]
+
+    def change(self, *args):
+        """Like cmd(), but skipped in check_mode.
+
+        Also set self.changed.
+        """
+        if not self.module.check_mode:
+            self.cmd(*args)
+        self.changed = True
+
+    def query(self, *args):
+        """Call firewall-offline-cmd query command, convert exit code to bool."""
+
+        rc = self._call_offline_cmd(args, check_rc=False)[0]
+        return True if rc == 0 else False
+
+    def finalize(self):
+        # nothing to do here, all changes are written immediately in offline mode
+        pass
+
+    def check_state(self, allowed, option):
+        """Check and interpret self.state
+
+        allowed is a list of allowed values. E.g. most operations only accept
+        enabled/disabled, while others only accept present/absent, some accept
+        either. This keeps the behaviour bug-for-bug compatible with
+        OnlineAPIBackend.
+
+        Return True for enabled/present or False for disabled/absent.
+        """
+        if self.state not in allowed:
+            self.module.fail_json(
+                msg="state '%s' not accepted for option '%s'" % (self.state, option)
+            )
+
+        return self.state in ["enabled", "present"]
+
+    def set_firewalld_conf(self, firewalld_conf, allow_zone_drifting_deprecated):
+        if allow_zone_drifting_deprecated:
+            # compatibility with OnlineAPIBackend: allow_zone_drifting gets
+            # ignored when deprecated, without failing the role
+            other_keys = set(firewalld_conf.keys()) - set(["allow_zone_drifting"])
+            if len(other_keys) == 0:
+                # parser in main() already wrote a warning
+                return
+
+        # there are currently no other supported options in firewalld_conf, so
+        # this should not happen; if it ever does, implement it
+        self.module.fail_json(
+            msg="firewalld_conf is not currently supported in offline mode; please file a bug"
+        )
+
+    def set_zone(self):
+        create = self.check_state(["present", "absent"], "zone")
+        if create != self.zone_exists:
+            self.change(
+                "--%s-zone=%s" % ("new" if create else "delete", self.zone),
+            )
+        if not create and self.zone_exists:
+            self.zone = None
+            self.zone_exists = False
+
+    def set_default_zone(self, zone):
+        if self.cmd("--get-default-zone") != zone:
+            self.change("--set-default-zone", zone)
+
+    def set_service(
+        self,
+        service_operation,
+        service,
+        description,
+        short,
+        port,
+        protocol,
+        source_port,
+        helper_module,
+        destination_ipv4,
+        destination_ipv6,
+        includes,
+    ):
+        if service_operation:
+            present = self.check_state(["present", "absent"], "service")
+            known_services = self.cmd("--get-services").split()
+            service_exists = service in known_services
+
+            if present:
+                if not service_exists:
+                    self.change("--new-service", service)
+
+                existing_description = self.cmd(
+                    "--service", service, "--get-description"
+                )
+                if description is not None and description != existing_description:
+                    self.change("--service", service, "--set-description", description)
+
+                existing_short = self.cmd("--service", service, "--get-short")
+                if short is not None and short != existing_short:
+                    self.change("--service", service, "--set-short", short)
+
+                for _port, _protocol in port:
+                    spec = "%s/%s" % (_port, _protocol)
+                    if not self.query("--service", service, "--query-port=" + spec):
+                        self.change("--service", service, "--add-port=" + spec)
+
+                for _protocol in protocol:
+                    if not self.query(
+                        "--service", service, "--query-protocol=" + _protocol
+                    ):
+                        self.change("--service", service, "--add-protocol=" + _protocol)
+
+                for _port, _protocol in source_port:
+                    spec = "%s/%s" % (_port, _protocol)
+                    if not self.query(
+                        "--service", service, "--query-source-port=" + spec
+                    ):
+                        self.change("--service", service, "--add-source-port=" + spec)
+
+                for _module in helper_module:
+                    if not self.query(
+                        "--service", service, "--query-helper=" + _module
+                    ):
+                        self.change("--service", service, "--add-helper=" + _module)
+
+                if destination_ipv4 and not self.query(
+                    "--service",
+                    service,
+                    "--query-destination=ipv4:" + destination_ipv4,
+                ):
+                    self.change(
+                        "--service",
+                        service,
+                        "--set-destination=ipv4:" + destination_ipv4,
+                    )
+
+                if destination_ipv6 and not self.query(
+                    "--service",
+                    service,
+                    "--query-destination=ipv6:" + destination_ipv6,
+                ):
+                    self.change(
+                        "--service",
+                        service,
+                        "--set-destination=ipv6:" + destination_ipv6,
+                    )
+
+                for _include in includes:
+                    if not self.query(
+                        "--service", service, "--query-include=" + _include
+                    ):
+                        self.change("--service", service, "--add-include=" + _include)
+
+            if not present and service_exists:
+                if port:
+                    for _port, _protocol in port:
+                        spec = "%s/%s" % (_port, _protocol)
+                        if self.query("--service", service, "--query-port=" + spec):
+                            self.change("--service", service, "--remove-port=" + spec)
+                if source_port:
+                    for _port, _protocol in source_port:
+                        spec = "%s/%s" % (_port, _protocol)
+                        if self.query(
+                            "--service", service, "--query-source-port=" + spec
+                        ):
+                            self.change(
+                                "--service", service, "--remove-source-port=" + spec
+                            )
+                if protocol:
+                    for _protocol in protocol:
+                        if self.query(
+                            "--service", service, "--query-protocol=" + _protocol
+                        ):
+                            self.change(
+                                "--service", service, "--remove-protocol=" + _protocol
+                            )
+
+                if helper_module:
+                    for _module in helper_module:
+                        if self.query(
+                            "--service", service, "--query-helper=" + _module
+                        ):
+                            self.change(
+                                "--service", service, "--remove-helper=" + _module
+                            )
+
+                if destination_ipv4 and self.query(
+                    "--service",
+                    service,
+                    "--query-destination=ipv4:" + destination_ipv4,
+                ):
+                    # asymmetric, but correct: no IP value here, just the protocol version
+                    self.change("--service", service, "--remove-destination=ipv4")
+
+                if destination_ipv6 and self.query(
+                    "--service",
+                    service,
+                    "--query-destination=ipv6:" + destination_ipv6,
+                ):
+                    self.change("--service", service, "--remove-destination=ipv6")
+
+                for _include in includes:
+                    if self.query("--service", service, "--query-include=" + _include):
+                        self.change(
+                            "--service", service, "--remove-include=" + _include
+                        )
+
+                if not any(
+                    (
+                        port,
+                        source_port,
+                        protocol,
+                        helper_module,
+                        destination_ipv4,
+                        destination_ipv6,
+                    )
+                ):
+                    self.change("--delete-service", service)
+
+        # not service_operation: add/remove service from zone
+        else:
+            known_services = self.cmd("--get-services").split()
+            enable = self.check_state(["enabled", "disabled"], "service")
+            for item in service:
+                if item not in known_services:
+                    if self.module.check_mode:
+                        self.module.warn(
+                            "Service does not exist - "
+                            + item
+                            + ". Ensure that you define the service in the playbook before running it in diff mode"
+                        )
+                        continue
+                    else:
+                        self.module.fail_json(msg="INVALID SERVICE - " + item)
+
+                cur = self.query("--zone", self.zone, "--query-service=" + item)
+
+                if cur != enable:
+                    op = "--add-service=" if enable else "--remove-service-from-zone="
+                    self.change("--zone", self.zone, op + item)
+
+    def set_ipset(self, ipset, description, short, ipset_type, ipset_entries):
+        present = self.check_state(["present", "absent"], "ipset")
+        known_ipsets = self.cmd("--get-ipsets").split()
+        ipset_exists = ipset in known_ipsets
+
+        if ipset_exists and ipset_type:
+            m = re.search(r"\stype: (.*)$", self.cmd("--info-ipset", ipset), re.M)
+            if not m:
+                self.module.fail_json(
+                    "'firewall-offline-cmd --info-ipset %s' did not print 'type:'"
+                    % ipset
+                )
+            existing_type = m.group(1)
+            if ipset_type != existing_type:
+                self.module.fail_json(
+                    msg="Name conflict when creating ipset - "
+                    "ipset %s of type %s already exists" % (ipset, existing_type)
+                )
+
+        if present:
+            if not ipset_exists:
+                if not ipset_type:
+                    self.module.fail_json(
+                        msg="ipset_type needed when creating a new ipset"
+                    )
+                self.change("--new-ipset", ipset, "--type=%s" % ipset_type)
+
+            existing_description = self.cmd("--ipset", ipset, "--get-description")
+            if description is not None and description != existing_description:
+                self.change("--ipset", ipset, "--set-description", description)
+
+            existing_short = self.cmd("--ipset", ipset, "--get-short")
+            if short is not None and short != existing_short:
+                self.change("--ipset", ipset, "--set-short", short)
+            for entry in ipset_entries:
+                if not self.query("--ipset", ipset, "--query-entry", entry):
+                    self.change("--ipset", ipset, "--add-entry", entry)
+
+        # remove
+        elif ipset_exists:
+            if ipset_entries:
+                for entry in ipset_entries:
+                    if self.query("--ipset", ipset, "--query-entry", entry):
+                        self.change("--ipset", ipset, "--remove-entry", entry)
+            else:
+                rc, bound_zone = self._call_offline_cmd(
+                    ["--get-zone-of-source=ipset:" + ipset], check_rc=False
+                )
+                if rc == 0:
+                    if self.module.check_mode:
+                        self.module.warn(
+                            "Ensure ipset:%s is removed from zone %s before attempting to remove it"
+                            % (ipset, bound_zone)
+                        )
+                    else:
+                        self.module.fail_json(
+                            msg="Remove ipset:%s from all zones before attempting to remove it"
+                            % ipset
+                        )
+
+                self.change("--delete-ipset", ipset)
+
+    def set_port(self, port):
+        enable = self.check_state(["enabled", "disabled"], "port")
+        for _port, _protocol in port:
+            spec = "%s/%s" % (_port, _protocol)
+            cur = self.query("--zone", self.zone, "--query-port=" + spec)
+
+            if cur != enable:
+                self.change(
+                    "--zone",
+                    self.zone,
+                    "--%s-port=%s" % ("add" if enable else "remove", spec),
+                )
+
+    def set_source_port(self, source_port):
+        enable = self.check_state(["enabled", "disabled"], "source_port")
+        for _port, _protocol in source_port:
+            spec = "%s/%s" % (_port, _protocol)
+            cur = self.query("--zone", self.zone, "--query-source-port=" + spec)
+
+            if cur != enable:
+                self.change(
+                    "--zone",
+                    self.zone,
+                    "--%s-source-port=%s" % ("add" if enable else "remove", spec),
+                )
+
+    def set_forward_port(self, forward_port):
+        enable = self.check_state(["enabled", "disabled"], "forward_port")
+        for _port, _protocol, _to_port, _to_addr in forward_port:
+            spec = "port=%s:proto=%s" % (_port, _protocol)
+            if _to_port is not None:
+                spec += ":toport=%s" % _to_port
+            if _to_addr is not None:
+                spec += ":toaddr=%s" % _to_addr
+
+            cur = self.query("--zone", self.zone, "--query-forward-port=" + spec)
+
+            if cur != enable:
+                self.change(
+                    "--zone",
+                    self.zone,
+                    "--%s-forward-port=%s" % ("add" if enable else "remove", spec),
+                )
+
+    def set_masquerade(self, masquerade):
+        cur = self.query("--zone", self.zone, "--query-masquerade")
+
+        if cur != masquerade:
+            self.change(
+                "--zone",
+                self.zone,
+                "--%s-masquerade" % ("add" if masquerade else "remove"),
+            )
+
+    def set_rich_rule(self, rich_rule):
+        enable = self.check_state(["enabled", "disabled"], "rich_rule")
+
+        for item in rich_rule:
+            # note: item is a Rich_Rule object, but its __str__() does the right thing
+            cur = self.query("--zone", self.zone, "--query-rich-rule=" + item)
+
+            if cur != enable:
+                self.change(
+                    "--zone",
+                    self.zone,
+                    "--%s-rich-rule=%s" % ("add" if enable else "remove", item),
+                )
+
+    def set_source(self, source):
+        if self.module.check_mode:
+            ipset_names = self.cmd("--get-ipsets").split()
+
+        enable = self.check_state(["enabled", "disabled"], "source")
+
+        for item in source:
+            # Error case handling for check mode
+            if (
+                self.module.check_mode
+                and item.startswith("ipset:")
+                and item.split(":")[1] not in ipset_names
+            ):
+                self.module.warn(
+                    "%s does not exist - ensure it is defined in a previous task before running play outside check mode"
+                    % item
+                )
+                self.changed = True
+            else:
+                cur = self.query("--zone", self.zone, "--query-source=" + item)
+
+                if cur != enable:
+                    self.change(
+                        "--zone",
+                        self.zone,
+                        "--%s-source=%s" % ("add" if enable else "remove", item),
+                    )
+
+    def set_interface(self, interface):
+        # we can't do this via NM like in OnlineAPIBackend, always go via firewalld config
+        enable = self.check_state(["enabled", "disabled"], "interface")
+
+        for item in interface:
+            cur = self.query("--zone", self.zone, "--query-interface=" + item)
+            if cur != enable:
+                self.change(
+                    "--zone",
+                    self.zone,
+                    # note: --change-interface first removes it from the old zone
+                    "--%s-interface=%s" % ("change" if enable else "remove", item),
+                )
+
+    def set_icmp_block(self, icmp_block):
+        enable = self.check_state(["enabled", "disabled"], "icmp_block")
+
+        for item in icmp_block:
+            cur = self.query("--zone", self.zone, "--query-icmp-block=" + item)
+
+            if cur != enable:
+                self.change(
+                    "--zone",
+                    self.zone,
+                    "--%s-icmp-block=%s" % ("add" if enable else "remove", item),
+                )
+
+    def set_icmp_block_inversion(self, icmp_block_inversion):
+        cur = self.query("--zone", self.zone, "--query-icmp-block-inversion")
+
+        if cur != icmp_block_inversion:
+            self.change(
+                "--zone",
+                self.zone,
+                "--%s-icmp-block-inversion"
+                % ("add" if icmp_block_inversion else "remove"),
+            )
+
+    def set_target(self, target):
+        enable = self.check_state(
+            ["enabled", "present", "disabled", "absent"], "target"
+        )
+        cur_target = self.cmd("--zone", self.zone, "--get-target")
+        new_target = target if enable else "default"
+
+        if new_target != cur_target:
+            self.change("--zone", self.zone, "--set-target", new_target)
+
+
+PCI_REGEX = re.compile("[0-9a-fA-F]{4}:[0-9a-fA-F]{4}")
+
+
+# NOTE: Because of PEP632, we cannot use distutils.
+# In addition, because of the wide range of python
+# versions we have to support, there isn't a good
+# version parser across all of them, that is provided
+# with Ansible.
+def lsr_parse_version(v_str):
+    v_ary = v_str.split(".")
+    v = []
+    for v_ary_str in v_ary:
+        try:
+            v.append(int(v_ary_str))
+        except ValueError:
+            v.append(0)
+    return v
 
 
 pci_ids = None
@@ -432,6 +1503,9 @@ def get_interface_pci():
 
 
 def parse_pci_id(module, item):
+    if not module.params["online"]:
+        module.fail_json(msg="interface_pci_id is not supported in offline mode.")
+
     if PCI_REGEX.search(item):
         global pci_ids
         if not pci_ids:
@@ -615,10 +1689,6 @@ def check_firewalld_conf(firewalld_conf):
     check_allow_zone_drifting(firewalld_conf)
 
 
-def set_the_default_zone(fw, set_default_zone):
-    fw.setDefaultZone(set_default_zone)
-
-
 def main():
     module = AnsibleModule(
         argument_spec=dict(
@@ -691,7 +1761,9 @@ def main():
             protocol=dict(required=False, type="list", elements="str", default=[]),
             helper_module=dict(required=False, type="list", elements="str", default=[]),
             destination=dict(required=False, type="list", elements="str", default=[]),
+            includes=dict(required=False, type="list", elements="str", default=[]),
             __report_changed=dict(required=False, type="bool", default=True),
+            online=dict(required=False, type="bool", default=True),
         ),
         supports_check_mode=True,
         required_if=(
@@ -771,6 +1843,8 @@ def main():
     permanent = module.params["permanent"]
     runtime = module.params["runtime"]
     state = module.params["state"]
+    includes = module.params["includes"]
+    online = module.params["online"]
 
     # All options that require state to be set
     state_required = any(
@@ -982,586 +2056,65 @@ def main():
     if not HAS_FIREWALLD:
         module.fail_json(msg="No firewalld")
 
-    fw = FirewallClient()
+    # Pre-run version checking
+    if lsr_parse_version(FW_VERSION) < lsr_parse_version("0.2.11"):
+        module.fail_json(
+            msg="Unsupported firewalld version %s, requires >= 0.2.11" % FW_VERSION
+        )
 
-    fw_offline = False
-    if not fw.connected:
-        # Firewalld is not currently running, permanent-only operations
-        fw_offline = True
-        runtime = False
-        permanent = True
-
-        # Pre-run version checking
-        if lsr_parse_version(FW_VERSION) < lsr_parse_version("0.3.9"):
-            module.fail_json(
-                msg="Unsupported firewalld version %s" " requires >= 0.3.9" % FW_VERSION
-            )
-
-        try:
-            from firewall.core.fw_test import Firewall_test
-
-            fw = Firewall_test()
-
-        except ImportError:
-            # In firewalld version 0.7.0 this behavior changed
-            from firewall.core.fw import Firewall
-
-            fw = Firewall(offline=True)
-
-        fw.start()
-    else:
-        # Pre-run version checking
-        if lsr_parse_version(FW_VERSION) < lsr_parse_version("0.2.11"):
-            module.fail_json(
-                msg="Unsupported firewalld version %s, requires >= 0.2.11" % FW_VERSION
-            )
-
-        # Set exception handler
-        def exception_handler(exception_message):
-            module.fail_json(msg=exception_message)
-
-        fw.setExceptionHandler(exception_handler)
-
-    # Get default zone, the permanent zone and settings
-    fw_zone = None
-    fw_settings = None
-    if fw_offline:
-        # if zone is None, we will use default zone which always exists
-        zone_exists = zone is None or zone in fw.zone.get_zones()
-        if not zone_exists and not zone_operation:
-            module.fail_json(msg="Permanent zone '%s' does not exist." % zone)
-        elif zone_exists:
-            zone = zone or fw.get_default_zone()
-            fw_zone = fw.config.get_zone(zone)
-            fw_settings = FirewallClientZoneSettings(
-                list(fw.config.get_zone_config(fw_zone))
-            )
-    else:
-        zone_exists = False
-        if runtime:
-            zone_exists = zone_exists or zone is None or zone in fw.getZones()
-            err_str = "Runtime"
-        if permanent:
-            zone_exists = (
-                zone_exists or zone is None or zone in fw.config().getZoneNames()
-            )
-            err_str = "Permanent"
-
-        if not zone_exists and not zone_operation:
-            module.fail_json(msg="%s zone '%s' does not exist." % (err_str, zone))
-        elif zone_exists:
-            zone = zone or fw.getDefaultZone()
-            fw_zone = fw.config().getZoneByName(zone)
-            fw_settings = fw_zone.getSettings()
+    backendClass = OnlineAPIBackend if online else OfflineCLIBackend
+    backend = backendClass(
+        module, permanent, runtime, zone_operation, zone, state, timeout
+    )
 
     # Firewall modification starts here
 
-    changed = False
-    need_reload = False
-
-    # firewalld.conf
     if firewalld_conf:
-        fw_config = fw.config()
-        if not allow_zone_drifting_deprecated and firewalld_conf.get(
-            "allow_zone_drifting"
-        ) != fw_config.get_property("AllowZoneDrifting"):
-            if not module.check_mode:
-                fw_config.set_property(
-                    "AllowZoneDrifting", firewalld_conf.get("allow_zone_drifting")
-                )
-            changed = True
-            need_reload = True
-
-    # zone
+        backend.set_firewalld_conf(firewalld_conf, allow_zone_drifting_deprecated)
     if zone_operation:
-        if state == "present" and not zone_exists:
-            if not module.check_mode:
-                fw.config().addZone(zone, FirewallClientZoneSettings())
-                need_reload = True
-            changed = True
-        elif state == "absent" and zone_exists:
-            if not module.check_mode:
-                fw_zone.remove()
-                need_reload = True
-            changed = True
-            fw_zone = None
-            fw_settings = None
-
-    # set default zone
+        backend.set_zone()
     if set_default_zone:
-        if fw.getDefaultZone() != set_default_zone:
-            set_the_default_zone(fw, set_default_zone)
-            changed = True
-
-    # service
-    if service_operation and permanent:
-        service_exists = service in fw.config().getServiceNames()
-        if service_exists:
-            fw_service = fw.config().getServiceByName(service)
-            fw_service_settings = fw_service.getSettings()
-        elif state == "present":
-            fw_service, fw_service_settings = create_service(module, fw, service)
-            changed = True
-            service_exists = True
-
-        if state == "present":
-            if (
-                description is not None
-                and description != fw_service_settings.getDescription()
-            ):
-                if not module.check_mode:
-                    fw_service_settings.setDescription(description)
-                changed = True
-            if short is not None and short != fw_service_settings.getShort():
-                if not module.check_mode:
-                    fw_service_settings.setShort(short)
-                changed = True
-            for _port, _protocol in port:
-                if not fw_service_settings.queryPort(_port, _protocol):
-                    if not module.check_mode:
-                        fw_service_settings.addPort(_port, _protocol)
-                    changed = True
-            for _protocol in protocol:
-                if not fw_service_settings.queryProtocol(_protocol):
-                    if not module.check_mode:
-                        fw_service_settings.addProtocol(_protocol)
-                    changed = True
-            for _port, _protocol in source_port:
-                if not fw_service_settings.querySourcePort(_port, _protocol):
-                    if not module.check_mode:
-                        fw_service_settings.addSourcePort(_port, _protocol)
-                    changed = True
-            for _module in helper_module:
-                if fw_service_settings.queryModule(_module):
-                    if not module.check_mode:
-                        fw_service_settings.addModule(_module)
-                    changed = True
-            if destination_ipv4:
-                if not fw_service_settings.queryDestination("ipv4", destination_ipv4):
-                    if not module.check_mode:
-                        fw_service_settings.setDestination("ipv4", destination_ipv4)
-                    changed = True
-            if destination_ipv6:
-                if not fw_service_settings.queryDestination("ipv6", destination_ipv6):
-                    if not module.check_mode:
-                        fw_service_settings.setDestination("ipv6", destination_ipv6)
-                    changed = True
-        if state == "absent" and service_exists:
-            if port:
-                for _port, _protocol in port:
-                    if fw_service_settings.queryPort(_port, _protocol):
-                        if not module.check_mode:
-                            fw_service_settings.removePort(_port, _protocol)
-                        changed = True
-            if source_port:
-                for _port, _protocol in source_port:
-                    if fw_service_settings.querySourcePort(_port, _protocol):
-                        if not module.check_mode:
-                            fw_service_settings.removeSourcePort(_port, _protocol)
-                        changed = True
-            if protocol:
-                for _protocol in protocol:
-                    if fw_service_settings.queryProtocol(_protocol):
-                        if not module.check_mode:
-                            fw_service_settings.removeProtocol(_protocol)
-                        changed = True
-            if helper_module:
-                for _module in helper_module:
-                    if fw_service_settings.queryModule(_module):
-                        if not module.check_mode:
-                            fw_service_settings.removeModule(_module)
-                        changed = True
-            if destination_ipv4:
-                if fw_service_settings.queryDestination("ipv4", destination_ipv4):
-                    if not module.check_mode:
-                        fw_service_settings.removeDestination("ipv4", destination_ipv4)
-                    changed = True
-            if destination_ipv6:
-                if fw_service_settings.queryDestination("ipv6", destination_ipv6):
-                    if not module.check_mode:
-                        fw_service_settings.removeDestination("ipv6", destination_ipv6)
-                    changed = True
-            if not any(
-                (
-                    port,
-                    source_port,
-                    protocol,
-                    helper_module,
-                    destination_ipv4,
-                    destination_ipv6,
-                )
-            ):
-                if not module.check_mode:
-                    fw_service.remove()
-                    service_exists = False
-                changed = True
-        # If service operation occurs, this should be the only instruction executed by the script
-        if changed and not module.check_mode:
-            if service_exists:
-                fw_service.update(fw_service_settings)
-            need_reload = True
-    else:
-        for item in service:
-            service_exists = item in fw.config().getServiceNames()
-            if state == "enabled" and service_exists:
-                if runtime and not fw.queryService(zone, item):
-                    if not module.check_mode:
-                        fw.addService(zone, item, timeout)
-                    changed = True
-                if permanent and not fw_settings.queryService(item):
-                    if not module.check_mode:
-                        fw_settings.addService(item)
-                    changed = True
-            elif state == "disabled" and service_exists:
-                if runtime and fw.queryService(zone, item):
-                    if not module.check_mode:
-                        fw.removeService(zone, item)
-                if permanent and fw_settings.queryService(item):
-                    if not module.check_mode:
-                        fw_settings.removeService(item)
-                    changed = True
-            else:
-                if module.check_mode:
-                    module.warn(
-                        "Service does not exist - "
-                        + item
-                        + ". Ensure that you define the service in the playbook before running it in diff mode"
-                    )
-                else:
-                    module.fail_json(msg="INVALID SERVICE - " + item)
-
-    # ipset operations
+        backend.set_default_zone(set_default_zone)
+    if service:
+        backend.set_service(
+            service_operation,
+            service,
+            description,
+            short,
+            port,
+            protocol,
+            source_port,
+            helper_module,
+            destination_ipv4,
+            destination_ipv6,
+            includes,
+        )
     if ipset_operation:
-        ipset_exists = ipset in fw.config().getIPSetNames()
-        fw_ipset = None
-        fw_ipset_settings = None
-        if ipset_exists:
-            fw_ipset = fw.config().getIPSetByName(ipset)
-            fw_ipset_settings = fw_ipset.getSettings()
-            if ipset_type and ipset_type != fw_ipset_settings.getType():
-                module.fail_json(
-                    msg="Name conflict when creating ipset - "
-                    "ipset %s of type %s already exists"
-                    % (ipset, fw_ipset_settings.getType())
-                )
-        elif state == "present":
-            fw_ipset, fw_ipset_settings = create_ipset(module, fw, ipset, ipset_type)
-            changed = True
-            ipset_exists = True
-        if state == "present":
-            if (
-                description is not None
-                and description != fw_ipset_settings.getDescription()
-            ):
-                if not module.check_mode:
-                    fw_ipset_settings.setDescription(description)
-                changed = True
-            if short is not None and short != fw_ipset_settings.getShort():
-                if not module.check_mode:
-                    fw_ipset_settings.setShort(short)
-                changed = True
-            for entry in ipset_entries:
-                if not fw_ipset_settings.queryEntry(entry):
-                    if not module.check_mode:
-                        fw_ipset_settings.addEntry(entry)
-                    changed = True
-        elif ipset_exists:
-            if ipset_entries:
-                for entry in ipset_entries:
-                    if fw_ipset_settings.queryEntry(entry):
-                        if not module.check_mode:
-                            fw_ipset_settings.removeEntry(entry)
-                        changed = True
-            else:
-                ipset_source_name = "ipset:%s" % ipset
-                bound_zone_permanent = fw.config().getZoneOfSource(ipset_source_name)
-                if bound_zone_permanent:
-                    bound_zone_permanent = "permanent - %s" % bound_zone_permanent
-                bound_zone_runtime = fw.getZoneOfSource(ipset_source_name)
-                if bound_zone_runtime:
-                    bound_zone_runtime = "runtime - %s" % bound_zone_runtime
-                if bound_zone_permanent or bound_zone_runtime:
-                    bound_zones = " | ".join(
-                        [
-                            i
-                            for i in [bound_zone_permanent, bound_zone_runtime]
-                            if i != ""
-                        ]
-                    )
-                    if module.check_mode:
-                        module.warn(
-                            "Ensure %s is removed from all zones before attempting to remove it. Enabled zones: %s"
-                            % (ipset_source_name, bound_zones)
-                        )
-                    else:
-                        module.fail_json(
-                            msg="Remove %s from all permanent and runtime zones before attempting to remove it"
-                            % ipset_source_name
-                        )
-                elif ipset_exists:
-                    if not module.check_mode:
-                        fw_ipset.remove()
-                        ipset_exists = False
-                    changed = True
-
-        if changed and not module.check_mode:
-            if ipset_exists:
-                fw_ipset.update(fw_ipset_settings)
-            need_reload = True
-
-    # port
-    for _port, _protocol in port:
-        if state == "enabled":
-            if runtime and not fw.queryPort(zone, _port, _protocol):
-                if not module.check_mode:
-                    fw.addPort(zone, _port, _protocol, timeout)
-                changed = True
-            if permanent and not fw_settings.queryPort(_port, _protocol):
-                if not module.check_mode:
-                    fw_settings.addPort(_port, _protocol)
-                changed = True
-        elif state == "disabled":
-            if runtime and fw.queryPort(zone, _port, _protocol):
-                if not module.check_mode:
-                    fw.removePort(zone, _port, _protocol)
-                changed = True
-            if permanent and fw_settings.queryPort(_port, _protocol):
-                if not module.check_mode:
-                    fw_settings.removePort(_port, _protocol)
-                changed = True
-
-    # source_port
-    for _port, _protocol in source_port:
-        if state == "enabled":
-            if runtime and not fw.querySourcePort(zone, _port, _protocol):
-                if not module.check_mode:
-                    fw.addSourcePort(zone, _port, _protocol, timeout)
-                changed = True
-            if permanent and not fw_settings.querySourcePort(_port, _protocol):
-                if not module.check_mode:
-                    fw_settings.addSourcePort(_port, _protocol)
-                changed = True
-        elif state == "disabled":
-            if runtime and fw.querySourcePort(zone, _port, _protocol):
-                if not module.check_mode:
-                    fw.removeSourcePort(zone, _port, _protocol)
-                changed = True
-            if permanent and fw_settings.querySourcePort(_port, _protocol):
-                if not module.check_mode:
-                    fw_settings.removeSourcePort(_port, _protocol)
-                changed = True
-
-    # forward_port
-    if len(forward_port) > 0:
-        for _port, _protocol, _to_port, _to_addr in forward_port:
-            if state == "enabled":
-                if runtime and not fw.queryForwardPort(
-                    zone, _port, _protocol, _to_port, _to_addr
-                ):
-                    if not module.check_mode:
-                        fw.addForwardPort(
-                            zone, _port, _protocol, _to_port, _to_addr, timeout
-                        )
-                    changed = True
-                if permanent and not fw_settings.queryForwardPort(
-                    _port, _protocol, _to_port, _to_addr
-                ):
-                    if not module.check_mode:
-                        fw_settings.addForwardPort(_port, _protocol, _to_port, _to_addr)
-                    changed = True
-            elif state == "disabled":
-                if runtime and fw.queryForwardPort(
-                    zone, _port, _protocol, _to_port, _to_addr
-                ):
-                    if not module.check_mode:
-                        fw.removeForwardPort(zone, _port, _protocol, _to_port, _to_addr)
-                    changed = True
-                if permanent and fw_settings.queryForwardPort(
-                    _port, _protocol, _to_port, _to_addr
-                ):
-                    if not module.check_mode:
-                        fw_settings.removeForwardPort(
-                            _port, _protocol, _to_port, _to_addr
-                        )
-                    changed = True
-
-    # masquerade
+        backend.set_ipset(ipset, description, short, ipset_type, ipset_entries)
+    if port and not service_operation:
+        backend.set_port(port)
+    if source_port and not service_operation:
+        backend.set_source_port(source_port)
+    if forward_port:
+        backend.set_forward_port(forward_port)
     if masquerade is not None:
-        if masquerade:
-            if runtime and not fw.queryMasquerade(zone):
-                if not module.check_mode:
-                    fw.addMasquerade(zone, timeout)
-                changed = True
-            if permanent and not fw_settings.queryMasquerade():
-                if not module.check_mode:
-                    fw_settings.addMasquerade()
-                changed = True
-        else:
-            if runtime and fw.queryMasquerade(zone):
-                if not module.check_mode:
-                    fw.removeMasquerade(zone)
-                changed = True
-            if permanent and fw_settings.queryMasquerade():
-                if not module.check_mode:
-                    fw_settings.removeMasquerade()
-                changed = True
-
-    # rich_rule
-    for item in rich_rule:
-        if state == "enabled":
-            if runtime and not fw.queryRichRule(zone, item):
-                if not module.check_mode:
-                    fw.addRichRule(zone, item, timeout)
-                changed = True
-            if permanent and not fw_settings.queryRichRule(item):
-                if not module.check_mode:
-                    fw_settings.addRichRule(item)
-                changed = True
-        elif state == "disabled":
-            if runtime and fw.queryRichRule(zone, item):
-                if not module.check_mode:
-                    fw.removeRichRule(zone, item)
-                changed = True
-            if permanent and fw_settings.queryRichRule(item):
-                if not module.check_mode:
-                    fw_settings.removeRichRule(item)
-                changed = True
-
-    # source
-    for item in source:
-        # Error case handling for check mode
-        if (
-            module.check_mode
-            and item.startswith("ipset:")
-            and item.split(":")[1] not in fw.config().getIPSetNames()
-        ):
-            module.warn(
-                "%s does not exist - ensure it is defined in a previous task before running play outside check mode"
-                % item
-            )
-            changed = True
-        elif state == "enabled":
-            if runtime and not fw.querySource(zone, item):
-                if not module.check_mode:
-                    fw.addSource(zone, item)
-                changed = True
-            if permanent and not fw_settings.querySource(item):
-                if not module.check_mode:
-                    fw_settings.addSource(item)
-                changed = True
-        elif state == "disabled":
-            if runtime and fw.querySource(zone, item):
-                if not module.check_mode:
-                    fw.removeSource(zone, item)
-                changed = True
-            if permanent and fw_settings.querySource(item):
-                if not module.check_mode:
-                    fw_settings.removeSource(item)
-                changed = True
-
-    # interface
-    for item in interface:
-        if state == "enabled":
-            if runtime and not fw.queryInterface(zone, item):
-                if not module.check_mode:
-                    fw.changeZoneOfInterface(zone, item)
-                changed = True
-            if permanent:
-                nm_used, if_changed = try_set_zone_of_interface(module, zone, item)
-                if nm_used:
-                    if if_changed:
-                        changed = True
-                elif not fw_settings.queryInterface(item):
-                    if not module.check_mode:
-                        handle_interface_permanent(
-                            zone, item, fw_zone, fw_settings, fw, fw_offline, module
-                        )
-                    changed = True
-        elif state == "disabled":
-            if runtime and fw.queryInterface(zone, item):
-                if not module.check_mode:
-                    fw.removeInterface(zone, item)
-                changed = True
-            if permanent:
-                nm_used, if_changed = try_set_zone_of_interface(module, "", item)
-                if nm_used:
-                    if if_changed:
-                        changed = True
-                elif fw_settings.queryInterface(item):
-                    if not module.check_mode:
-                        fw_settings.removeInterface(item)
-                    changed = True
-
-    # icmp_block
-    for item in icmp_block:
-        if state == "enabled":
-            if runtime and not fw.queryIcmpBlock(zone, item):
-                if not module.check_mode:
-                    fw.addIcmpBlock(zone, item, timeout)
-                changed = True
-            if permanent and not fw_settings.queryIcmpBlock(item):
-                if not module.check_mode:
-                    fw_settings.addIcmpBlock(item)
-                changed = True
-        elif state == "disabled":
-            if runtime and fw.queryIcmpBlock(zone, item):
-                if not module.check_mode:
-                    fw.removeIcmpBlock(zone, item)
-                changed = True
-            if permanent and fw_settings.queryIcmpBlock(item):
-                if not module.check_mode:
-                    fw_settings.removeIcmpBlock(item)
-                changed = True
-
-    # icmp_block_inversion
+        backend.set_masquerade(masquerade)
+    if rich_rule:
+        backend.set_rich_rule(rich_rule)
+    if source:
+        backend.set_source(source)
+    if interface:
+        backend.set_interface(interface)
+    if icmp_block:
+        backend.set_icmp_block(icmp_block)
     if icmp_block_inversion is not None:
-        if icmp_block_inversion:
-            if runtime and not fw.queryIcmpBlockInversion(zone):
-                if not module.check_mode:
-                    fw.addIcmpBlockInversion(zone)
-                changed = True
-            if permanent and not fw_settings.queryIcmpBlockInversion():
-                if not module.check_mode:
-                    fw_settings.addIcmpBlockInversion()
-                changed = True
-        else:
-            if runtime and fw.queryIcmpBlockInversion(zone):
-                if not module.check_mode:
-                    fw.removeIcmpBlockInversion(zone)
-                changed = True
-            if permanent and fw_settings.queryIcmpBlockInversion():
-                if not module.check_mode:
-                    fw_settings.removeIcmpBlockInversion()
-                changed = True
-
-    # target
+        backend.set_icmp_block_inversion(icmp_block_inversion)
     if target is not None:
-        if state in ["enabled", "present"]:
-            if permanent and fw_settings.getTarget() != target:
-                if not module.check_mode:
-                    fw_settings.setTarget(target)
-                    need_reload = True
-                changed = True
-        elif state in ["absent", "disabled"]:
-            target = "default"
-            if permanent and fw_settings.getTarget() != target:
-                if not module.check_mode:
-                    fw_settings.setTarget(target)
-                    need_reload = True
-                changed = True
+        backend.set_target(target)
 
-    # apply permanent changes
-    if changed and (zone_operation or permanent):
-        if fw_zone and fw_settings:
-            if fw_offline:
-                fw.config.set_zone_config(fw_zone, fw_settings.settings)
-            else:
-                fw_zone.update(fw_settings)
-        if need_reload:
-            fw.reload()
+    backend.finalize()
 
-    if not module.params["__report_changed"]:
-        changed = False
+    changed = backend.changed and module.params["__report_changed"]
     module.exit_json(changed=changed, __firewall_changed=changed)
 
 

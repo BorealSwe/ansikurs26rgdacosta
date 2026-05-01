@@ -1,0 +1,43 @@
+download_url: https://console.redhat.com/api/automation-hub/v3/plugin/ansible/content/published/collections/artifacts/redhat-rhel_system_roles-1.108.6.tar.gz
+format_version: 1.0.0
+name: rhel_system_roles
+namespace: redhat
+server: https://console.redhat.com/api/automation-hub/content/published/
+signatures:
+- pubkey_fingerprint: 39B5D759361A97464C564A8FE1A4BD708A828AAD
+  pulp_created: '2025-10-06T17:40:39.405641Z'
+  signature: '-----BEGIN PGP SIGNATURE-----
+
+
+    iQIcBAABCAAGBQJo4/8LAAoJEOGkvXCKgoqtb0AQAK96UH2oPJfe8cs/EPaDdZHL
+
+    wQM9xcShpCPHMNTqg+omvA0GnsNXBfySoGa8EkEYHYQoKEQ9G4l3zuIYuwYpiK/a
+
+    o89mmDpJO6dnEgnq6r5UJyVzCYRpP4KCWlsCgmoyF6ALELb5bU5AyxTC2kj8euA6
+
+    YWG+7ony/5iKS35n5VINlKuRKoJE2NAu6BUyq9vuKhznbkB+9CyqZJIFc24qAFTl
+
+    m1prNCQlrKfsgAqWfUx/BUwLNlqBqUO7WkrM2x+eWjbIf5XU3oykb4mjig3mZAgC
+
+    P+GGHdgGEBzMCDHPPlDisxgYbUGp7US+u5O4qKrNTOUtlCChTbLEhWpsMsVg1ow0
+
+    xLg3By1Q675KDKCa+6YVN21pzHdRJuCcdhbf3monm00tAGq3dCL+S3969ehj8G2Z
+
+    vVqF6aXdm/wlUbtBlVVbE3Nfw6LdDLUW5d4cNEtg4QanFTRZbjl1buMJCjRi/Al2
+
+    mAKpG+Sz8QXTcmtpU/Zd5C1o7NVi4PVurmZh3xBXdZXRkNZdSqioOKVHaDaWy3XH
+
+    UNNGtp2umd2CBKcl1zTICMjlUw75v3NaDoUiLpzbsbdbbov8GajK4sMJL7Inz2+j
+
+    HRKsp3mJbN4o3htK5tKQjzoJk4RwR7dxQQ3Nc+XJ3AVCrMhvu4Y1YqYo87vDr3Hl
+
+    9q5m3a1ZV7yIZWPGqUXV
+
+    =InGs
+
+    -----END PGP SIGNATURE-----
+
+    '
+  signing_service: null
+version: 1.108.6
+version_url: /api/automation-hub/content/published/v3/plugin/ansible/content/published/collections/index/redhat/rhel_system_roles/versions/1.108.6/

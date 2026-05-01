@@ -200,6 +200,10 @@ def test_module_get_values(_ansible_helm_module, no_values, get_all):
             'version.BuildInfo{Version:"v3.10.3", GitCommit:7870ab3ed4135f136eec, GoVersion:"go1.18.9"}',
             "3.10.3",
         ),
+        (
+            'version.BuildInfo{Version:"v3.15.0-rc.1", GitCommit:"d7afa3b6b432c09a02cd07342e908ba5bed34940", GitTreeState:"clean", GoVersion:"go1.22.4"}',
+            "3.15.0-rc.1",
+        ),
         ('Client: &version.Version{SemVer:"v3.12.3", ', "3.12.3"),
         ('Client: &version.Version{SemVer:"v3.12.3"', None),
     ],
@@ -238,7 +242,7 @@ def test_module_run_helm_command(_ansible_helm_module):
     assert (rc, out, err) == (0, output, error)
 
     _ansible_helm_module.run_command.assert_called_once_with(
-        command, environ_update=env_update
+        command, environ_update=env_update, data=None
     )
 
 
@@ -439,3 +443,46 @@ def test_module_get_helm_set_values_args(set_values, expected):
 
     result = helm_module.get_helm_set_values_args(set_values)
     assert " ".join(expected) == result
+
+
+@pytest.mark.parametrize(
+    "helm_version,should_fail",
+    [
+        ("3.0.0", False),
+        ("3.5.0", False),
+        ("3.10.3", False),
+        ("3.15.0", False),
+        ("3.17.0", False),
+        ("2.9.0", True),
+        ("2.17.0", True),
+        ("4.0.0", True),
+        ("4.1.0", True),
+        ("5.0.0", True),
+    ],
+)
+def test_module_validate_helm_version(_ansible_helm_module, helm_version, should_fail):
+    _ansible_helm_module.get_helm_version = MagicMock()
+    _ansible_helm_module.get_helm_version.return_value = helm_version
+
+    if should_fail:
+        with pytest.raises(SystemExit):
+            _ansible_helm_module.validate_helm_version()
+        _ansible_helm_module.fail_json.assert_called_once()
+        call_args = _ansible_helm_module.fail_json.call_args
+        assert "Helm version must be >=3.0.0,<4.0.0" in call_args[1]["msg"]
+        assert helm_version in call_args[1]["msg"]
+    else:
+        _ansible_helm_module.validate_helm_version()
+        _ansible_helm_module.fail_json.assert_not_called()
+
+
+def test_module_validate_helm_version_none(_ansible_helm_module):
+    _ansible_helm_module.get_helm_version = MagicMock()
+    _ansible_helm_module.get_helm_version.return_value = None
+
+    with pytest.raises(SystemExit):
+        _ansible_helm_module.validate_helm_version()
+
+    _ansible_helm_module.fail_json.assert_called_once_with(
+        msg="Unable to determine Helm version"
+    )

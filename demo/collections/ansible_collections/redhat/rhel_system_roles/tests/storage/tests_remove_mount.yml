@@ -54,7 +54,7 @@
                 size: "{{ volume_size }}"
                 mount_point: "{{ mount_location_after }}"
 
-    - name: Verify role results
+    - name: Verify role results - 2
       include_tasks: verify-role-results.yml
 
     - name: Repeat the previous invocation to verify idempotence
@@ -69,7 +69,7 @@
                 size: "{{ volume_size }}"
                 mount_point: "{{ mount_location_after }}"
 
-    - name: Verify role results
+    - name: Verify role results - 3
       include_tasks: verify-role-results.yml
 
     - name: Clean up
@@ -85,5 +85,5 @@
                 size: "{{ volume_size }}"
                 mount_point: "{{ mount_location_after }}"
 
-    - name: Verify role results
+    - name: Verify role results - 4
       include_tasks: verify-role-results.yml

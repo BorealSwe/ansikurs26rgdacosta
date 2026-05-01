@@ -96,7 +96,7 @@
       command: ls /etc/rsyslog.d
       changed_when: false
 
-    - name: Check ports managed by firewall and selinux
+    - name: Check ports managed by firewall and selinux - 2
       include_tasks: tasks/check_firewall_selinux.yml
 
     - name: Run again with purge to erase all config
@@ -110,7 +110,7 @@
         name: redhat.rhel_system_roles.logging
         public: true
 
-    - name: Ensure config file size and counts
+    - name: Ensure config file size and counts - 2
       vars:
         __conf_count: 0
         __conf_size: "{{ 'less' if __logging_is_ostree | d(false) else 'more' }}"
@@ -129,7 +129,7 @@
       command: ls /etc/rsyslog.d
       changed_when: false
 
-    - name: Check ports managed by firewall and selinux
+    - name: Check ports managed by firewall and selinux - 3
       include_tasks: tasks/check_firewall_selinux.yml
 
     - name: Run again with purge and reset to test idempotency
@@ -147,7 +147,7 @@
       command: ls /etc/rsyslog.d
       changed_when: false
 
-    - name: Check ports managed by firewall and selinux
+    - name: Check ports managed by firewall and selinux - 6
       include_tasks: tasks/check_firewall_selinux.yml
 
     - name: Assert {{ __default_system_log }}

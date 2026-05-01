@@ -1,0 +1,48 @@
+{
+ "collection_info": {
+  "namespace": "fedora",
+  "name": "linux_system_roles",
+  "version": "1.119.0",
+  "authors": [
+   "System Roles Owners <systemroles@lists.fedorahosted.org>"
+  ],
+  "readme": "README.md",
+  "tags": [
+   "system",
+   "collection",
+   "infrastructure",
+   "linux",
+   "monitoring",
+   "networking",
+   "security",
+   "storage"
+  ],
+  "description": "Ansible roles for linux system components management",
+  "license": [
+   "GPL-2.0-or-later",
+   "GPL-3.0-only",
+   "GPL-3.0-or-later",
+   "LGPL-3.0-only",
+   "MIT",
+   "BSD-3-Clause"
+  ],
+  "license_file": null,
+  "dependencies": {
+   "ansible.posix": "*",
+   "community.general": ">=6.6.0,<12.0.0",
+   "containers.podman": "*"
+  },
+  "repository": "https://github.com/linux-system-roles/linux-system-roles.github.io/",
+  "documentation": "https://github.com/linux-system-roles/linux-system-roles.github.io/blob/master/README.md",
+  "homepage": "https://linux-system-roles.github.io",
+  "issues": "https://github.com/linux-system-roles/linux-system-roles.github.io/issues"
+ },
+ "file_manifest_file": {
+  "name": "FILES.json",
+  "ftype": "file",
+  "chksum_type": "sha256",
+  "chksum_sha256": "df1060e8c15958ca6b2c20d965152b0e2406c4eeeefc338b1fac3d1eabe11e99",
+  "format": 1
+ },
+ "format": 1
+}

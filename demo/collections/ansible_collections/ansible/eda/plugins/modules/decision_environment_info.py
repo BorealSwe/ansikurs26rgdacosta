@@ -55,7 +55,8 @@ decision_environments:
           "image_url": "https://quay.io/repository/ansible/eda-server",
           "modified_at": "2024-08-15T21:12:52.218994Z",
           "name": "Example Decision environment",
-          "organization_id": 1
+          "organization_id": 1,
+          "pull_policy": "always"
       }
   ]
 """
@@ -85,6 +86,7 @@ def main() -> None:
         password=module.params.get("controller_password"),
         timeout=module.params.get("request_timeout"),
         validate_certs=module.params.get("validate_certs"),
+        token=module.params.get("controller_token"),
     )
 
     decision_environment_endpoint = "decision-environments"

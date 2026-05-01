@@ -1,0 +1,157 @@
+---
+- name: Prepare hosts for CDN registration
+  hosts: "{{ my_host | default('all') }}"
+  become: true
+  gather_facts: false
+
+  vars:
+    satellite_hint: "satellite|katello|candlepin|foreman"
+    rhsm_hostname: "subscription.rhsm.redhat.com"
+    rhsm_prefix: "/subscription"
+    rhsm_port: "443"
+    rhsm_baseurl: "https://cdn.redhat.com"
+    rhsm_ca_dir: "/etc/rhsm/ca/"
+    rhsm_repo_ca_cert: "/etc/rhsm/ca/redhat-uep.pem"
+
+  tasks:
+
+    - name: Ensure host is unregistered
+      community.general.redhat_subscription:
+        state: absent
+      failed_when: false
+
+    - name: Ensure local subscription data is cleaned
+      ansible.builtin.command: subscription-manager clean
+      changed_when: true
+      failed_when: false
+
+    - name: Ensure consumer and entitlement directories are absent
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /etc/pki/consumer
+        - /etc/pki/entitlement
+
+    - name: Ensure consumer and entitlement directories exist
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: "0755"
+      loop:
+        - /etc/pki/consumer
+        - /etc/pki/entitlement
+
+    - name: Ensure Katello CA files are absent
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /etc/rhsm/ca/katello-default-ca.pem
+        - /etc/rhsm/ca/katello-server-ca.pem
+
+    - name: Ensure Katello consumer packages are absent
+      ansible.builtin.dnf:
+        name: "katello-ca-consumer*"
+        state: absent
+      failed_when: false
+
+    - name: Ensure RHSM hostname configuration
+      ansible.builtin.command:
+        cmd: "subscription-manager config --server.hostname={{ rhsm_hostname }}"
+      changed_when: true
+
+    - name: Ensure RHSM prefix configuration
+      ansible.builtin.command:
+        cmd: "subscription-manager config --server.prefix={{ rhsm_prefix }}"
+      changed_when: true
+
+    - name: Ensure RHSM port configuration
+      ansible.builtin.command:
+        cmd: "subscription-manager config --server.port={{ rhsm_port }}"
+      changed_when: true
+
+    - name: Ensure RHSM baseurl configuration
+      ansible.builtin.command:
+        cmd: "subscription-manager config --rhsm.baseurl={{ rhsm_baseurl }}"
+      changed_when: true
+
+    - name: Ensure RHSM CA certificate exists
+      ansible.builtin.stat:
+        path: "{{ rhsm_repo_ca_cert }}"
+      register: ca_stat
+
+    - name: Ensure play fails if RHSM CA certificate missing
+      ansible.builtin.fail:
+        msg: "Missing required CA certificate {{ rhsm_repo_ca_cert }}"
+      when: not ca_stat.stat.exists
+
+    - name: Ensure Katello repo_ca_cert overrides are removed
+      ansible.builtin.lineinfile:
+        path: /etc/rhsm/rhsm.conf
+        regexp: '^\s*repo_ca_cert\s*=.*katello.*$'
+        state: absent
+
+    - name: Ensure Katello ca_cert_dir overrides are removed
+      ansible.builtin.lineinfile:
+        path: /etc/rhsm/rhsm.conf
+        regexp: '^\s*ca_cert_dir\s*=.*katello.*$'
+        state: absent
+
+    - name: Ensure insecure RHSM settings are absent
+      ansible.builtin.lineinfile:
+        path: /etc/rhsm/rhsm.conf
+        regexp: '^\s*insecure\s*=\s*1\s*$'
+        state: absent
+
+    - name: Ensure RHSM ca_cert_dir configured
+      ansible.builtin.ini_file:
+        path: /etc/rhsm/rhsm.conf
+        section: rhsm
+        option: ca_cert_dir
+        value: "{{ rhsm_ca_dir }}"
+
+    - name: Ensure RHSM repo_ca_cert configured
+      ansible.builtin.ini_file:
+        path: /etc/rhsm/rhsm.conf
+        section: rhsm
+        option: repo_ca_cert
+        value: "{{ rhsm_repo_ca_cert }}"
+
+    - name: Ensure generated redhat.repo is absent
+      ansible.builtin.file:
+        path: /etc/yum.repos.d/redhat.repo
+        state: absent
+
+    - name: Ensure DNF cache is cleaned
+      ansible.builtin.command: dnf clean all
+      changed_when: true
+
+    - name: Ensure DNF cache directory reset
+      ansible.builtin.file:
+        path: /var/cache/dnf
+        state: absent
+
+    - name: Ensure DNF cache directory exists
+      ansible.builtin.file:
+        path: /var/cache/dnf
+        state: directory
+        mode: "0755"
+
+    - name: Ensure Katello CA references are absent
+      ansible.builtin.command: grep -Rns 'katello-server-ca\.pem' /etc/rhsm /etc/yum.repos.d
+      register: katello_scan
+      failed_when: katello_scan.rc == 0
+      changed_when: false
+
+    - name: Ensure Satellite artifacts are reported
+      ansible.builtin.command: >
+        grep -RIn --exclude-dir=.git -E '{{ satellite_hint }}'
+        /etc/rhsm /etc/yum.repos.d
+      register: satellite_scan
+      changed_when: false
+      failed_when: false
+
+    - name: Ensure Satellite artifact output is displayed
+      ansible.builtin.debug:
+        var: satellite_scan.stdout_lines

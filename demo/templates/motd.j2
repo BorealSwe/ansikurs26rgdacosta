@@ -1,0 +1,27 @@
+{# Created by Ricardo da Costa <rdacosta@redhat.com> #}
+{{ training_marker }}
+Managed by Ansible on {{ ansible_date_time.date }} at {{ ansible_date_time.time }}
+Host: {{ inventory_hostname }}
+
+{{ motd_title | upper }}
+Environment: {{ training_env | lower }}
+Contact: {{ contact_email | lower }}
+
+{% if training_env | lower in ['prod', 'production'] %}
+WARNING: This system is in PRODUCTION mode. Be cautious with changes.
+{% elif training_env | lower in ['lab', 'dev'] %}
+This is a training system. Break things safely, then fix them properly.
+{% else %}
+Environment not recognised. Using safe defaults.
+{% endif %}
+
+System summary:
+- OS          : {{ ansible_distribution }} {{ ansible_distribution_version }}
+- Kernel      : {{ ansible_kernel }}
+- CPU cores   : {{ ansible_processor_vcpus | default('unknown') }}
+- Memory (MB) : {{ ansible_memtotal_mb | default('unknown') }}
+
+Ansible aliases available in this environment:
+{% for a in ansible_aliases | sort(attribute='name') %}
+- {{ "%-4s" % a.name }} -> {{ a.cmd }}  # {{ a.desc }}
+{% endfor %}

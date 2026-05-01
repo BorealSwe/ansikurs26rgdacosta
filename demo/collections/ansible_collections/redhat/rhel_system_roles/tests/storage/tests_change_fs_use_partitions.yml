@@ -56,7 +56,7 @@
                 fs_type: "{{ fs_type_after }}"
                 mount_point: "{{ mount_location }}"
 
-    - name: Verify role results
+    - name: Verify role results - 2
       include_tasks: verify-role-results.yml
 
     - name: Repeat the previous invocation to verify idempotence
@@ -72,7 +72,7 @@
                 fs_type: "{{ fs_type_after }}"
                 mount_point: "{{ mount_location }}"
 
-    - name: Verify role results
+    - name: Verify role results - 3
       include_tasks: verify-role-results.yml
 
     - name: Clean up
@@ -90,5 +90,5 @@
                 mount_point: "{{ mount_location }}"
                 state: absent
 
-    - name: Verify role results
+    - name: Verify role results - 4
       include_tasks: verify-role-results.yml

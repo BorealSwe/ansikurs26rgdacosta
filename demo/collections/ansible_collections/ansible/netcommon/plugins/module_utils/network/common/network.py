@@ -17,10 +17,9 @@ __metaclass__ = type
 import json
 import traceback
 
-from ansible.module_utils._text import to_native, to_text
 from ansible.module_utils.basic import AnsibleModule, env_fallback
+from ansible.module_utils.common.text.converters import to_native, to_text
 from ansible.module_utils.connection import Connection, ConnectionError
-from ansible.module_utils.six import iteritems
 
 from ansible_collections.ansible.netcommon.plugins.module_utils.network.common.netconf import (
     NetconfConnection,
@@ -53,7 +52,7 @@ NET_CONNECTIONS = dict()
 
 def _transitional_argument_spec():
     argument_spec = {}
-    for key, value in iteritems(NET_TRANSPORT_ARGS):
+    for key, value in NET_TRANSPORT_ARGS.items():
         value["required"] = False
         argument_spec[key] = value
     return argument_spec
@@ -202,8 +201,8 @@ def get_resource_connection(module):
     if network_api == "netconf":
         module._connection = NetconfConnection(module._socket_path)
     elif network_api == "local":
-        # This isn't supported, but we shouldn't fail here.
-        # Set the connection to a fake connection so it fails sensibly.
+        # not accessible code alert can be taken out at around  01-01-2027,
+        # when connection local is removed
         module._connection = LocalResourceConnection(module)
     else:
         module._connection = Connection(module._socket_path)

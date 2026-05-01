@@ -1,0 +1,19 @@
+---
+training_marker: "Red Hat training managed file. Local modifications will be lost."
+training_env: "lab"
+motd_title: "Training System"
+contact_email: "helpdesk@example.com"
+
+ansible_aliases:
+  - { name: ap, cmd: ansible-playbook, desc: Run a playbook }
+  - { name: apsc, cmd: ansible-playbook --syntax-check, desc: Syntax-check a playbook }
+  - { name: acd, cmd: ansible-config dump, desc: Show effective Ansible configuration }
+  - { name: av, cmd: ansible --version, desc: Show Ansible version }
+  - { name: aig, cmd: ansible-inventory --graph, desc: Show inventory as a graph }
+
+  - { name: anr, cmd: ansible-navigator run -m stdout, desc: Run a playbook via ansible-navigator (stdout mode) }
+  - { name: ansc, cmd: ansible-navigator run -m stdout --syntax-check, desc: Syntax-check via ansible-navigator }
+  - { name: anch, cmd: ansible-navigator run -m stdout --check, desc: Dry-run via ansible-navigator (check mode) }
+  - { name: ancd, cmd: ansible-navigator config dump -m stdout, desc: Show effective navigator configuration }
+  - { name: anv, cmd: ansible-navigator --version, desc: Show ansible-navigator version }
+  - { name: anig, cmd: ansible-navigator inventory --graph, desc: Show inventory graph via ansible-navigator }

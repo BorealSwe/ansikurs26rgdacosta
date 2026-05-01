@@ -1,0 +1,16 @@
+- name: Demonstrate the difference between copy and synchronize
+  hosts: "{{ my_host | default('servera') }}"
+  become: true
+  gather_facts: false
+
+  vars_files:
+    - bashrc.yml
+
+  tasks:
+
+    - name: Ensure /etc/bashrc is configured
+      become: true
+      ansible.builtin.blockinfile:
+        path: /etc/bashrc
+        block: "{{ my_bashrc }}"
+        state: present

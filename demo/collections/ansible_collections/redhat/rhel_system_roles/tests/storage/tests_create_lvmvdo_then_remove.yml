@@ -95,7 +95,7 @@
                     size: "{{ volume_size }}"
                     mount_point: "{{ mount_location }}"
 
-        - name: Verify role results
+        - name: Verify role results - 2
           include_tasks: verify-role-results.yml
 
         - name: Remove LVM VDO volume in 'pool1' created above
@@ -114,7 +114,7 @@
                     size: "{{ volume_size }}"
                     mount_point: "{{ mount_location }}"
 
-        - name: Verify role results
+        - name: Verify role results - 3
           include_tasks: verify-role-results.yml
 
         - name: >-
@@ -133,10 +133,10 @@
                     size: "{{ volume_size }}"
                     mount_point: "{{ mount_location }}"
 
-        - name: Verify role results
+        - name: Verify role results - 4
           include_tasks: verify-role-results.yml
 
-        - name: Remove LVM VDO volume in 'pool1' created above
+        - name: Remove LVM VDO volume in 'pool1' created above - 2
           include_role:
             name: redhat.rhel_system_roles.storage
           vars:
@@ -151,5 +151,5 @@
                     size: "{{ volume_size }}"
                     mount_point: "{{ mount_location }}"
 
-        - name: Verify role results
+        - name: Verify role results - 5
           include_tasks: verify-role-results.yml

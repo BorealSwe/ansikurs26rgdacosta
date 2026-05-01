@@ -95,7 +95,7 @@ timesync_ntp_provider: chrony
 # are not covered by the predefined settings provided by this role.
 # 'timesync_chrony_custom_settings' allows to define a list of custom settings
 # for the chrony.conf file, by providing a list of settings. As an example,
-# for debugging, one might need to log mesurements, statistics and tracking.
+# for debugging, one might need to log measurements, statistics and tracking.
 # This information is usually stored in the /var/log/chrony directory. For
 # that, one needs to define two different settings (logdir and log), as
 # follows:
@@ -111,6 +111,18 @@ timesync_chrony_custom_settings:
 # the role will fail to ensure the reboot requirement is not overlooked.
 # For non-transactional update systems, this variable is ignored.
 timesync_transactional_update_reboot_ok: true
+
+# This option is useful on systems where IPv6 or IPv4 are disabled.
+# chronyd will work on a IPv6-disabled host without -4, but it logs error messages
+# when binding to the IPv6 sockets fails. Adding the -4 option disables those sockets
+# and there are no error messages. It's also useful to prevent the client from using
+# IPv6 servers when IPv4 is known to work better (e.g. IPv6 over a tunnel).
+# Corresponds to the `-4` and `-6` OPTIONS for chronyd and ntpd.  Values are:
+# * IPv4 - use only IPv4
+# * IPv6 - use only IPv6
+# * all - use both IPv4 and IPv6
+# Default is all
+timesync_ntp_ip_family: all
 ```
 
 ## Example Playbooks

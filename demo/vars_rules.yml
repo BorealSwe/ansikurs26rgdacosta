@@ -1,14 +1,15 @@
 ---
 - variable name must begin with an alphabetical
-- only punctuation allowed is the underscore 
+- only punctuation allowed is the underscore
 - when a key's value BEGINS with a variable, encapsultation is required with ""
 
 valid variable names:
-  - {{ my_string }}
-  - {{http_port}}
-  - {{ my_port_1 }}
+  - my_string
+  - http_port
+  - my_port_1
 
 reference variables using {{ }}
 
 ansible.posix.firewalld:
   service: "{{ http_service }}"
+

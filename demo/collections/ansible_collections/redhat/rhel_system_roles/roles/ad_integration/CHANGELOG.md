@@ -1,6 +1,42 @@
 Changelog
 =========
 
+[1.6.0] - 2025-07-02
+--------------------
+
+### New Features
+
+- feat: search for name of domain/realm in sssd.conf; merge settings if duplicates (#145)
+
+### Other Changes
+
+- ci: Bump sclorg/testing-farm-as-github-action from 3 to 4 (#136)
+- ci: bump tox-lsr to 3.8.0; rename qemu/kvm tests (#137)
+- ci: Add Fedora 42; use tox-lsr 3.9.0; use lsr-report-errors for qemu tests (#138)
+- ci: Update dyndns test for Fedora 42 and RHEL 10 (#139)
+- ci: Add support for bootc end-to-end validation tests (#140)
+- ci: Use ansible 2.19 for fedora 42 testing; support python 3.13 (#144)
+
+[1.5.0] - 2025-04-28
+--------------------
+
+### New Features
+
+- feat: Introduced option to skip package installation (#131)
+
+### Other Changes
+
+- ci: ansible-plugin-scan is disabled for now (#121)
+- ci: bump ansible-lint to v25; provide collection requirements for ansible-lint (#124)
+- ci: Check spelling with codespell (#126)
+- ci: Add test plan that runs CI tests and customize it for each role (#127)
+- ci: In test plans, prefix all relate variables with SR_ (#128)
+- ci: Fix bug with ARTIFACTS_URL after prefixing with SR_ (#129)
+- ci: several changes related to new qemu test, ansible-lint, python versions, ubuntu versions (#130)
+- ci: use tox-lsr 3.6.0; improve qemu test logging (#132)
+- ci: skip storage scsi, nvme tests in github qemu ci (#133)
+- test: test for ad_integration_manage_packages (#134)
+
 [1.4.8] - 2025-01-09
 --------------------
 

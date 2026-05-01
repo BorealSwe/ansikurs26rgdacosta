@@ -1,0 +1,44 @@
+---
+- name: Let's demonstrate errors
+  hosts: all
+  become: false
+
+  tasks:
+
+    - name: Check which user automation is being run as
+      ansible.builtin.debug:
+        var: ansible_user
+
+    - name: This task will succeed
+      ansible.builtin.debug:
+        msg: Hooray! This works.
+
+    - name: This is a linting issue
+      ansible.builtin.debug:
+        msg: This also works but ...
+
+    - name: Ensure user is created
+      become: true
+      ansible.builtin.user:
+        name: ansible
+        state: present
+
+    - name: This is an errant task
+      ansible.builtin.copy:
+        content: foo bar baz bongle
+        dest: /tmp/ansible_created
+        mode: "0644"
+
+    - name: This task will never run
+      ansible.builtin.debug:
+        msg: Yeah, you won't see this task
+
+- name: Just a second play
+  hosts: serverb
+  become: false
+
+  tasks:
+
+    - name: This is a good task for the second play
+      ansible.builtin.debug:
+        msg: Hooray! I also work.

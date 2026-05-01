@@ -62,6 +62,15 @@ unless otherwise indicated.
   `journald_rate_limit_interval_sec`.
   See `man 5 journald.conf` for more information.
 
+- `journald_keep_free` - integer variable in megabytes, sets the amount of
+  filesystem space in megabytes that should be kept free if the system (persistent or volatile) is close to
+  filling up.
+  See `man 5 journald.conf` for more information
+
+- `journald_max_retention` - integer variable, in minutes,
+  sets how long journal entries can be retained before they are deleted.
+  No implicit value is configured by the role.
+
 ## Example Playbook
 
 ```yaml
@@ -71,6 +80,7 @@ unless otherwise indicated.
     journald_max_disk_size: 2048
     journald_per_user: true
     journald_sync_interval: 1
+    journald_keep_free: 10240
   roles:
     - redhat.rhel_system_roles.journald
 ```

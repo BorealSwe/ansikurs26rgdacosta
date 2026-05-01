@@ -58,8 +58,9 @@ SOFTWARE.
   </style>
   <style type="text/css">code{white-space: pre;}</style>
   <style type="text/css">
+html { -webkit-text-size-adjust: 100%; }
 pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
 pre > code.sourceCode > span:empty { height: 1.2em; }
 .sourceCode { overflow: visible; }
 code.sourceCode > span { color: inherit; text-decoration: inherit; }
@@ -70,7 +71,7 @@ div.sourceCode { overflow: auto; }
 }
 @media print {
 pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
 }
 pre.numberSource code
   { counter-reset: source-line 0; }
@@ -138,6 +139,8 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <li><a href="#supported-architectures"
 id="toc-supported-architectures">Supported architectures</a></li>
 <li><a href="#requirements" id="toc-requirements">Requirements</a>
+<li><a href="#considerations"
+id="toc-considerations">Considerations</a></li>
 <li><a href="#role-variables" id="toc-role-variables">Role Variables</a>
 <ul>
 <li><a href="#bootloader_gather_facts"
@@ -181,6 +184,13 @@ loader which runs on the following architectures:</p>
 </ul>
 <h1 id="requirements">Requirements</h1>
 <p>None</p>
+<h1 id="considerations">Considerations</h1>
+<p>Since Fedora 42, or grubby-8.40-82.fc42.x86_64, there is a bug <a
+href="https://bugzilla.redhat.com/show_bug.cgi?id=2361624">BZ#2361624</a>
+that causes the default kernel to change to a newly added kernel. You
+can ensure that a particular kernel is booted by setting the
+<code>default: true</code> entry for the kernel within the <a
+href="#bootloader_settings">bootloader_settings</a> variable.</p>
 <h1 id="role-variables">Role Variables</h1>
 <h2 id="bootloader_gather_facts">bootloader_gather_facts</h2>
 <p>Whether to gather <a href="#bootloader_facts">bootloader_facts</a>
@@ -188,17 +198,17 @@ that contain boot information for all kernels.</p>
 <p>Default: <code>false</code></p>
 <p>Type: <code>bool</code></p>
 <h2 id="bootloader_settings">bootloader_settings</h2>
-<p>With this variable, list kernels and their command line parameters
-that you want to set.</p>
-<p>Required keys:</p>
+<p>Use this variable to list kernels and their command line
+parameters.</p>
+<p>Available keys:</p>
 <ol type="1">
 <li><p><code>kernel</code> - with this, specify the kernel to update
-settings for. Each list should specify the same kernel using one or
-multiple keys.</p>
-<p>If you want to you add a kernel, you must specify three keys -
+settings for. Each entry should specify a kernel using one or more
+keys.</p>
+<p>If you want to add a kernel, you must specify three keys:
 <code>path</code>, <code>title</code>, <code>initrd</code>.</p>
-<p>If you want to modify or remove a kerne, you can specify one or more
-key.</p>
+<p>If you want to modify or remove a kernel, you can specify one or more
+keys.</p>
 <p>You can also specify <code>DEFAULT</code> or <code>ALL</code> to
 update the default or all kernels.</p>
 <p>Available keys:</p>
@@ -216,66 +226,76 @@ update the default or all kernels.</p>
 <li><p><code>state</code> - state of the kernel.</p>
 <p>Available values: <code>present</code>, <code>absent</code></p>
 <p>Default: <code>present</code></p></li>
-<li><p><code>options</code> - with this, specify settings to update</p>
+<li><p><code>options</code> - use this to specify settings to update</p>
 <ul>
-<li><code>name</code> - The name of the setting. <code>name</code> is
-omitted when using <code>replaced</code>.</li>
+<li><code>name</code> - The name of the setting. Omit <code>name</code>
+when using <code>replaced</code>.</li>
 <li><code>value</code> - The value for the setting. You must omit
-<code>value</code> if the setting has no value, e.g.
-<code>quiet</code>.</li>
+<code>value</code> if the setting has no value, e.g. <code>quiet</code>.
+<strong>NOTE</strong> - a value must not be <a
+href="https://yaml.org/type/bool.html">YAML bool type</a>. One situation
+where this might be a problem is using <code>value: on</code> or other
+YAML <code>bool</code> typed value. You must quote these values, or
+otherwise pass them as a value of <code>str</code> type e.g.
+<code>value: "on"</code>. The same applies to <code>null</code> values.
+If you specify a value, it must not be <code>null</code> - values such
+as <code>value:</code> or <code>value: ~</code> or
+<code>value: null</code> are not allowed and will raise an error.</li>
 <li><code>state</code> - <code>present</code> (default) or
 <code>absent</code>. The value <code>absent</code> means to remove a
-setting with <code>name</code> name - name must be provided.</li>
-<li><code>previous</code> - Optional - the only value is
-<code>replaced</code> - this is used to specify that the previous
-settings should be replaced with the given settings.</li>
-<li><code>copy_default</code> - Optional - when you create a kernel, you
+setting with the given <code>name</code> - the name must be
+provided.</li>
+<li><code>previous</code> - Optional - the only supported value is
+<code>replaced</code> - use this to specify that the previous settings
+should be replaced with the given settings.</li>
+<li><code>copy_default</code> - Optional - when creating a kernel, you
 can specify <code>copy_default: true</code> to copy the default
-arguments to the created kernel</li>
+arguments to the created kernel.</li>
 </ul></li>
+<li><p><code>default</code> - boolean that identifies whether to make
+this kernel the default. By default, the role does not change the
+default kernel.</p></li>
 </ol>
 <p>For an example, see <a href="#example-playbook">Example
 Playbook</a>.</p>
 <p>Default: <code>{}</code></p>
 <p>Type: <code>dict</code></p>
 <h2 id="bootloader_timeout">bootloader_timeout</h2>
-<p>With this variable, you can customize the loading time of the GRUB
+<p>Use this variable to customize the loading time of the GRUB
 bootloader.</p>
 <p>Default: <code>5</code></p>
 <p>Type: <code>int</code></p>
 <h2 id="bootloader_password">bootloader_password</h2>
-<p>With this variable, you can protect boot parameters with a
-password.</p>
-<p><strong>WARNING</strong>: Changing bootloader password is not
+<p>Use this variable to protect boot parameters with a password.</p>
+<p><strong>WARNING</strong>: Changing the bootloader password is not
 idempotent.</p>
-<p>Boot loader username is always <code>root</code>.</p>
+<p>The bootloader username is always <code>root</code>.</p>
 <p>This should come from vault.</p>
 <p>If unset, current configuration is not touched.</p>
 <p>Default: <code>null</code></p>
 <p>Type: <code>string</code></p>
 <h2 id="bootloader_remove_password">bootloader_remove_password</h2>
-<p>By setting this variable to <code>true</code>, you can remove
-bootloader password.</p>
+<p>Set this variable to <code>true</code> to remove the bootloader
+password.</p>
 <p>Default: <code>false</code></p>
 <p>Type: <code>bool</code></p>
 <h2 id="bootloader_reboot_ok">bootloader_reboot_ok</h2>
-<p>If <code>true</code>, if the role detects that something was changed
-that requires a reboot to take effect, the role will reboot the managed
-host.</p>
+<p>If <code>true</code>, the role will reboot the managed host when it
+detects that changes require a reboot to take effect.</p>
 <p>If <code>false</code>, it is up to you to determine when to reboot
 the managed host.</p>
-<p>The role will returns the variable
+<p>The role will return the variable
 <code>bootloader_reboot_required</code> (see below) with a value of
-<code>true</code> to indicate that some change has occurred which needs
-a reboot to take effect.</p>
+<code>true</code> to indicate that changes have occurred which need a
+reboot to take effect.</p>
 <p>Default: <code>false</code></p>
 <p>Type: <code>bool</code></p>
 <h1 id="variables-exported-by-the-role">Variables Exported by the
 Role</h1>
 <p>The role exports the following variables:</p>
 <h2 id="bootloader_reboot_needed">bootloader_reboot_needed</h2>
-<p>Default <code>false</code> - if <code>true</code>, this means a
-reboot is needed to apply the changes made by the role</p>
+<p>Default: <code>false</code> - if <code>true</code>, this means a
+reboot is needed to apply the changes made by the role.</p>
 <h2 id="bootloader_facts">bootloader_facts</h2>
 <p>Contains boot information for all kernels.</p>
 <p>The role returns this variable when you set
@@ -337,61 +357,63 @@ class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb3-1"><a href="
 <span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="at">            </span><span class="fu">value</span><span class="kw">:</span><span class="at"> tty0</span></span>
 <span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="at">            </span><span class="fu">state</span><span class="kw">:</span><span class="at"> present</span></span>
 <span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="fu">previous</span><span class="kw">:</span><span class="at"> replaced</span></span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="co">      # Update an existing kernel using index</span></span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">kernel</span><span class="kw">:</span></span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">index</span><span class="kw">:</span><span class="at"> </span><span class="dv">1</span></span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">options</span><span class="kw">:</span></span>
-<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> print-fatal-signals</span></span>
-<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="at">            </span><span class="fu">value</span><span class="kw">:</span><span class="at"> </span><span class="dv">1</span></span>
-<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a><span class="co">      # Update an existing kernel using title</span></span>
-<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">kernel</span><span class="kw">:</span></span>
-<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">title</span><span class="kw">:</span><span class="at"> Red Hat Enterprise Linux (4.1.1.1.el8.x86_64) 8</span></span>
-<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">options</span><span class="kw">:</span></span>
-<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> no_timer_check</span></span>
-<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">state</span><span class="kw">:</span><span class="at"> present</span></span>
-<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a><span class="co">      # Add a kernel with arguments</span></span>
-<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">kernel</span><span class="kw">:</span></span>
-<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">path</span><span class="kw">:</span><span class="at"> /boot/vmlinuz-6.5.7-100.fc37.x86_64</span></span>
-<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">initrd</span><span class="kw">:</span><span class="at"> /boot/initramfs-6.5.7-100.fc37.x86_64.img</span></span>
-<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">title</span><span class="kw">:</span><span class="at"> My kernel</span></span>
-<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">options</span><span class="kw">:</span></span>
-<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> console</span></span>
-<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a><span class="at">            </span><span class="fu">value</span><span class="kw">:</span><span class="at"> tty0</span></span>
-<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> print-fatal-signals</span></span>
-<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a><span class="at">            </span><span class="fu">value</span><span class="kw">:</span><span class="at"> </span><span class="dv">1</span></span>
-<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> no_timer_check</span></span>
-<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a><span class="at">            </span><span class="fu">state</span><span class="kw">:</span><span class="at"> present</span></span>
-<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">state</span><span class="kw">:</span><span class="at"> present</span></span>
-<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a><span class="co">      # Add a kernel with arguments and copying default arguments</span></span>
-<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">kernel</span><span class="kw">:</span></span>
-<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">path</span><span class="kw">:</span><span class="at"> /boot/vmlinuz-6.5.7-100.fc37.x86_64</span></span>
-<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">initrd</span><span class="kw">:</span><span class="at"> /boot/initramfs-6.5.7-100.fc37.x86_64.img</span></span>
-<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">title</span><span class="kw">:</span><span class="at"> My kernel</span></span>
-<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">options</span><span class="kw">:</span></span>
-<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> console</span></span>
-<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a><span class="at">            </span><span class="fu">value</span><span class="kw">:</span><span class="at"> tty0</span></span>
-<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="fu">copy_default</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
-<span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">state</span><span class="kw">:</span><span class="at"> present</span></span>
-<span id="cb3-47"><a href="#cb3-47" aria-hidden="true" tabindex="-1"></a><span class="co">      # Remove a kernel</span></span>
-<span id="cb3-48"><a href="#cb3-48" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">kernel</span><span class="kw">:</span></span>
-<span id="cb3-49"><a href="#cb3-49" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">title</span><span class="kw">:</span><span class="at"> My kernel</span></span>
-<span id="cb3-50"><a href="#cb3-50" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">state</span><span class="kw">:</span><span class="at"> absent</span></span>
-<span id="cb3-51"><a href="#cb3-51" aria-hidden="true" tabindex="-1"></a><span class="co">      # Update all kernels</span></span>
-<span id="cb3-52"><a href="#cb3-52" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">kernel</span><span class="kw">:</span><span class="at"> ALL</span></span>
-<span id="cb3-53"><a href="#cb3-53" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">options</span><span class="kw">:</span></span>
-<span id="cb3-54"><a href="#cb3-54" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> debug</span></span>
-<span id="cb3-55"><a href="#cb3-55" aria-hidden="true" tabindex="-1"></a><span class="at">            </span><span class="fu">state</span><span class="kw">:</span><span class="at"> present</span></span>
-<span id="cb3-56"><a href="#cb3-56" aria-hidden="true" tabindex="-1"></a><span class="co">      # Update the default kernel</span></span>
-<span id="cb3-57"><a href="#cb3-57" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">kernel</span><span class="kw">:</span><span class="at"> DEFAULT</span></span>
-<span id="cb3-58"><a href="#cb3-58" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">options</span><span class="kw">:</span></span>
-<span id="cb3-59"><a href="#cb3-59" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> quiet</span></span>
-<span id="cb3-60"><a href="#cb3-60" aria-hidden="true" tabindex="-1"></a><span class="at">            </span><span class="fu">state</span><span class="kw">:</span><span class="at"> present</span></span>
-<span id="cb3-61"><a href="#cb3-61" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">bootloader_timeout</span><span class="kw">:</span><span class="at"> </span><span class="dv">5</span></span>
-<span id="cb3-62"><a href="#cb3-62" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">bootloader_password</span><span class="kw">:</span><span class="at"> </span><span class="ch">null</span></span>
-<span id="cb3-63"><a href="#cb3-63" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">bootloader_remove_password</span><span class="kw">:</span><span class="at"> </span><span class="ch">false</span></span>
-<span id="cb3-64"><a href="#cb3-64" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">bootloader_reboot_ok</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
-<span id="cb3-65"><a href="#cb3-65" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">roles</span><span class="kw">:</span></span>
-<span id="cb3-66"><a href="#cb3-66" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> redhat.rhel_system_roles.bootloader</span></span></code></pre></div>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">default</span><span class="kw">:</span><span class="at"> </span><span class="ch">false</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="co">      # Update an existing kernel using index</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">kernel</span><span class="kw">:</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">index</span><span class="kw">:</span><span class="at"> </span><span class="dv">1</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">options</span><span class="kw">:</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> print-fatal-signals</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a><span class="at">            </span><span class="fu">value</span><span class="kw">:</span><span class="at"> </span><span class="dv">1</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">default</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a><span class="co">      # Update an existing kernel using title</span></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">kernel</span><span class="kw">:</span></span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">title</span><span class="kw">:</span><span class="at"> Red Hat Enterprise Linux (4.1.1.1.el8.x86_64) 8</span></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">options</span><span class="kw">:</span></span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> no_timer_check</span></span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">state</span><span class="kw">:</span><span class="at"> present</span></span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a><span class="co">      # Add a kernel with arguments</span></span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">kernel</span><span class="kw">:</span></span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">path</span><span class="kw">:</span><span class="at"> /boot/vmlinuz-6.5.7-100.fc37.x86_64</span></span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">initrd</span><span class="kw">:</span><span class="at"> /boot/initramfs-6.5.7-100.fc37.x86_64.img</span></span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">title</span><span class="kw">:</span><span class="at"> My kernel</span></span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">options</span><span class="kw">:</span></span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> console</span></span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a><span class="at">            </span><span class="fu">value</span><span class="kw">:</span><span class="at"> tty0</span></span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> print-fatal-signals</span></span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a><span class="at">            </span><span class="fu">value</span><span class="kw">:</span><span class="at"> </span><span class="dv">1</span></span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> no_timer_check</span></span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a><span class="at">            </span><span class="fu">state</span><span class="kw">:</span><span class="at"> present</span></span>
+<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">state</span><span class="kw">:</span><span class="at"> present</span></span>
+<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a><span class="co">      # Add a kernel with arguments and copying default arguments</span></span>
+<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">kernel</span><span class="kw">:</span></span>
+<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">path</span><span class="kw">:</span><span class="at"> /boot/vmlinuz-6.5.7-100.fc37.x86_64</span></span>
+<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">initrd</span><span class="kw">:</span><span class="at"> /boot/initramfs-6.5.7-100.fc37.x86_64.img</span></span>
+<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">title</span><span class="kw">:</span><span class="at"> My kernel</span></span>
+<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">options</span><span class="kw">:</span></span>
+<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> console</span></span>
+<span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a><span class="at">            </span><span class="fu">value</span><span class="kw">:</span><span class="at"> tty0</span></span>
+<span id="cb3-47"><a href="#cb3-47" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="fu">copy_default</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
+<span id="cb3-48"><a href="#cb3-48" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">state</span><span class="kw">:</span><span class="at"> present</span></span>
+<span id="cb3-49"><a href="#cb3-49" aria-hidden="true" tabindex="-1"></a><span class="co">      # Remove a kernel</span></span>
+<span id="cb3-50"><a href="#cb3-50" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">kernel</span><span class="kw">:</span></span>
+<span id="cb3-51"><a href="#cb3-51" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">title</span><span class="kw">:</span><span class="at"> My kernel</span></span>
+<span id="cb3-52"><a href="#cb3-52" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">state</span><span class="kw">:</span><span class="at"> absent</span></span>
+<span id="cb3-53"><a href="#cb3-53" aria-hidden="true" tabindex="-1"></a><span class="co">      # Update all kernels</span></span>
+<span id="cb3-54"><a href="#cb3-54" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">kernel</span><span class="kw">:</span><span class="at"> ALL</span></span>
+<span id="cb3-55"><a href="#cb3-55" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">options</span><span class="kw">:</span></span>
+<span id="cb3-56"><a href="#cb3-56" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> debug</span></span>
+<span id="cb3-57"><a href="#cb3-57" aria-hidden="true" tabindex="-1"></a><span class="at">            </span><span class="fu">state</span><span class="kw">:</span><span class="at"> present</span></span>
+<span id="cb3-58"><a href="#cb3-58" aria-hidden="true" tabindex="-1"></a><span class="co">      # Update the default kernel</span></span>
+<span id="cb3-59"><a href="#cb3-59" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">kernel</span><span class="kw">:</span><span class="at"> DEFAULT</span></span>
+<span id="cb3-60"><a href="#cb3-60" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">options</span><span class="kw">:</span></span>
+<span id="cb3-61"><a href="#cb3-61" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> quiet</span></span>
+<span id="cb3-62"><a href="#cb3-62" aria-hidden="true" tabindex="-1"></a><span class="at">            </span><span class="fu">state</span><span class="kw">:</span><span class="at"> present</span></span>
+<span id="cb3-63"><a href="#cb3-63" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">bootloader_timeout</span><span class="kw">:</span><span class="at"> </span><span class="dv">5</span></span>
+<span id="cb3-64"><a href="#cb3-64" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">bootloader_password</span><span class="kw">:</span><span class="at"> </span><span class="ch">null</span></span>
+<span id="cb3-65"><a href="#cb3-65" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">bootloader_remove_password</span><span class="kw">:</span><span class="at"> </span><span class="ch">false</span></span>
+<span id="cb3-66"><a href="#cb3-66" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">bootloader_reboot_ok</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
+<span id="cb3-67"><a href="#cb3-67" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">roles</span><span class="kw">:</span></span>
+<span id="cb3-68"><a href="#cb3-68" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> redhat.rhel_system_roles.bootloader</span></span></code></pre></div>
 <h1 id="rpm-ostree">rpm-ostree</h1>
 <p>See README-ostree.md</p>
 <h1 id="license">License</h1>

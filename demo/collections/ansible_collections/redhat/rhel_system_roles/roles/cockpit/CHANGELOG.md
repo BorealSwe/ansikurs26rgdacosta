@@ -1,6 +1,74 @@
 Changelog
 =========
 
+[1.7.1] - 2025-08-01
+--------------------
+
+### Other Changes
+
+- test: Use post quantum encryption where available (#229)
+
+[1.7.0] - 2025-07-02
+--------------------
+
+### New Features
+
+- feat: add sles 16 support (#227)
+
+### Other Changes
+
+- refactor: fix ansible-lint indentation (#226)
+
+[1.6.1] - 2025-06-16
+--------------------
+
+### Other Changes
+
+- tests: Fix check_port.yml invocation, check permanent firewall configuration (#219)
+- tests: Enable firewall management tests in container builds (#222)
+- tests: Update tests_port to do bootc end-to-end validation (#223)
+- ci: Use ansible 2.19 for fedora 42 testing; support python 3.13 (#224)
+
+[1.6.0] - 2025-05-21
+--------------------
+
+### New Features
+
+- feat: Support this role in container builds (#212)
+
+### Bug Fixes
+
+- fix: Ignore extra lines in dnf repoquery parsing (#214)
+- fix: Consider "degraded" systemd state as booted (#217)
+
+### Other Changes
+
+- ci: Update to tox-lsr 3.7.0 (#213)
+- ci: bump sclorg/testing-farm-as-github-action from 3 to 4 (#215)
+- ci: bump tox-lsr to 3.8.0; rename qemu/kvm tests (#216)
+- ci: Add Fedora 42; use tox-lsr 3.9.0; use lsr-report-errors for qemu tests (#218)
+
+[1.5.16] - 2025-04-23
+--------------------
+
+### Bug Fixes
+
+- fix: Ignore cockpit-pcp on RedHat 9 (#204)
+- fix: Run Fedora 42 with dnf instead of default setup (#205)
+- fix: Dynamically ignore cockpit-pcp (#206)
+
+### Other Changes
+
+- ci: Check spelling with codespell (#196)
+- ci: Add test plan that runs CI tests and customize it for each role (#197)
+- ci: In test plans, prefix all relate variables with SR_ (#198)
+- ci: Fix bug with ARTIFACTS_URL after prefixing with SR_ (#199)
+- test: Remove all cockpit packages in cleanup (#201)
+- ci: Remove EOL ubuntu-20.04 runner, add 24.04 (#207)
+- ci: several changes related to new qemu test, ansible-lint, python versions, ubuntu versions (#208)
+- ci: use tox-lsr 3.6.0; improve qemu test logging (#209)
+- ci: skip storage scsi, nvme tests in github qemu ci (#210)
+
 [1.5.15] - 2025-02-03
 --------------------
 

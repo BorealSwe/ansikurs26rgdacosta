@@ -3,18 +3,16 @@
   hosts: "{{ my_host | default('all') }}"
   become: true
   gather_facts: false
-  force_handlers: true
-
-  vars:
-    my_user: bobby
 
   tasks:
 
     - name: Ensure user is at state
       ansible.builtin.user:
         name: "{{ my_user }}"
+        uid: "{{ my_uid | default(omit) }}"
         state: "{{ my_state | default('present') }}"
         password: "{{ my_pass | default('redhat123') | password_hash('sha512') }}"
+        system: "{{ my_system_user | default('false') }}"
         groups: "{{ my_group | default(omit) }}"
         generate_ssh_key: "{{ my_keygen | default(false) }}"
         update_password: on_create

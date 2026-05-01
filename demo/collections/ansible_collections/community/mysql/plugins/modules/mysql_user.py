@@ -11,15 +11,16 @@ __metaclass__ = type
 DOCUMENTATION = r'''
 ---
 module: mysql_user
-short_description: Adds or removes a user from a MySQL database
+short_description: Adds or removes a user from a MySQL or MariaDB database
 description:
-   - Adds or removes a user from a MySQL database.
+   - Adds or removes a user from a MySQL or MariaDB database.
 options:
   name:
     description:
       - Name of the user (role) to add or remove.
     type: str
     required: true
+    aliases: ['user']
   password:
     description:
       - Set the user's password. Only for C(mysql_native_password) authentication.
@@ -45,6 +46,7 @@ options:
   priv:
     description:
       - "MySQL privileges string in the format: C(db.table:priv1,priv2)."
+      - Additionally, there must be no spaces between the table and the privilege as this will yield a non-idempotent check mode.
       - "Multiple privileges can be specified by separating each one using
         a forward slash: C(db.table1:priv/db.table2:priv)."
       - The format is based on MySQL C(GRANT) statement.
@@ -139,8 +141,16 @@ options:
     description:
       - User's plugin auth_string (``CREATE USER user IDENTIFIED WITH plugin BY plugin_auth_string``).
       - If I(plugin) is ``pam`` (MariaDB) or ``auth_pam`` (MySQL) an optional I(plugin_auth_string) can be used to choose a specific PAM service.
+      - You need to define a I(salt) to have idempotence on password change with ``caching_sha2_password`` and ``sha256_password`` plugins.
     type: str
     version_added: '0.1.0'
+  salt:
+    description:
+      - Salt used to generate password hash from I(plugin_auth_string).
+      - Salt length must be 20 characters.
+      - Salt only support ``caching_sha2_password`` or ``sha256_password`` authentication I(plugin).
+    type: str
+    version_added: '3.10.0'
   resource_limits:
     description:
       - Limit the user for certain server resources. Provided since MySQL 5.6 / MariaDB 10.2.
@@ -172,13 +182,24 @@ options:
 
   column_case_sensitive:
     description:
-      - The default is C(false).
+      - The default is C(true).
       - When C(true), the module will not uppercase the field names in the privileges.
       - When C(false), the field names will be upper-cased. This is the default
       - This feature was introduced because MySQL 8 and above uses case sensitive
         fields names in privileges.
+      - The default changed from C(false) to C(true) in v4.0.0
     type: bool
+    default: true
     version_added: '3.8.0'
+
+  locked:
+    description:
+      - Lock account to prevent connections using it.
+      - This is primarily used for creating a user that will act as a DEFINER on stored procedures.
+      - If not specified leaves the lock state as is (for a new user creates unlocked).
+    type: bool
+    version_added: '3.13.0'
+
   attributes:
     description:
       - "Create, update, or delete user attributes (arbitrary 'key: value' comments) for the user."
@@ -188,6 +209,7 @@ options:
     version_added: '3.9.0'
 
 notes:
+   - Compatible with MySQL or MariaDB.
    - "MySQL server installs with default I(login_user) of C(root) and no password.
      To secure this user as part of an idempotent playbook, you must create at least two tasks:
      1) change the root user's password, without providing any I(login_user)/I(login_password) details,
@@ -214,6 +236,7 @@ author:
 - Lukasz Tomaszkiewicz (@tomaszkiewicz)
 - kmarse (@kmarse)
 - Laurent Indermühle (@laurent-indermuehle)
+- E.S. Rosenberg (@Keeper-of-the-Keys)
 
 extends_documentation_fragment:
 - community.mysql.mysql
@@ -258,7 +281,7 @@ EXAMPLES = r'''
     priv: '*.*:ALL,GRANT'
     state: present
     session_vars:
-      wsrep_on: off
+      wsrep_on: 'off'
 
 - name: Create user with password, all database privileges and 'WITH GRANT OPTION' in db1 and db2
   community.mysql.mysql_user:
@@ -368,6 +391,13 @@ EXAMPLES = r'''
     priv: '*.*:ALL'
     state: present
 
+- name: Create user 'bob' authenticated with plugin 'caching_sha2_password' and static salt
+  community.mysql.mysql_user:
+    name: bob
+    plugin: caching_sha2_password
+    plugin_auth_string: password
+    salt: 1234567890abcdefghij
+
 - name: Limit bob's resources to 10 queries per hour and 5 connections per hour
   community.mysql.mysql_user:
     name: bob
@@ -381,6 +411,13 @@ EXAMPLES = r'''
     subtract_privs: true
     priv:
       'db1.*': DELETE
+
+- name: Create locked user to act as a definer on procedures
+  community.mysql.mysql_user:
+    name: readonly_procedures_locked
+    locked: true
+    priv:
+      db1.*: SELECT
 
 # Example .my.cnf file for setting the root password
 # [client]
@@ -401,7 +438,6 @@ from ansible_collections.community.mysql.plugins.module_utils.mysql import (
 )
 from ansible_collections.community.mysql.plugins.module_utils.user import (
     convert_priv_dict_to_str,
-    get_impl,
     get_mode,
     InvalidPrivsError,
     limit_resources,
@@ -423,7 +459,13 @@ from ansible.module_utils._text import to_native
 def main():
     argument_spec = mysql_common_argument_spec()
     argument_spec.update(
-        user=dict(type='str', required=True, aliases=['name']),
+        name=dict(type='str', required=True, aliases=['user'], deprecated_aliases=[
+            {
+                'name': 'user',
+                'version': '5.0.0',
+                'collection_name': 'community.mysql',
+            }],
+        ),
         password=dict(type='str', no_log=True),
         encrypted=dict(type='bool', default=False),
         host=dict(type='str', default='localhost'),
@@ -440,12 +482,14 @@ def main():
         plugin=dict(default=None, type='str'),
         plugin_hash_string=dict(default=None, type='str'),
         plugin_auth_string=dict(default=None, type='str'),
+        salt=dict(default=None, type='str'),
         resource_limits=dict(type='dict'),
         force_context=dict(type='bool', default=False),
         session_vars=dict(type='dict'),
-        column_case_sensitive=dict(type='bool', default=None),  # TODO 4.0.0 add default=True
+        column_case_sensitive=dict(type='bool', default=True),
         password_expire=dict(type='str', choices=['now', 'never', 'default', 'interval'], no_log=True),
         password_expire_interval=dict(type='int', required_if=[('password_expire', 'interval', True)], no_log=True),
+        locked=dict(type='bool'),
     )
     module = AnsibleModule(
         argument_spec=argument_spec,
@@ -454,7 +498,7 @@ def main():
     )
     login_user = module.params["login_user"]
     login_password = module.params["login_password"]
-    user = module.params["user"]
+    user = module.params["name"]
     password = module.params["password"]
     encrypted = module.boolean(module.params["encrypted"])
     host = module.params["host"].lower()
@@ -480,11 +524,13 @@ def main():
     plugin = module.params["plugin"]
     plugin_hash_string = module.params["plugin_hash_string"]
     plugin_auth_string = module.params["plugin_auth_string"]
+    salt = module.params["salt"]
     resource_limits = module.params["resource_limits"]
     session_vars = module.params["session_vars"]
     column_case_sensitive = module.params["column_case_sensitive"]
     password_expire = module.params["password_expire"]
     password_expire_interval = module.params["password_expire_interval"]
+    locked = module.boolean(module.params['locked'])
 
     if priv and not isinstance(priv, (str, dict)):
         module.fail_json(msg="priv parameter must be str or dict but %s was passed" % type(priv))
@@ -498,6 +544,14 @@ def main():
     if password_expire_interval and password_expire_interval < 1:
         module.fail_json(msg="password_expire_interval value \
                              should be positive number")
+
+    if salt:
+        if not plugin_auth_string:
+            module.fail_json(msg="salt requires plugin_auth_string")
+        if len(salt) != 20:
+            module.fail_json(msg="salt must be 20 characters long")
+        if plugin not in ['caching_sha2_password', 'sha256_password']:
+            module.fail_json(msg="salt requires caching_sha2_password or sha256_password plugin")
 
     cursor = None
     try:
@@ -515,20 +569,11 @@ def main():
         module.fail_json(msg="unable to connect to database, check login_user and login_password are correct or %s has the credentials. "
                              "Exception message: %s" % (config_file, to_native(e)))
 
-    # TODO Release 4.0.0 : Remove this test and variable assignation
-    if column_case_sensitive is None:
-        column_case_sensitive = False
-        module.warn("Option column_case_sensitive is not provided. "
-                    "The default is now false, so the column's name will be uppercased. "
-                    "The default will be changed to true in community.mysql 4.0.0.")
-
     if not sql_log_bin:
         cursor.execute("SET SQL_LOG_BIN=0;")
 
     if session_vars:
         set_session_vars(module, cursor, session_vars)
-
-    get_impl(cursor)
 
     if priv is not None:
         try:
@@ -544,15 +589,17 @@ def main():
             try:
                 if update_password == "always":
                     result = user_mod(cursor, user, host, host_all, password, encrypted,
-                                      plugin, plugin_hash_string, plugin_auth_string,
+                                      plugin, plugin_hash_string, plugin_auth_string, salt,
                                       priv, append_privs, subtract_privs, attributes, tls_requires, module,
-                                      password_expire, password_expire_interval)
+                                      password_expire, password_expire_interval, locked=locked)
 
                 else:
-                    result = user_mod(cursor, user, host, host_all, None, encrypted,
-                                      None, None, None,
-                                      priv, append_privs, subtract_privs, attributes, tls_requires, module,
-                                      password_expire, password_expire_interval)
+                    result = user_mod(cursor=cursor, user=user, host=host, host_all=host_all, password=None,
+                                      encrypted=encrypted, plugin=None, plugin_hash_string=None, plugin_auth_string=None,
+                                      salt=None, new_priv=priv, append_privs=append_privs, subtract_privs=subtract_privs,
+                                      attributes=attributes, tls_requires=tls_requires, module=module,
+                                      password_expire=password_expire, password_expire_interval=password_expire_interval,
+                                      locked=locked)
                 changed = result['changed']
                 msg = result['msg']
                 password_changed = result['password_changed']
@@ -568,9 +615,9 @@ def main():
                     priv = None  # avoid granting unwanted privileges
                 reuse_existing_password = update_password == 'on_new_username'
                 result = user_add(cursor, user, host, host_all, password, encrypted,
-                                  plugin, plugin_hash_string, plugin_auth_string,
+                                  plugin, plugin_hash_string, plugin_auth_string, salt,
                                   priv, attributes, tls_requires, reuse_existing_password, module,
-                                  password_expire, password_expire_interval)
+                                  password_expire, password_expire_interval, locked=locked)
                 changed = result['changed']
                 password_changed = result['password_changed']
                 final_attributes = result['attributes']

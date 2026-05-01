@@ -8,7 +8,8 @@
   vars:
     certificate_requests:
       - name: "{{ mycert | default(inventory_hostname) }}"
-        dns: "{{ inventory_hostname }}"
+        dns:
+          - "{{ inventory_hostname }}"
         ca: self-sign
 
   roles:

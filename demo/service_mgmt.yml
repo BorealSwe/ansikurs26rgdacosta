@@ -1,0 +1,12 @@
+- name: Manage a service
+  hosts: "{{ my_host | default('servera') }}"
+  become: true
+  gather_facts: false
+
+  tasks:
+
+    - name: Ensure {{ my_service }} is restarted
+      ansible.builtin.systemd_service:
+        name: "{{ my_service | default('chronyd') }}"
+        state: "{{ my_state | default('started') }}"
+        enabled: "{{ my_persistence | default('true') }}"

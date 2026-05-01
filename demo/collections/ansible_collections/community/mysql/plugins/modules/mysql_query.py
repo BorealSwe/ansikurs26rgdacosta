@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2020, Andrew Klychkov (@Andersson007) <aaklychkov@mail.ru>
+# Copyright: (c) 2020, Andrew Klychkov (@Andersson007) <andrew.a.klychkov@gmail.com>
 # GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import (absolute_import, division, print_function)
@@ -10,9 +10,9 @@ __metaclass__ = type
 DOCUMENTATION = r'''
 ---
 module: mysql_query
-short_description: Run MySQL queries
+short_description: Run MySQL or MariaDB queries
 description:
-- Runs arbitrary MySQL queries.
+- Runs arbitrary MySQL or MariaDB queries.
 - Pay attention, the module does not support check mode!
   All queries will be executed in autocommit mode.
 - To run SQL queries from a file, use M(community.mysql.mysql_db) module.
@@ -51,16 +51,23 @@ options:
     - Where passed queries run in a single transaction (C(yes)) or commit them one-by-one (C(no)).
     type: bool
     default: false
+  session_vars:
+     description:
+     - "Dictionary of session variables in form of C(variable: value) to set at the beginning of module execution."
+     - Cannot be used to set global variables, use the M(community.mysql.mysql_variables) module instead.
+     type: dict
+     version_added: '3.16.0'
 attributes:
   check_mode:
     support: none
 seealso:
 - module: community.mysql.mysql_db
+notes:
+- Compatible with MariaDB or MySQL.
 author:
 - Andrew Klychkov (@Andersson007)
 extends_documentation_fragment:
 - community.mysql.mysql
-
 '''
 
 EXAMPLES = r'''
@@ -115,8 +122,18 @@ rowcount:
     returned: changed
     type: list
     sample: [5, 1]
+execution_time_ms:
+    description:
+    - A list containing execution time per query in milliseconds.
+    - The measurements are done right before and after passing
+      the query to the driver for execution.
+    returned: success
+    type: list
+    sample: [7104, 85]
+    version_added: '3.12.0'
 '''
 
+import time
 import warnings
 
 from ansible.module_utils.basic import AnsibleModule
@@ -125,6 +142,7 @@ from ansible_collections.community.mysql.plugins.module_utils.mysql import (
     mysql_common_argument_spec,
     mysql_driver,
     mysql_driver_fail_msg,
+    set_session_vars,
 )
 from ansible.module_utils._text import to_native
 
@@ -137,6 +155,26 @@ DDL_QUERY_KEYWORDS = ('CREATE', 'DROP', 'ALTER', 'RENAME', 'TRUNCATE')
 # Module execution.
 #
 
+def get_time():
+    try:
+        time_taken = time.perf_counter()
+    except AttributeError:
+        # For Python 2 compatibility, fallback to time.time()
+        time_taken = time.time()
+    return time_taken
+
+
+def execute_and_return_time(cursor, query, args):
+    # Measure query execution time in milliseconds
+    start_time = get_time()
+
+    cursor.execute(query, args)
+
+    # Calculate the execution time rounding it to 4 decimal places
+    exec_time_ms = round((get_time() - start_time) * 1000, 4)
+    return cursor, exec_time_ms
+
+
 def main():
     argument_spec = mysql_common_argument_spec()
     argument_spec.update(
@@ -145,6 +183,7 @@ def main():
         positional_args=dict(type='list', elements='raw'),
         named_args=dict(type='dict'),
         single_transaction=dict(type='bool', default=False),
+        session_vars=dict(type='dict'),
     )
 
     module = AnsibleModule(
@@ -164,6 +203,7 @@ def main():
     check_hostname = module.params['check_hostname']
     config_file = module.params['config_file']
     query = module.params["query"]
+    session_vars = module.params["session_vars"]
 
     if not isinstance(query, (str, list)):
         module.fail_json(msg="the query option value must be a string or list, passed %s" % type(query))
@@ -207,10 +247,14 @@ def main():
 
     max_keyword_len = len(max(DML_QUERY_KEYWORDS + DDL_QUERY_KEYWORDS, key=len))
 
+    if session_vars:
+        set_session_vars(module, cursor, session_vars)
+
     # Execute query:
     query_result = []
     executed_queries = []
     rowcount = []
+    execution_time_ms = []
 
     already_exists = False
     for q in query:
@@ -221,7 +265,8 @@ def main():
                                         category=mysql_driver.Warning)
 
                 try:
-                    cursor.execute(q, arguments)
+                    cursor, exec_time_ms = execute_and_return_time(cursor, q, arguments)
+                    execution_time_ms.append(exec_time_ms)
                 except mysql_driver.Warning:
                     # When something is run with IF NOT EXISTS
                     # and there's "already exists" MySQL warning,
@@ -278,6 +323,7 @@ def main():
         'executed_queries': executed_queries,
         'query_result': query_result,
         'rowcount': rowcount,
+        'execution_time_ms': execution_time_ms,
     }
 
     # Exit:
