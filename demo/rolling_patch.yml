@@ -1,0 +1,94 @@
+---
+- name: Rolling patch with validation
+  hosts: "{{ my_host | default('all') }}"
+  become: true
+  gather_facts: true
+  force_handlers: true
+  serial:
+    - 1
+    - 25%
+    - 50%
+  max_fail_percentage: 30
+
+  vars:
+
+    my_min_disk_mb: 500
+    my_health_port: 22
+
+  tasks:
+
+    - name: Pre-patch validation
+      tags:
+        - validate
+        - patch
+      block:
+
+        - name: Ensure sufficient disk space is available
+          ansible.builtin.assert:
+            that:
+              - item.size_available > (my_min_disk_mb * 1048576)
+            fail_msg: >-
+              Insufficient disk space on {{ item.mount }}:
+              {{ item.size_available | human_readable }} available,
+              {{ my_min_disk_mb }}MB required
+          loop: "{{ ansible_facts['mounts'] }}"
+          loop_control:
+            label: "{{ item.mount }}"
+          when: item.mount in ['/', '/var']
+
+        - name: Ensure host is reachable on health port
+          delegate_to: localhost
+          ansible.builtin.wait_for:
+            host: "{{ inventory_hostname }}"
+            port: "{{ my_health_port }}"
+            timeout: 10
+
+    - name: Patch system
+      tags:
+        - patch
+      block:
+
+        - name: Ensure all packages are updated
+          register: patch_result
+          ansible.builtin.dnf:
+            name: '*'
+            state: latest
+
+        - name: Ensure reboot necessity is determined
+          register: reboot_check
+          changed_when: false
+          failed_when: false
+          ansible.builtin.command: /usr/bin/dnf needs-restarting -r
+
+        - name: Ensure server is rebooted if needed
+          when: reboot_check.rc == 1
+          ansible.builtin.reboot:
+            reboot_timeout: 600
+            msg: "Rebooting after patching"
+
+    - name: Post-patch validation
+      tags:
+        - validate
+        - patch
+      block:
+
+        - name: Ensure host is reachable after patching
+          delegate_to: localhost
+          ansible.builtin.wait_for:
+            host: "{{ inventory_hostname }}"
+            port: "{{ my_health_port }}"
+            delay: 5
+            timeout: 300
+
+        - name: Ensure system is healthy after patching
+          register: uptime_check
+          changed_when: false
+          ansible.builtin.command: uptime
+
+        - name: Report patch results
+          ansible.builtin.debug:
+            msg: >-
+              {{ inventory_hostname }}:
+              {{ patch_result.changed | default(false) | ternary('Packages updated', 'Already up to date') }},
+              {{ reboot_check.rc | default(0) | ternary('Rebooted', 'No reboot needed') }},
+              {{ uptime_check.stdout }}

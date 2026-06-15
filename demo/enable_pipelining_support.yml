@@ -1,6 +1,6 @@
 ---
 - name: Enable pipelining support
-  hosts: "{{ my_host | mandatory('Ensure that you set a value for the varialbe my_host') }}"
+  hosts: "{{ my_host | mandatory('Ensure that you set a value for the variable my_host') }}"
   gather_facts: false
   become: true
 

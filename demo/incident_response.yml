@@ -1,0 +1,112 @@
+---
+- name: Incident response evidence collection
+  hosts: "{{ my_host | mandatory('You must specify the target host with -e my_host=<hostname>') }}"
+  become: true
+  gather_facts: true
+
+  vars:
+
+    my_evidence_dir: /var/tmp/incident_{{ inventory_hostname }}_{{ ansible_date_time.date }}
+    my_fetch_dest: ./incident_evidence/
+
+  tasks:
+
+    - name: Ensure evidence directory exists
+      ansible.builtin.file:
+        path: "{{ my_evidence_dir }}"
+        state: directory
+        mode: "0700"
+
+    - name: Capture system state
+      block:
+
+        - name: Ensure running processes are captured
+          changed_when: false
+          ansible.builtin.shell: ps auxww > {{ my_evidence_dir }}/processes.txt
+
+        - name: Ensure network connections are captured
+          changed_when: false
+          ansible.builtin.shell: ss -tulnp > {{ my_evidence_dir }}/network_connections.txt
+
+        - name: Ensure listening ports are captured
+          changed_when: false
+          ansible.builtin.shell: ss -tlnp > {{ my_evidence_dir }}/listening_ports.txt
+
+        - name: Ensure login history is captured
+          changed_when: false
+          ansible.builtin.shell: last -50 > {{ my_evidence_dir }}/login_history.txt
+
+        - name: Ensure failed login attempts are captured
+          changed_when: false
+          ansible.builtin.shell: lastb -20 > {{ my_evidence_dir }}/failed_logins.txt
+          failed_when: false
+
+        - name: Ensure cron jobs are captured
+          changed_when: false
+          ansible.builtin.shell: >
+            for user in $(cut -f1 -d: /etc/passwd); do
+              echo "=== $user ===" ;
+              crontab -l -u "$user" 2>/dev/null ;
+            done > {{ my_evidence_dir }}/cron_jobs.txt
+
+        - name: Ensure active user sessions are captured
+          changed_when: false
+          ansible.builtin.shell: w > {{ my_evidence_dir }}/active_sessions.txt
+
+        - name: Ensure recent file modifications are captured
+          changed_when: false
+          ansible.builtin.shell: >
+            find /etc /usr/bin /usr/sbin -type f -mtime -1
+            -ls > {{ my_evidence_dir }}/recent_modifications.txt
+          failed_when: false
+
+        - name: Ensure system uptime and load are captured
+          changed_when: false
+          ansible.builtin.shell: >
+            echo "=== Uptime ===" && uptime &&
+            echo "=== Memory ===" && free -h &&
+            echo "=== Disk ===" && df -h
+            > {{ my_evidence_dir }}/system_stats.txt
+
+        - name: Ensure SELinux denials are captured
+          changed_when: false
+          ansible.builtin.shell: >
+            ausearch -m avc -ts recent 2>/dev/null
+            > {{ my_evidence_dir }}/selinux_denials.txt
+          failed_when: false
+
+    - name: Ensure evidence is fetched to controller
+      tags:
+        - fetch
+      ansible.builtin.fetch:
+        src: "{{ my_evidence_dir }}/"
+        dest: "{{ my_fetch_dest }}"
+        flat: false
+
+    - name: Report evidence collection summary
+      ansible.builtin.debug:
+        msg: >-
+          Evidence collected from {{ inventory_hostname }}
+          and saved to {{ my_evidence_dir }}.
+          Fetched to controller at {{ my_fetch_dest }}.
+
+    - name: Isolate host
+      tags:
+        - isolate
+        - never
+      block:
+
+        - name: Ensure non-essential services are stopped
+          ansible.builtin.shell: >
+            systemctl list-units --type=service --state=running --no-pager
+            --no-legend | awk '{print $1}'
+            | grep -v -E '(sshd|auditd|systemd|dbus|NetworkManager|chronyd)'
+          register: nonessential_services
+          changed_when: false
+          failed_when: false
+
+        - name: Report isolation candidates
+          ansible.builtin.debug:
+            msg: >-
+              Services that would be stopped during isolation:
+              {{ nonessential_services.stdout_lines | default([]) | join(', ') }}

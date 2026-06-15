@@ -1,0 +1,109 @@
+---
+- name: Backup and restore validation
+  hosts: "{{ my_host | default('servera') }}"
+  become: true
+  gather_facts: true
+
+  vars:
+
+    my_backup_sources:
+      - /etc/ssh
+      - /etc/pam.d
+      - /etc/sudoers.d
+    my_backup_dest: /var/tmp/backup_{{ inventory_hostname }}_{{ ansible_date_time.date }}
+    my_restore_staging: /var/tmp/restore_staging
+
+  tasks:
+
+    - name: Create backup
+      tags:
+        - backup
+      block:
+
+        - name: Ensure backup directory exists
+          ansible.builtin.file:
+            path: "{{ my_backup_dest }}"
+            state: directory
+            mode: "0700"
+
+        - name: Ensure configuration directories are backed up
+          loop: "{{ my_backup_sources }}"
+          ansible.builtin.command: >
+            cp -a {{ item }} {{ my_backup_dest }}/{{ item | basename }}
+          args:
+            creates: "{{ my_backup_dest }}/{{ item | basename }}"
+
+        - name: Ensure backup archive is created
+          ansible.builtin.archive:
+            path: "{{ my_backup_dest }}/"
+            dest: "{{ my_backup_dest }}.tar.gz"
+            format: gz
+
+        - name: Ensure backup checksums are generated
+          register: backup_checksums
+          changed_when: false
+          ansible.builtin.command: >
+            sha256sum {{ my_backup_dest }}.tar.gz
+
+        - name: Report backup details
+          ansible.builtin.debug:
+            msg: >-
+              Backup created: {{ my_backup_dest }}.tar.gz
+              Checksum: {{ backup_checksums.stdout.split(' ')[0] }}
+
+    - name: Validate restore
+      tags:
+        - validate
+      block:
+
+        - name: Ensure staging directory exists
+          ansible.builtin.file:
+            path: "{{ my_restore_staging }}"
+            state: directory
+            mode: "0700"
+
+        - name: Ensure backup archive is extracted to staging
+          ansible.builtin.unarchive:
+            src: "{{ my_backup_dest }}.tar.gz"
+            dest: "{{ my_restore_staging }}"
+            remote_src: true
+
+        - name: Ensure backed up files match originals
+          register: diff_results
+          loop: "{{ my_backup_sources }}"
+          loop_control:
+            label: "{{ item }}"
+          changed_when: false
+          failed_when: false
+          ansible.builtin.command: >
+            diff -rq {{ item }} {{ my_restore_staging }}/{{ item | basename }}
+
+        - name: Report validation results
+          loop: "{{ diff_results.results }}"
+          loop_control:
+            label: "{{ item.item }}"
+          ansible.builtin.debug:
+            msg: >-
+              {{ item.item }}:
+              {{ 'PASS - backup matches original' if item.rc == 0 else 'FAIL - differences detected: ' + item.stdout | default('unknown') }}
+
+    - name: Cleanup
+      tags:
+        - cleanup
+      block:
+
+        - name: Ensure staging directory is removed
+          ansible.builtin.file:
+            path: "{{ my_restore_staging }}"
+            state: absent
+
+        - name: Ensure backup working directory is removed
+          ansible.builtin.file:
+            path: "{{ my_backup_dest }}"
+            state: absent
+
+        - name: Report cleanup complete
+          ansible.builtin.debug:
+            msg: >-
+              Cleanup complete. Backup archive retained at
+              {{ my_backup_dest }}.tar.gz

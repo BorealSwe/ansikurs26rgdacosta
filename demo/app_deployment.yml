@@ -1,0 +1,120 @@
+---
+- name: Deploy database tier
+  hosts: "{{ my_db_host | default('servera') }}"
+  become: true
+  gather_facts: false
+  force_handlers: true
+
+  vars:
+
+    my_db_package: mariadb-server
+    my_db_service: mariadb
+
+  tasks:
+
+    - name: Ensure database server is installed
+      notify: Ensure database service is restarted
+      ansible.builtin.dnf:
+        name:
+          - "{{ my_db_package }}"
+          - python3-PyMySQL
+        state: present
+
+    - name: Ensure database service is started and enabled
+      ansible.builtin.systemd:
+        name: "{{ my_db_service }}"
+        state: started
+        enabled: true
+
+    - name: Ensure database port is open in firewall
+      ansible.posix.firewalld:
+        service: mysql
+        permanent: true
+        immediate: true
+        state: enabled
+
+  handlers:
+
+    - name: Ensure database service is restarted
+      ansible.builtin.systemd:
+        name: "{{ my_db_service }}"
+        state: restarted
+
+- name: Deploy application tier
+  hosts: "{{ my_app_host | default('servera') }}"
+  become: true
+  gather_facts: false
+  force_handlers: true
+
+  vars:
+
+    my_app_package: httpd
+    my_app_content: |
+      Hello from {{ inventory_hostname }}
+
+      Application tier deployed successfully
+    my_app_services:
+      - http
+      - https
+
+  tasks:
+
+    - name: Ensure web server is installed
+      notify: Ensure web service is restarted
+      ansible.builtin.dnf:
+        name:
+          - "{{ my_app_package }}"
+        state: present
+
+    - name: Ensure web service is started and enabled
+      ansible.builtin.systemd:
+        name: "{{ my_app_package }}"
+        state: started
+        enabled: true
+
+    - name: Ensure firewall ports are open
+      loop: "{{ my_app_services }}"
+      ansible.posix.firewalld:
+        service: "{{ item }}"
+        permanent: true
+        immediate: true
+        state: enabled
+
+    - name: Ensure application content is deployed
+      notify: Ensure web service is restarted
+      ansible.builtin.copy:
+        content: "{{ my_app_content }}"
+        dest: /var/www/html/index.html
+        mode: "0644"
+
+  handlers:
+
+    - name: Ensure web service is restarted
+      ansible.builtin.systemd:
+        name: "{{ my_app_package }}"
+        state: restarted
+
+- name: Validate deployment
+  hosts: localhost
+  become: false
+  gather_facts: false
+
+  vars:
+
+    my_app_host: "{{ my_app_host | default('servera') }}"
+
+  tasks:
+
+    - name: Ensure application responds
+      register: app_test
+      ansible.builtin.uri:
+        url: "http://{{ my_app_host }}"
+        return_content: true
+        status_code: 200
+
+    - name: Report deployment status
+      ansible.builtin.debug:
+        msg: >-
+          Deployment validated.
+          HTTP {{ app_test.status }} from {{ my_app_host }}.
+          Content: {{ app_test.content | trim }}

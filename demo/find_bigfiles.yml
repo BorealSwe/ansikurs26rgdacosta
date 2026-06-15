@@ -20,7 +20,7 @@
       paths: "{{ my_path }}"
       age: "{{ my_age }}"
       size: "{{ my_size }}"
-      recurse: yes
+      recurse: true
 
   - name: Ensure file properties are displayed
     loop: "{{ found_files['files'] }}"

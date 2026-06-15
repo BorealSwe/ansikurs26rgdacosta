@@ -13,4 +13,4 @@
           - tmux
           - nmap
           - ant
-        state: installed
+        state: present

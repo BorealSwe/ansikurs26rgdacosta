@@ -1,0 +1,104 @@
+---
+- name: Certificate lifecycle management
+  hosts: "{{ my_host | default('servera') }}"
+  become: true
+  gather_facts: true
+  force_handlers: true
+
+  vars:
+
+    my_cert_paths:
+      - /etc/pki/tls/certs
+    my_expiry_days: 30
+    my_cert_cn: "{{ inventory_hostname }}"
+    my_cert_dest: /etc/pki/tls/certs/{{ inventory_hostname }}.crt
+    my_key_dest: /etc/pki/tls/private/{{ inventory_hostname }}.key
+
+  tasks:
+
+    - name: Scan for certificates expiring soon
+      tags:
+        - scan
+        - always
+      block:
+
+        - name: Ensure certificate files are found
+          register: cert_files
+          ansible.builtin.find:
+            paths: "{{ my_cert_paths }}"
+            patterns: '*.crt,*.pem'
+            recurse: true
+
+        - name: Ensure certificate expiry dates are checked
+          register: cert_expiry
+          loop: "{{ cert_files.files }}"
+          loop_control:
+            label: "{{ item.path }}"
+          changed_when: false
+          failed_when: false
+          ansible.builtin.command: >
+            openssl x509 -in {{ item.path }}
+            -checkend {{ my_expiry_days * 86400 }}
+            -noout -subject -enddate
+
+        - name: Report certificate status
+          loop: "{{ cert_expiry.results }}"
+          loop_control:
+            label: "{{ item.item.path }}"
+          when: item.rc is defined
+          ansible.builtin.debug:
+            msg: >-
+              {{ item.item.path }}:
+              {{ 'EXPIRING SOON' if item.rc != 0 else 'OK' }}
+              - {{ item.stdout | default('unable to read') }}
+
+    - name: Renew certificates
+      tags:
+        - renew
+        - never
+      block:
+
+        - name: Ensure private key is generated
+          ansible.builtin.command: >
+            openssl genrsa -out {{ my_key_dest }} 2048
+          args:
+            creates: "{{ my_key_dest }}"
+
+        - name: Ensure private key permissions are restrictive
+          ansible.builtin.file:
+            path: "{{ my_key_dest }}"
+            mode: "0600"
+            owner: root
+            group: root
+
+        - name: Ensure self-signed certificate is generated
+          notify: Ensure dependent services are restarted
+          ansible.builtin.command: >
+            openssl req -new -x509
+            -key {{ my_key_dest }}
+            -out {{ my_cert_dest }}
+            -days 365
+            -subj "/CN={{ my_cert_cn }}"
+
+        - name: Ensure certificate permissions are correct
+          ansible.builtin.file:
+            path: "{{ my_cert_dest }}"
+            mode: "0644"
+            owner: root
+            group: root
+
+      rescue:
+
+        - name: Report certificate renewal failure
+          ansible.builtin.debug:
+            msg: "Certificate renewal failed for {{ inventory_hostname }}"
+
+  handlers:
+
+    - name: Ensure dependent services are restarted
+      ansible.builtin.service:
+        name: "{{ item }}"
+        state: restarted
+      loop:
+        - httpd
+      failed_when: false

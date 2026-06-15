@@ -65,6 +65,7 @@ collections/*
 vault.yml
 
 demo/lookups/credentials/
+demo/credentials/
 
 # --------------------------------------------------
 # Kubernetes / OpenShift local configs

@@ -8,5 +8,5 @@
 
     - name: Ensure ACME repo GPG key is defined
       ansible.builtin.rpm_key:
-        key: http://workstation.lab.example.com/gpg_key
+        key: https://workstation.lab.example.com/gpg_key
         state: present

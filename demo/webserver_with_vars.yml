@@ -2,7 +2,6 @@
 - name: Ensure webservers are installed
   hosts: "{{ my_host | default('servera') }}"
   become: true
-  become: true
   force_handlers: true
 
   tasks:
@@ -34,15 +33,6 @@
       ansible.builtin.set_fact:
         my_webserver: "{{ my_host }}"
         cacheable: true
-
-    - name: Ensure stub content is deployed
-      ansible.builtin.copy:
-        content: |
-          Hello world
-
-          I am a web server running httpd aka apache
-        dest: /var/www/html/index.html
-        mode: 0644
 
 - name: Test web server deployment
   hosts: localhost

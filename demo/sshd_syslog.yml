@@ -25,5 +25,5 @@
 
     - name: Ensure sshd is restarted
       ansible.builtin.service:
-        service: sshd
+        name: sshd
         state: restarted

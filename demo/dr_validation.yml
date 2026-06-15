@@ -1,0 +1,119 @@
+---
+- name: Disaster recovery readiness validation
+  hosts: "{{ my_host | default('servera') }}"
+  become: true
+  gather_facts: true
+
+  vars:
+
+    my_backup_paths:
+      - /var/backup
+      - /var/tmp/backup
+    my_backup_max_age_days: 7
+    my_critical_ports:
+      - port: 22
+        service: SSH
+      - port: 80
+        service: HTTP
+    my_min_restore_space_gb: 5
+
+  tasks:
+
+    - name: Validate backup freshness
+      tags:
+        - backup
+      block:
+
+        - name: Ensure backup directories are checked
+          register: backup_files
+          ansible.builtin.find:
+            paths: "{{ my_backup_paths }}"
+            age: "-{{ my_backup_max_age_days }}d"
+            recurse: true
+          failed_when: false
+
+        - name: Report backup freshness
+          ansible.builtin.debug:
+            msg: >-
+              Recent backups (< {{ my_backup_max_age_days }} days):
+              {{ backup_files.matched | default(0) }} files found
+              -
+              {{ 'PASS' if (backup_files.matched | default(0)) > 0 else 'FAIL - no recent backups found' }}
+
+    - name: Validate service connectivity
+      tags:
+        - connectivity
+      block:
+
+        - name: Ensure critical ports are reachable
+          register: port_checks
+          loop: "{{ my_critical_ports }}"
+          loop_control:
+            label: "{{ item.service }} ({{ item.port }})"
+          failed_when: false
+          ansible.builtin.wait_for:
+            host: "{{ inventory_hostname }}"
+            port: "{{ item.port }}"
+            timeout: 5
+          delegate_to: localhost
+
+        - name: Report connectivity status
+          loop: "{{ port_checks.results }}"
+          loop_control:
+            label: "{{ item.item.service }}"
+          ansible.builtin.debug:
+            msg: >-
+              {{ item.item.service }} (port {{ item.item.port }}):
+              {{ 'PASS' if item.failed is not defined or not item.failed else 'FAIL - port unreachable' }}
+
+    - name: Validate restore capacity
+      tags:
+        - capacity
+      block:
+
+        - name: Ensure disk space is sufficient for restore
+          ansible.builtin.assert:
+            that:
+              - (item.size_available | int) > (my_min_restore_space_gb * 1073741824)
+            success_msg: >-
+              {{ item.mount }}: {{ item.size_available | human_readable }} available - PASS
+            fail_msg: >-
+              {{ item.mount }}: {{ item.size_available | human_readable }} available,
+              need {{ my_min_restore_space_gb }}GB - FAIL
+          loop: "{{ ansible_facts['mounts'] }}"
+          loop_control:
+            label: "{{ item.mount }}"
+          when: item.mount in ['/', '/var']
+          failed_when: false
+
+    - name: Validate configuration consistency
+      tags:
+        - config
+      block:
+
+        - name: Ensure critical configuration files exist
+          register: config_checks
+          loop:
+            - /etc/ssh/sshd_config
+            - /etc/fstab
+            - /etc/hosts
+            - /etc/resolv.conf
+          ansible.builtin.stat:
+            path: "{{ item }}"
+
+        - name: Report configuration file status
+          loop: "{{ config_checks.results }}"
+          loop_control:
+            label: "{{ item.item }}"
+          ansible.builtin.debug:
+            msg: >-
+              {{ item.item }}:
+              {{ 'PASS' if item.stat.exists else 'FAIL - missing' }}
+
+    - name: DR readiness summary
+      tags:
+        - always
+      ansible.builtin.debug:
+        msg: >-
+          DR validation complete for {{ inventory_hostname }}.
+          Review the output above for any FAIL items that need attention.

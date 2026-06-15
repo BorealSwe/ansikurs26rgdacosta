@@ -7,13 +7,13 @@
   pre_tasks:
 
     - name: pre_task 1
-      notify: pre_task_handler 1
+      notify: pre_tasks handler 1
 
     - name: pre_task 2
-      notify: pre_task_handler 1
+      notify: pre_tasks handler 1
 
     - name: pre_task 3
-      notify: pre_task_handler 1
+      notify: pre_tasks handler 1
 
   roles:
 
@@ -81,8 +81,8 @@
   tasks:
 
     - name: normal task 1
-      notify: normaal task 1 handler
+      notify: normal task 1 handler
 
- handlers:
+  handlers:
 
     - name: normal task 1 handler

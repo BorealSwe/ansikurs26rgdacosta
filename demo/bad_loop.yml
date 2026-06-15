@@ -14,4 +14,4 @@
         - ant
       ansible.builtin.package:
         name: "{{ item }}"
-        state: installed
+        state: present

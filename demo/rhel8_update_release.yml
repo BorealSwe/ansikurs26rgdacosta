@@ -18,7 +18,7 @@
       ansible.builtin.assert:
         that: 
           - ansible_facts['distribution']  == "RedHat" 
-          - ansible_facts['distribution_major_version'] | int = 8 
+          - ansible_facts['distribution_major_version'] | int == 8
         fail_msg: |
 
           ****************************
@@ -51,7 +51,9 @@
         reboot_timeout: 600
 
     - name: Ensure that we can connect to server
+      delegate_to: localhost
       ansible.builtin.wait_for:
+        host: "{{ inventory_hostname }}"
         port: 22
         delay: 10
         timeout: 600

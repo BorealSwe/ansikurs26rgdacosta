@@ -1,0 +1,75 @@
+---
+- name: User offboarding
+  hosts: "{{ my_host | default('all') }}"
+  become: true
+  gather_facts: true
+
+  vars:
+
+    my_user: "{{ my_offboard_user | mandatory('You must specify the user to offboard with -e my_offboard_user=<username>') }}"
+    my_archive_dir: /var/tmp/offboarded
+    my_audit_log: /var/log/offboarding.log
+
+  tasks:
+
+    - name: Ensure user exists before offboarding
+      register: user_check
+      ansible.builtin.getent:
+        database: passwd
+        key: "{{ my_user }}"
+      failed_when: false
+
+    - name: Ensure offboarding proceeds only for existing users
+      when: user_check is not failed
+      block:
+
+        - name: Ensure user account is locked
+          ansible.builtin.user:
+            name: "{{ my_user }}"
+            password_lock: true
+            expires: 0
+
+        - name: Ensure SSH authorised keys are removed
+          ansible.builtin.file:
+            path: "/home/{{ my_user }}/.ssh/authorized_keys"
+            state: absent
+
+        - name: Ensure sudoers access is revoked
+          ansible.builtin.file:
+            path: "/etc/sudoers.d/{{ my_user }}"
+            state: absent
+
+        - name: Ensure archive directory exists
+          ansible.builtin.file:
+            path: "{{ my_archive_dir }}"
+            state: directory
+            mode: "0700"
+
+        - name: Ensure home directory is archived
+          ansible.builtin.archive:
+            path: "/home/{{ my_user }}"
+            dest: "{{ my_archive_dir }}/{{ my_user }}_{{ ansible_date_time.date }}.tar.gz"
+            format: gz
+          failed_when: false
+
+        - name: Ensure audit log entry is created
+          ansible.builtin.lineinfile:
+            path: "{{ my_audit_log }}"
+            create: true
+            mode: "0600"
+            line: >-
+              {{ ansible_date_time.iso8601 }}
+              User {{ my_user }} offboarded from {{ inventory_hostname }}
+              by {{ ansible_user_id }}
+
+        - name: Report offboarding status
+          ansible.builtin.debug:
+            msg: >-
+              {{ my_user }} offboarded from {{ inventory_hostname }}:
+              account locked, SSH keys removed, sudo revoked,
+              home archived to {{ my_archive_dir }}
+
+    - name: Report user not found
+      when: user_check is failed
+      ansible.builtin.debug:
+        msg: "User {{ my_user }} does not exist on {{ inventory_hostname }}"

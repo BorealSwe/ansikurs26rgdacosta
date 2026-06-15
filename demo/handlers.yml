@@ -31,7 +31,9 @@
 
     - name: Ensure that we can connect to server
       listen: Reboot server
+      delegate_to: localhost
       ansible.builtin.wait_for:
+        host: "{{ inventory_hostname }}"
         port: 22
         delay: 5
         timeout: 20

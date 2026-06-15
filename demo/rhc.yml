@@ -1,3 +1,7 @@
+---
+# Provide my_username and my_password via --extra-vars or ansible-vault
+# Example: ansible-playbook rhc.yml -e my_host=servera -e my_username=admin -e my_password=secret
+# Never hardcode credentials in this file
 - name: Register systems
   hosts: "{{ my_host | default('all') }}"
   become: true
