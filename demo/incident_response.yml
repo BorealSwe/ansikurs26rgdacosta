@@ -43,10 +43,11 @@
 
         - name: Ensure cron jobs are captured
           changed_when: false
+          failed_when: false
           ansible.builtin.shell: >
             for user in $(cut -f1 -d: /etc/passwd); do
               echo "=== $user ===" ;
-              crontab -l -u "$user" 2>/dev/null ;
+              crontab -l -u "$user" 2>/dev/null || true ;
             done > {{ my_evidence_dir }}/cron_jobs.txt
 
         - name: Ensure active user sessions are captured
