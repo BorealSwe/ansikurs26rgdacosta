@@ -76,11 +76,18 @@
             > {{ my_evidence_dir }}/selinux_denials.txt
           failed_when: false
 
-    - name: Ensure evidence is fetched to controller
+    - name: Ensure evidence is archived
+      register: evidence_archive
+      ansible.builtin.archive:
+        path: "{{ my_evidence_dir }}/"
+        dest: "{{ my_evidence_dir }}.tar.gz"
+        format: gz
+
+    - name: Ensure evidence archive is fetched to controller
       tags:
         - fetch
       ansible.builtin.fetch:
-        src: "{{ my_evidence_dir }}/"
+        src: "{{ my_evidence_dir }}.tar.gz"
         dest: "{{ my_fetch_dest }}"
         flat: false
 
@@ -88,7 +95,7 @@
       ansible.builtin.debug:
         msg: >-
           Evidence collected from {{ inventory_hostname }}
-          and saved to {{ my_evidence_dir }}.
+          and archived to {{ my_evidence_dir }}.tar.gz.
           Fetched to controller at {{ my_fetch_dest }}.
 
     - name: Isolate host
