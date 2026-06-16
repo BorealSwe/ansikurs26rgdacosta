@@ -7,42 +7,42 @@
   vars_files:
     - vars/common.yml
 
-  handlers:
-    - name: Restart HAProxy
-      ansible.builtin.systemd_service:
-        name: haproxy
-        state: restarted
-
   tasks:
-    - name: Install HAProxy
+    - name: Ensure HAProxy is installed
       ansible.builtin.dnf:
         name: haproxy
         state: present
 
-    - name: Template HAProxy configuration
+    - name: Ensure HAProxy configuration is templated
       ansible.builtin.template:
         src: templates/haproxy.cfg.j2
         dest: /etc/haproxy/haproxy.cfg
         owner: root
         group: root
         mode: "0644"
-      notify: Restart HAProxy
+      notify: Ensure HAProxy is restarted
 
-    - name: Set SELinux boolean for HAProxy connections
+    - name: Ensure SELinux boolean is set for HAProxy connections
       ansible.posix.seboolean:
         name: haproxy_connect_any
         state: true
         persistent: true
 
-    - name: Enable and start HAProxy
+    - name: Ensure HAProxy is enabled and started
       ansible.builtin.systemd_service:
         name: haproxy
         state: started
         enabled: true
 
-    - name: Open firewall for HTTP
+    - name: Ensure firewall is open for HTTP
       ansible.posix.firewalld:
         service: http
         permanent: true
         immediate: true
         state: enabled
+
+  handlers:
+    - name: Ensure HAProxy is restarted
+      ansible.builtin.systemd_service:
+        name: haproxy
+        state: restarted

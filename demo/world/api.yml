@@ -7,20 +7,13 @@
   vars_files:
     - vars/common.yml
 
-  handlers:
-    - name: Restart World API
-      ansible.builtin.systemd_service:
-        name: "{{ api_service_name }}"
-        state: restarted
-        daemon_reload: true
-
   tasks:
-    - name: Enable Node.js 20 module stream
+    - name: Ensure Node.js 20 module stream is enabled
       ansible.builtin.dnf:
         name: "{{ api_node_module }}"
         state: present
 
-    - name: Create API service user
+    - name: Ensure API service user is present
       ansible.builtin.user:
         name: "{{ api_service_user }}"
         system: true
@@ -28,7 +21,7 @@
         home: "{{ api_install_dir }}"
         create_home: true
 
-    - name: Deploy API source code
+    - name: Ensure API source code is deployed
       ansible.builtin.copy:
         src: files/world_api/
         dest: "{{ api_install_dir }}/"
@@ -36,43 +29,50 @@
         group: "{{ api_service_user }}"
         mode: "0644"
         directory_mode: "0755"
-      notify: Restart World API
+      notify: Ensure World API is restarted
 
-    - name: Install Node.js dependencies
+    - name: Ensure Node.js dependencies are installed
       ansible.builtin.command:
         cmd: npm ci --production
         chdir: "{{ api_install_dir }}"
         creates: "{{ api_install_dir }}/node_modules"
       become_user: "{{ api_service_user }}"
 
-    - name: Template API environment file
+    - name: Ensure API environment file is templated
       ansible.builtin.template:
         src: templates/world-api.conf.j2
         dest: /etc/sysconfig/{{ api_service_name }}
         owner: root
         group: "{{ api_service_user }}"
         mode: "0640"
-      notify: Restart World API
+      notify: Ensure World API is restarted
 
-    - name: Template API systemd unit
+    - name: Ensure API systemd unit is templated
       ansible.builtin.template:
         src: templates/world-api.service.j2
         dest: /etc/systemd/system/{{ api_service_name }}.service
         owner: root
         group: root
         mode: "0644"
-      notify: Restart World API
+      notify: Ensure World API is restarted
 
-    - name: Enable and start World API
+    - name: Ensure World API is enabled and started
       ansible.builtin.systemd_service:
         name: "{{ api_service_name }}"
         state: started
         enabled: true
         daemon_reload: true
 
-    - name: Open firewall for API
+    - name: Ensure firewall is open for API
       ansible.posix.firewalld:
         port: "{{ world_api_port }}/tcp"
         permanent: true
         immediate: true
         state: enabled
+
+  handlers:
+    - name: Ensure World API is restarted
+      ansible.builtin.systemd_service:
+        name: "{{ api_service_name }}"
+        state: restarted
+        daemon_reload: true

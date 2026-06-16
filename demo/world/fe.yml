@@ -7,49 +7,43 @@
   vars_files:
     - vars/common.yml
 
-  handlers:
-    - name: Restart nginx
-      ansible.builtin.systemd_service:
-        name: nginx
-        state: restarted
-
   tasks:
-    - name: Enable Node.js 20 module stream
+    - name: Ensure Node.js 20 module stream is enabled
       ansible.builtin.dnf:
         name: "{{ fe_node_module }}"
         state: present
 
-    - name: Install nginx
+    - name: Ensure nginx is installed
       ansible.builtin.dnf:
         name: nginx
         state: present
 
-    - name: Create frontend build directory
+    - name: Ensure frontend build directory is present
       ansible.builtin.file:
         path: "{{ fe_build_dir }}"
         state: directory
         mode: "0755"
 
-    - name: Deploy frontend source code
+    - name: Ensure frontend source code is deployed
       ansible.builtin.copy:
         src: files/world_fe/
         dest: "{{ fe_build_dir }}/"
         mode: "0644"
         directory_mode: "0755"
 
-    - name: Install Node.js dependencies
+    - name: Ensure Node.js dependencies are installed
       ansible.builtin.command:
         cmd: npm ci
         chdir: "{{ fe_build_dir }}"
         creates: "{{ fe_build_dir }}/node_modules"
 
-    - name: Build React frontend
+    - name: Ensure React frontend is built
       ansible.builtin.command:
         cmd: npm run build
         chdir: "{{ fe_build_dir }}"
         creates: "{{ fe_build_dir }}/dist/index.html"
 
-    - name: Deploy built frontend to nginx document root
+    - name: Ensure built frontend is deployed to nginx document root
       ansible.builtin.command:
         cmd: >
           rsync -a --delete
@@ -57,35 +51,41 @@
           {{ fe_document_root }}/
       changed_when: true
 
-    - name: Restore SELinux context on document root
+    - name: Ensure SELinux context is restored on document root
       ansible.builtin.command:
         cmd: restorecon -Rv {{ fe_document_root }}
       changed_when: true
 
-    - name: Template nginx configuration
+    - name: Ensure nginx configuration is templated
       ansible.builtin.template:
         src: templates/nginx.conf.j2
         dest: /etc/nginx/nginx.conf
         owner: root
         group: root
         mode: "0644"
-      notify: Restart nginx
+      notify: Ensure nginx is restarted
 
-    - name: Set SELinux boolean for nginx proxy
+    - name: Ensure SELinux boolean is set for nginx proxy
       ansible.posix.seboolean:
         name: httpd_can_network_connect
         state: true
         persistent: true
 
-    - name: Enable and start nginx
+    - name: Ensure nginx is enabled and started
       ansible.builtin.systemd_service:
         name: nginx
         state: started
         enabled: true
 
-    - name: Open firewall for HTTP
+    - name: Ensure firewall is open for HTTP
       ansible.posix.firewalld:
         service: http
         permanent: true
         immediate: true
         state: enabled
+
+  handlers:
+    - name: Ensure nginx is restarted
+      ansible.builtin.systemd_service:
+        name: nginx
+        state: restarted
