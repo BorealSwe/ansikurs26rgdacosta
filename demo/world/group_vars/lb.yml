@@ -1,8 +1,8 @@
 ---
 lb_backends:
-  - name: serverb
-    address: serverb
-    port: 80
+  - name: "{{ world_fe_host }}"
+    address: "{{ world_fe_host }}"
+    port: "{{ world_fe_port }}"
 
 lb_frontend_port: 80
 lb_stats_port: 8404

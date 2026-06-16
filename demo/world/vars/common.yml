@@ -1,4 +1,9 @@
 ---
+world_db_host: serverd
+world_api_host: serverc
+world_fe_host: serverb
+world_lb_host: servera
+
 world_db_name: world
 world_db_user: ricardo
 world_db_password: redhat123

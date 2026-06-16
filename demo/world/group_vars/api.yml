@@ -1,5 +1,5 @@
 ---
-api_db_host: serverd
+api_db_host: "{{ world_db_host }}"
 api_install_dir: /opt/world-api
 api_service_user: world-api
 api_service_name: world-api
