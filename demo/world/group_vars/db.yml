@@ -1,0 +1,9 @@
+---
+db_packages:
+  - mariadb-server
+  - python3-PyMySQL
+
+db_service: mariadb
+db_datadir: /var/lib/mysql
+db_sql_file: /tmp/world.sql
+db_import_marker: /var/lib/mysql/.world_imported

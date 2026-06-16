@@ -1,0 +1,5 @@
+---
+fe_api_backend: serverc
+fe_build_dir: /opt/world-fe-build
+fe_document_root: /usr/share/nginx/html
+fe_node_module: "@nodejs:20/common"
