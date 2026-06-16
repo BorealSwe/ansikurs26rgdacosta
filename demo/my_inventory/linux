@@ -7,7 +7,7 @@ serverb
 serverd
 
 [rhel10]
-server[a:d]
+server[a:f]
 
 [rhel:children]
 rhel10
