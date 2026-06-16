@@ -1,0 +1,191 @@
+---
+- name: Tear down MariaDB database server
+  hosts: db
+  become: true
+  gather_facts: false
+
+  vars_files:
+    - vars/common.yml
+
+  tasks:
+    - name: Ensure MariaDB is stopped and disabled
+      ansible.builtin.systemd_service:
+        name: mariadb
+        state: stopped
+        enabled: false
+      ignore_errors: true
+
+    - name: Ensure MariaDB packages are removed
+      ansible.builtin.dnf:
+        name:
+          - mariadb-server
+          - python3-PyMySQL
+        state: absent
+
+    - name: Ensure MariaDB data and config are removed
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - "{{ db_datadir }}"
+        - /root/.my.cnf
+        - /etc/my.cnf.d/world.cnf
+        - "{{ db_sql_file }}"
+
+    - name: Ensure firewall port for MariaDB is closed
+      ansible.posix.firewalld:
+        port: "{{ world_db_port }}/tcp"
+        permanent: true
+        immediate: true
+        state: disabled
+      ignore_errors: true
+
+- name: Tear down World API
+  hosts: api
+  become: true
+  gather_facts: false
+
+  vars_files:
+    - vars/common.yml
+
+  tasks:
+    - name: Ensure World API is stopped and disabled
+      ansible.builtin.systemd_service:
+        name: "{{ api_service_name }}"
+        state: stopped
+        enabled: false
+      ignore_errors: true
+
+    - name: Ensure World API systemd unit and config are removed
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /etc/systemd/system/{{ api_service_name }}.service
+        - /etc/sysconfig/{{ api_service_name }}
+
+    - name: Ensure systemd is reloaded
+      ansible.builtin.systemd_service:
+        daemon_reload: true
+
+    - name: Ensure API install directory is removed
+      ansible.builtin.file:
+        path: "{{ api_install_dir }}"
+        state: absent
+
+    - name: Ensure API service user is removed
+      ansible.builtin.user:
+        name: "{{ api_service_user }}"
+        state: absent
+        remove: true
+
+    - name: Ensure Node.js module stream is reset
+      ansible.builtin.command:
+        cmd: dnf module reset nodejs -y
+      changed_when: true
+
+    - name: Ensure firewall port for API is closed
+      ansible.posix.firewalld:
+        port: "{{ world_api_port }}/tcp"
+        permanent: true
+        immediate: true
+        state: disabled
+      ignore_errors: true
+
+- name: Tear down World Frontend
+  hosts: fe
+  become: true
+  gather_facts: false
+
+  vars_files:
+    - vars/common.yml
+
+  tasks:
+    - name: Ensure nginx is stopped and disabled
+      ansible.builtin.systemd_service:
+        name: nginx
+        state: stopped
+        enabled: false
+      ignore_errors: true
+
+    - name: Ensure nginx is removed
+      ansible.builtin.dnf:
+        name: nginx
+        state: absent
+
+    - name: Ensure frontend build directory is removed
+      ansible.builtin.file:
+        path: "{{ fe_build_dir }}"
+        state: absent
+
+    - name: Ensure nginx document root is cleaned
+      ansible.builtin.file:
+        path: "{{ fe_document_root }}"
+        state: "{{ item }}"
+      loop:
+        - absent
+        - directory
+
+    - name: Ensure SELinux context is restored on document root
+      ansible.builtin.command:
+        cmd: restorecon -Rv {{ fe_document_root }}
+      changed_when: true
+
+    - name: Ensure SELinux boolean for nginx proxy is reset
+      ansible.posix.seboolean:
+        name: httpd_can_network_connect
+        state: false
+        persistent: true
+
+    - name: Ensure Node.js module stream is reset
+      ansible.builtin.command:
+        cmd: dnf module reset nodejs -y
+      changed_when: true
+
+    - name: Ensure firewall service for HTTP is closed
+      ansible.posix.firewalld:
+        service: http
+        permanent: true
+        immediate: true
+        state: disabled
+      ignore_errors: true
+
+- name: Tear down HAProxy load balancer
+  hosts: lb
+  become: true
+  gather_facts: false
+
+  vars_files:
+    - vars/common.yml
+
+  tasks:
+    - name: Ensure HAProxy is stopped and disabled
+      ansible.builtin.systemd_service:
+        name: haproxy
+        state: stopped
+        enabled: false
+      ignore_errors: true
+
+    - name: Ensure HAProxy is removed
+      ansible.builtin.dnf:
+        name: haproxy
+        state: absent
+
+    - name: Ensure HAProxy configuration is removed
+      ansible.builtin.file:
+        path: /etc/haproxy/haproxy.cfg
+        state: absent
+
+    - name: Ensure SELinux boolean for HAProxy is reset
+      ansible.posix.seboolean:
+        name: haproxy_connect_any
+        state: false
+        persistent: true
+
+    - name: Ensure firewall service for HTTP is closed
+      ansible.posix.firewalld:
+        service: http
+        permanent: true
+        immediate: true
+        state: disabled
+      ignore_errors: true
