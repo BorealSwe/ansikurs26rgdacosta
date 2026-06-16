@@ -1,5 +1,7 @@
 ---
 - name: Ensure /tmp permissions are checked
+  tags:
+    - audit
   register: tmp_perms
   ansible.builtin.stat:
     path: /tmp
@@ -13,6 +15,8 @@
       {{ 'PASS' if tmp_perms.stat.mode is defined and tmp_perms.stat.mode[-4] == '1' else 'FAIL' }}
 
 - name: Ensure world-writable files are found
+  tags:
+    - audit
   register: world_writable
   ansible.builtin.find:
     paths: "{{ compliance_world_writable_paths }}"
@@ -21,6 +25,8 @@
     excludes: "proc"
 
 - name: Ensure world-writable files are filtered
+  tags:
+    - audit
   ansible.builtin.set_fact:
     compliance_world_writable_files: >-
       {{ world_writable.files

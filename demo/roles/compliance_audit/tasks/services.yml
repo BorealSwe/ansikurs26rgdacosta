@@ -1,8 +1,12 @@
 ---
 - name: Ensure service facts are gathered
+  tags:
+    - audit
   ansible.builtin.service_facts:
 
 - name: Ensure running service count is determined
+  tags:
+    - audit
   ansible.builtin.set_fact:
     compliance_running_services: >-
       {{ ansible_facts.services

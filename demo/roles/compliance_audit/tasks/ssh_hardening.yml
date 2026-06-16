@@ -1,11 +1,15 @@
 ---
 - name: Ensure sshd effective configuration is read
+  tags:
+    - audit
   register: sshd_config
   changed_when: false
   failed_when: false
   ansible.builtin.command: sshd -T
 
 - name: Ensure PermitRootLogin value is extracted
+  tags:
+    - audit
   ansible.builtin.set_fact:
     compliance_ssh_root_value: >-
       {{ sshd_config.stdout_lines
