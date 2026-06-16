@@ -17,5 +17,7 @@
          | list }}
 
 - name: Report running service count
+  tags:
+    - audit
   ansible.builtin.debug:
     msg: "Running services: {{ compliance_running_services | length }}"
