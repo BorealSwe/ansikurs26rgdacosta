@@ -1,0 +1,101 @@
+---
+- name: Configure MariaDB database server
+  hosts: db
+  become: true
+  gather_facts: false
+
+  vars_files:
+    - vars/common.yml
+
+  handlers:
+    - name: Restart MariaDB
+      ansible.builtin.systemd_service:
+        name: "{{ db_service }}"
+        state: restarted
+
+  tasks:
+    - name: Install MariaDB and Python MySQL library
+      ansible.builtin.dnf:
+        name: "{{ db_packages }}"
+        state: present
+
+    - name: Configure case-insensitive table names
+      ansible.builtin.copy:
+        dest: /etc/my.cnf.d/world.cnf
+        mode: "0644"
+        content: |
+          [mysqld]
+          lower_case_table_names=1
+      notify: Restart MariaDB
+
+    - name: Enable and start MariaDB
+      ansible.builtin.systemd_service:
+        name: "{{ db_service }}"
+        state: started
+        enabled: true
+
+    - name: Apply pending configuration
+      ansible.builtin.meta: flush_handlers
+
+    - name: Set MariaDB root password
+      community.mysql.mysql_user:
+        name: root
+        password: "{{ world_db_root_password }}"
+        login_user: root
+        login_password: "{{ world_db_root_password }}"
+        check_implicit_admin: true
+        state: present
+
+    - name: Create root credentials file
+      ansible.builtin.copy:
+        dest: /root/.my.cnf
+        mode: "0600"
+        content: |
+          [client]
+          user=root
+          password={{ world_db_root_password }}
+
+    - name: Create application database
+      community.mysql.mysql_db:
+        name: "{{ world_db_name }}"
+        state: present
+
+    - name: Create application database user
+      community.mysql.mysql_user:
+        name: "{{ world_db_user }}"
+        password: "{{ world_db_password }}"
+        priv: "{{ world_db_name }}.*:ALL"
+        host: "%"
+        state: present
+
+    - name: Copy database dump to server
+      ansible.builtin.copy:
+        src: files/world.sql
+        dest: "{{ db_sql_file }}"
+        mode: "0644"
+
+    - name: Check if database has been imported
+      ansible.builtin.stat:
+        path: "{{ db_import_marker }}"
+      register: db_imported
+
+    - name: Import database dump
+      community.mysql.mysql_db:
+        name: "{{ world_db_name }}"
+        state: import
+        target: "{{ db_sql_file }}"
+      when: not db_imported.stat.exists
+
+    - name: Create import marker file
+      ansible.builtin.file:
+        path: "{{ db_import_marker }}"
+        state: touch
+        mode: "0644"
+      when: not db_imported.stat.exists
+
+    - name: Open firewall for MariaDB
+      ansible.posix.firewalld:
+        port: "{{ world_db_port }}/tcp"
+        permanent: true
+        immediate: true
+        state: enabled

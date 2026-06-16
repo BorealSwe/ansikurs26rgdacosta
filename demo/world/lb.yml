@@ -1,0 +1,48 @@
+---
+- name: Configure HAProxy load balancer
+  hosts: lb
+  become: true
+  gather_facts: false
+
+  vars_files:
+    - vars/common.yml
+
+  handlers:
+    - name: Restart HAProxy
+      ansible.builtin.systemd_service:
+        name: haproxy
+        state: restarted
+
+  tasks:
+    - name: Install HAProxy
+      ansible.builtin.dnf:
+        name: haproxy
+        state: present
+
+    - name: Template HAProxy configuration
+      ansible.builtin.template:
+        src: templates/haproxy.cfg.j2
+        dest: /etc/haproxy/haproxy.cfg
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Restart HAProxy
+
+    - name: Set SELinux boolean for HAProxy connections
+      ansible.posix.seboolean:
+        name: haproxy_connect_any
+        state: true
+        persistent: true
+
+    - name: Enable and start HAProxy
+      ansible.builtin.systemd_service:
+        name: haproxy
+        state: started
+        enabled: true
+
+    - name: Open firewall for HTTP
+      ansible.posix.firewalld:
+        service: http
+        permanent: true
+        immediate: true
+        state: enabled

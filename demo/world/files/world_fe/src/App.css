@@ -1,0 +1,81 @@
+.world-query-card {
+  max-width: 600px;
+}
+
+.world-query-globe-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+.world-globe-container {
+  flex-shrink: 0;
+}
+
+@media (max-width: 1024px) {
+  .world-query-globe-layout {
+    flex-direction: column;
+  }
+  .world-globe-container {
+    display: none;
+  }
+}
+
+.world-results {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-top: 24px;
+}
+
+.world-sub-section {
+  margin-top: 16px;
+}
+
+.world-city-detail-layout {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.world-city-detail-layout > div > .pf-v6-c-card {
+  max-width: none;
+}
+
+@media (max-width: 900px) {
+  .world-city-detail-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.world-continent-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.world-chart-legend {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 8px;
+  font-size: 0.85rem;
+  color: var(--pf-t--global--text--color--subtle);
+}
+
+.world-legend-dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 4px;
+}
+
+.world-legend-capital {
+  background-color: #c9190b;
+}
+
+.world-legend-city {
+  background-color: #0066cc;
+}

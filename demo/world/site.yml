@@ -1,0 +1,12 @@
+---
+- name: Deploy World database
+  ansible.builtin.import_playbook: db.yml
+
+- name: Deploy World API
+  ansible.builtin.import_playbook: api.yml
+
+- name: Deploy World frontend
+  ansible.builtin.import_playbook: fe.yml
+
+- name: Deploy World load balancer
+  ansible.builtin.import_playbook: lb.yml

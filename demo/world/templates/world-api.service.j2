@@ -1,0 +1,16 @@
+[Unit]
+Description=World API - Node.js Express application
+After=network.target
+
+[Service]
+Type=simple
+User={{ api_service_user }}
+Group={{ api_service_user }}
+WorkingDirectory={{ api_install_dir }}
+EnvironmentFile=/etc/sysconfig/{{ api_service_name }}
+ExecStart=/usr/bin/node app.js
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

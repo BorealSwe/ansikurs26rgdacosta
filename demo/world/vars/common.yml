@@ -1,0 +1,8 @@
+---
+world_db_name: world
+world_db_user: ricardo
+world_db_password: redhat123
+world_db_root_password: redhat321
+world_db_port: 3306
+world_api_port: 8080
+world_fe_port: 80
