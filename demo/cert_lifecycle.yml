@@ -29,28 +29,30 @@
             patterns: '*.crt,*.pem'
             recurse: true
 
-        - name: Ensure certificate expiry dates are checked
-          register: cert_expiry
+        - name: Ensure certificate details are gathered
+          register: cert_info
           loop: "{{ cert_files.files }}"
           loop_control:
             label: "{{ item.path }}"
-          changed_when: false
           failed_when: false
-          ansible.builtin.command: >
-            openssl x509 -in {{ item.path }}
-            -checkend {{ my_expiry_days * 86400 }}
-            -noout -subject -enddate
+          community.crypto.x509_certificate_info:
+            path: "{{ item.path }}"
 
         - name: Report certificate status
-          loop: "{{ cert_expiry.results }}"
+          loop: "{{ cert_info.results }}"
           loop_control:
             label: "{{ item.item.path }}"
-          when: item.rc is defined
+          when: item.not_after is defined
+          vars:
+            my_seconds_remaining: "{{ (item.not_after | to_datetime('%Y%m%d%H%M%SZ') - ansible_date_time.iso8601 | to_datetime('%Y-%m-%dT%H:%M:%SZ')).total_seconds() }}"
+            my_days_remaining: "{{ (my_seconds_remaining | int // 86400) }}"
           ansible.builtin.debug:
             msg: >-
               {{ item.item.path }}:
-              {{ 'EXPIRING SOON' if item.rc != 0 else 'OK' }}
-              - {{ item.stdout | default('unable to read') }}
+              {{ 'EXPIRING SOON' if (my_days_remaining | int) < my_expiry_days else 'OK' }}
+              — expires {{ item.not_after }}
+              ({{ my_days_remaining }} days remaining)
+              — subject: {{ item.subject.commonName | default('unknown') }}
 
     - name: Renew certificates
       tags:
@@ -59,30 +61,20 @@
       block:
 
         - name: Ensure private key is generated
-          ansible.builtin.command: >
-            openssl genrsa -out {{ my_key_dest }} 2048
-          args:
-            creates: "{{ my_key_dest }}"
-
-        - name: Ensure private key permissions are restrictive
-          ansible.builtin.file:
+          community.crypto.openssl_privatekey:
             path: "{{ my_key_dest }}"
+            size: 2048
             mode: "0600"
             owner: root
             group: root
 
         - name: Ensure self-signed certificate is generated
           notify: Ensure dependent services are restarted
-          ansible.builtin.command: >
-            openssl req -new -x509
-            -key {{ my_key_dest }}
-            -out {{ my_cert_dest }}
-            -days 365
-            -subj "/CN={{ my_cert_cn }}"
-
-        - name: Ensure certificate permissions are correct
-          ansible.builtin.file:
+          community.crypto.x509_certificate:
             path: "{{ my_cert_dest }}"
+            privatekey_path: "{{ my_key_dest }}"
+            provider: selfsigned
+            selfsigned_not_after: "+365d"
             mode: "0644"
             owner: root
             group: root

@@ -80,10 +80,10 @@
             delay: 5
             timeout: 300
 
-        - name: Ensure system is healthy after patching
-          register: uptime_check
-          changed_when: false
-          ansible.builtin.command: uptime
+        - name: Ensure facts are refreshed after patching
+          ansible.builtin.setup:
+            gather_subset:
+              - min
 
         - name: Report patch results
           ansible.builtin.debug:
@@ -91,4 +91,4 @@
               {{ inventory_hostname }}:
               {{ patch_result.changed | default(false) | ternary('Packages updated', 'Already up to date') }},
               {{ reboot_check.rc | default(0) | ternary('Rebooted', 'No reboot needed') }},
-              {{ uptime_check.stdout }}
+              Uptime: {{ ansible_facts['uptime_seconds'] // 60 }} minutes

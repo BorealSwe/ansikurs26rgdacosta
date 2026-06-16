@@ -1,0 +1,7 @@
+---
+compliance_min_password_length: 8
+compliance_max_password_days: 90
+compliance_ssh_permit_root: "no"
+compliance_world_writable_paths:
+  - /tmp
+  - /var/tmp

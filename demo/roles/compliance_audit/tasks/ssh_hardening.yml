@@ -1,0 +1,26 @@
+---
+- name: Ensure sshd effective configuration is read
+  register: sshd_config
+  changed_when: false
+  failed_when: false
+  ansible.builtin.command: sshd -T
+
+- name: Ensure PermitRootLogin value is extracted
+  ansible.builtin.set_fact:
+    compliance_ssh_root_value: >-
+      {{ sshd_config.stdout_lines
+         | select('match', '^permitrootlogin')
+         | first
+         | default('permitrootlogin unknown')
+         | split(' ')
+         | last }}
+
+- name: Report SSH root login status
+  tags:
+    - audit
+  ansible.builtin.debug:
+    msg: >-
+      SSH PermitRootLogin: {{ compliance_ssh_root_value }}
+      (required: {{ compliance_ssh_permit_root }})
+      -
+      {{ 'PASS' if compliance_ssh_root_value == compliance_ssh_permit_root else 'FAIL' }}

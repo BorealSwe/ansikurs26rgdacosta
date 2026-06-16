@@ -1,0 +1,38 @@
+---
+- name: Ensure /tmp permissions are checked
+  register: tmp_perms
+  ansible.builtin.stat:
+    path: /tmp
+
+- name: Report /tmp sticky bit status
+  tags:
+    - audit
+  ansible.builtin.debug:
+    msg: >-
+      /tmp sticky bit:
+      {{ 'PASS' if tmp_perms.stat.mode is defined and tmp_perms.stat.mode[-4] == '1' else 'FAIL' }}
+
+- name: Ensure world-writable files are found
+  register: world_writable
+  ansible.builtin.find:
+    paths: "{{ compliance_world_writable_paths }}"
+    file_type: file
+    recurse: true
+    excludes: "proc"
+
+- name: Ensure world-writable files are filtered
+  ansible.builtin.set_fact:
+    compliance_world_writable_files: >-
+      {{ world_writable.files
+         | selectattr('mode', 'match', '.*2$')
+         | list }}
+
+- name: Report world-writable file count
+  tags:
+    - audit
+  ansible.builtin.debug:
+    msg: >-
+      World-writable files:
+      {{ compliance_world_writable_files | length }}
+      -
+      {{ 'PASS' if (compliance_world_writable_files | length) == 0 else 'FAIL' }}

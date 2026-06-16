@@ -10,15 +10,9 @@
 
   tasks:
 
-    - name: Ensure package count is gathered
-      register: pkg_count
-      changed_when: false
-      ansible.builtin.shell: rpm -qa | wc -l
-
-    - name: Ensure uptime in days is calculated
-      register: uptime_days
-      changed_when: false
-      ansible.builtin.shell: awk '{print int($1/86400)}' /proc/uptime
+    - name: Ensure package facts are gathered
+      ansible.builtin.package_facts:
+        manager: auto
 
     - name: Ensure kernel needs-restarting status is checked
       register: needs_restart
@@ -37,8 +31,8 @@
           Memory        : {{ ansible_facts['memtotal_mb'] }} MB
           Swap          : {{ ansible_facts['swaptotal_mb'] }} MB
           Root disk free: {{ (ansible_facts['mounts'] | selectattr('mount', 'equalto', '/') | first).size_available | human_readable }}
-          Uptime        : {{ uptime_days.stdout }} days
-          Packages      : {{ pkg_count.stdout }}
+          Uptime        : {{ ansible_facts['uptime_seconds'] // 86400 }} days
+          Packages      : {{ ansible_facts.packages | length }}
           Reboot needed : {{ 'Yes' if needs_restart.rc | default(0) == 1 else 'No' }}
           IPv4 address  : {{ ansible_facts['default_ipv4']['address'] | default('N/A') }}
           FQDN          : {{ ansible_facts['fqdn'] }}
@@ -56,7 +50,7 @@
           Fleet Inventory Report - {{ ansible_date_time.date | default('unknown') }}
           ================================================
           {% for host in ansible_play_hosts %}
-          {{ host }}: {{ hostvars[host]['ansible_facts']['distribution'] | default('Unknown') }} {{ hostvars[host]['ansible_facts']['distribution_version'] | default('') }} | Kernel: {{ hostvars[host]['ansible_facts']['kernel'] | default('Unknown') }} | CPUs: {{ hostvars[host]['ansible_facts']['processor_vcpus'] | default('?') }} | RAM: {{ hostvars[host]['ansible_facts']['memtotal_mb'] | default('?') }}MB | Uptime: {{ hostvars[host]['uptime_days']['stdout'] | default('?') }}d | Pkgs: {{ hostvars[host]['pkg_count']['stdout'] | default('?') }}
+          {{ host }}: {{ hostvars[host]['ansible_facts']['distribution'] | default('Unknown') }} {{ hostvars[host]['ansible_facts']['distribution_version'] | default('') }} | Kernel: {{ hostvars[host]['ansible_facts']['kernel'] | default('Unknown') }} | CPUs: {{ hostvars[host]['ansible_facts']['processor_vcpus'] | default('?') }} | RAM: {{ hostvars[host]['ansible_facts']['memtotal_mb'] | default('?') }}MB | Uptime: {{ hostvars[host]['ansible_facts']['uptime_seconds'] | default(0) // 86400 }}d | Pkgs: {{ hostvars[host]['ansible_facts']['packages'] | default({}) | length }}
           {% endfor %}
       changed_when: false
       failed_when: false

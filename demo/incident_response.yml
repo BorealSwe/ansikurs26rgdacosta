@@ -6,88 +6,28 @@
 
   vars:
 
-    my_evidence_dir: /var/tmp/incident_{{ inventory_hostname }}_{{ ansible_date_time.date }}
+    my_sos_plugins: process,networking,login,cron,selinux,auditd,filesys
     my_fetch_dest: ./incident_evidence/
 
   tasks:
 
-    - name: Ensure evidence directory exists
-      ansible.builtin.file:
-        path: "{{ my_evidence_dir }}"
-        state: directory
-        mode: "0700"
+    - name: Ensure sos report collects system evidence
+      register: sos_output
+      changed_when: false
+      ansible.builtin.command: >
+        sos report --batch
+        --only-plugins={{ my_sos_plugins }}
+        --tmp-dir=/var/tmp
 
-    - name: Capture system state
-      block:
+    - name: Ensure sos archive path is extracted
+      ansible.builtin.set_fact:
+        my_sos_archive: "{{ sos_output.stdout | regex_search('/var/tmp/sosreport-[\\w.-]+\\.tar\\.xz') }}"
 
-        - name: Ensure running processes are captured
-          changed_when: false
-          ansible.builtin.shell: ps auxww > {{ my_evidence_dir }}/processes.txt
-
-        - name: Ensure network connections are captured
-          changed_when: false
-          ansible.builtin.shell: ss -tulnp > {{ my_evidence_dir }}/network_connections.txt
-
-        - name: Ensure listening ports are captured
-          changed_when: false
-          ansible.builtin.shell: ss -tlnp > {{ my_evidence_dir }}/listening_ports.txt
-
-        - name: Ensure login history is captured
-          changed_when: false
-          ansible.builtin.shell: last -50 > {{ my_evidence_dir }}/login_history.txt
-
-        - name: Ensure failed login attempts are captured
-          changed_when: false
-          ansible.builtin.shell: lastb -20 > {{ my_evidence_dir }}/failed_logins.txt
-          failed_when: false
-
-        - name: Ensure cron jobs are captured
-          changed_when: false
-          failed_when: false
-          ansible.builtin.shell: >
-            for user in $(cut -f1 -d: /etc/passwd); do
-              echo "=== $user ===" ;
-              crontab -l -u "$user" 2>/dev/null || true ;
-            done > {{ my_evidence_dir }}/cron_jobs.txt
-
-        - name: Ensure active user sessions are captured
-          changed_when: false
-          ansible.builtin.shell: w > {{ my_evidence_dir }}/active_sessions.txt
-
-        - name: Ensure recent file modifications are captured
-          changed_when: false
-          ansible.builtin.shell: >
-            find /etc /usr/bin /usr/sbin -type f -mtime -1
-            -ls > {{ my_evidence_dir }}/recent_modifications.txt
-          failed_when: false
-
-        - name: Ensure system uptime and load are captured
-          changed_when: false
-          ansible.builtin.shell: >
-            echo "=== Uptime ===" && uptime &&
-            echo "=== Memory ===" && free -h &&
-            echo "=== Disk ===" && df -h
-            > {{ my_evidence_dir }}/system_stats.txt
-
-        - name: Ensure SELinux denials are captured
-          changed_when: false
-          ansible.builtin.shell: >
-            ausearch -m avc -ts recent 2>/dev/null
-            > {{ my_evidence_dir }}/selinux_denials.txt
-          failed_when: false
-
-    - name: Ensure evidence is archived
-      register: evidence_archive
-      ansible.builtin.archive:
-        path: "{{ my_evidence_dir }}/"
-        dest: "{{ my_evidence_dir }}.tar.gz"
-        format: gz
-
-    - name: Ensure evidence archive is fetched to controller
+    - name: Ensure sos archive is fetched to controller
       tags:
         - fetch
       ansible.builtin.fetch:
-        src: "{{ my_evidence_dir }}.tar.gz"
+        src: "{{ my_sos_archive }}"
         dest: "{{ my_fetch_dest }}"
         flat: false
 
@@ -95,7 +35,8 @@
       ansible.builtin.debug:
         msg: >-
           Evidence collected from {{ inventory_hostname }}
-          and archived to {{ my_evidence_dir }}.tar.gz.
+          via sos report (plugins: {{ my_sos_plugins }}).
+          Archive: {{ my_sos_archive }}.
           Fetched to controller at {{ my_fetch_dest }}.
 
     - name: Isolate host
@@ -104,17 +45,31 @@
         - never
       block:
 
-        - name: Ensure non-essential services are stopped
-          ansible.builtin.shell: >
-            systemctl list-units --type=service --state=running --no-pager
-            --no-legend | awk '{print $1}'
-            | grep -v -E '(sshd|auditd|systemd|dbus|NetworkManager|chronyd)'
-          register: nonessential_services
-          changed_when: false
-          failed_when: false
+        - name: Ensure running services are gathered
+          ansible.builtin.service_facts:
+
+        - name: Ensure non-essential services are identified
+          vars:
+            my_essential_services:
+              - sshd
+              - auditd
+              - dbus
+              - NetworkManager
+              - chronyd
+              - systemd-journald
+              - systemd-logind
+          ansible.builtin.set_fact:
+            my_nonessential_services: >-
+              {{ ansible_facts.services
+                 | dict2items
+                 | selectattr('value.state', 'equalto', 'running')
+                 | selectattr('value.name', 'defined')
+                 | rejectattr('value.name', 'in', my_essential_services)
+                 | map(attribute='value.name')
+                 | list }}
 
         - name: Report isolation candidates
           ansible.builtin.debug:
             msg: >-
               Services that would be stopped during isolation:
-              {{ nonessential_services.stdout_lines | default([]) | join(', ') }}
+              {{ my_nonessential_services | join(', ') }}

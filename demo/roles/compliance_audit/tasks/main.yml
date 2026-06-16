@@ -1,0 +1,27 @@
+---
+- name: Include password policy audit
+  tags:
+    - audit
+    - remediate
+  ansible.builtin.include_tasks:
+    file: password_policy.yml
+
+- name: Include SSH hardening audit
+  tags:
+    - audit
+    - remediate
+  ansible.builtin.include_tasks:
+    file: ssh_hardening.yml
+
+- name: Include filesystem audit
+  tags:
+    - audit
+    - remediate
+  ansible.builtin.include_tasks:
+    file: filesystem.yml
+
+- name: Include services audit
+  tags:
+    - audit
+  ansible.builtin.include_tasks:
+    file: services.yml

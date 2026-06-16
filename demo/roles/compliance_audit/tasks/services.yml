@@ -1,0 +1,17 @@
+---
+- name: Ensure service facts are gathered
+  ansible.builtin.service_facts:
+
+- name: Ensure running service count is determined
+  ansible.builtin.set_fact:
+    compliance_running_services: >-
+      {{ ansible_facts.services
+         | dict2items
+         | selectattr('value.state', 'defined')
+         | selectattr('value.state', 'equalto', 'running')
+         | map(attribute='key')
+         | list }}
+
+- name: Report running service count
+  ansible.builtin.debug:
+    msg: "Running services: {{ compliance_running_services | length }}"

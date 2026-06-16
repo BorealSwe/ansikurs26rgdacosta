@@ -28,10 +28,11 @@
 
         - name: Ensure configuration directories are backed up
           loop: "{{ my_backup_sources }}"
-          ansible.builtin.command: >
-            cp -a {{ item }} {{ my_backup_dest }}/{{ item | basename }}
-          args:
-            creates: "{{ my_backup_dest }}/{{ item | basename }}"
+          ansible.builtin.copy:
+            src: "{{ item }}/"
+            dest: "{{ my_backup_dest }}/{{ item | basename }}/"
+            remote_src: true
+            mode: preserve
 
         - name: Ensure backup archive is created
           ansible.builtin.archive:
@@ -39,17 +40,17 @@
             dest: "{{ my_backup_dest }}.tar.gz"
             format: gz
 
-        - name: Ensure backup checksums are generated
-          register: backup_checksums
-          changed_when: false
-          ansible.builtin.command: >
-            sha256sum {{ my_backup_dest }}.tar.gz
+        - name: Ensure backup archive checksum is gathered
+          register: backup_checksum
+          ansible.builtin.stat:
+            path: "{{ my_backup_dest }}.tar.gz"
+            checksum_algorithm: sha256
 
         - name: Report backup details
           ansible.builtin.debug:
             msg: >-
               Backup created: {{ my_backup_dest }}.tar.gz
-              Checksum: {{ backup_checksums.stdout.split(' ')[0] }}
+              Checksum: {{ backup_checksum.stat.checksum }}
 
     - name: Validate restore
       tags:
