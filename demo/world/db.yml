@@ -37,6 +37,7 @@
         password: "{{ world_db_root_password }}"
         login_user: root
         login_password: "{{ world_db_root_password }}"
+        login_unix_socket: /var/lib/mysql/mysql.sock
         check_implicit_admin: true
         state: present
 
