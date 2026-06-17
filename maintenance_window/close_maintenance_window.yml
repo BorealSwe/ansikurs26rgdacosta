@@ -1,7 +1,7 @@
 ---
 - name: Close maintenance window
   hosts: all
-  become: false
+  become: true
 
   tasks:
     - name: Ensure maintenance window open fact is removed
