@@ -3,6 +3,7 @@
   hosts: "{{ my_host | default('all') }}"
   become: true
   force_handlers: true
+  gather_facts: false
 
   tasks:
 
