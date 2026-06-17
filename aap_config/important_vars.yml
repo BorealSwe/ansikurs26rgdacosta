@@ -1,0 +1,6 @@
+---
+controller_host: "https://aap.lab.example.com"
+controller_user: "admin"
+controller_pass: "redhat"
+controller_verify_tls: false
+org_name: "Linux"

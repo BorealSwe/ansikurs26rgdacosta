@@ -4,13 +4,11 @@
   gather_facts: false
   connection: local
 
+  vars_files:
+    - important_vars.yml
+
   vars:
-    controller_host: "https://aap.lab.example.com"
     controller_api: "{{ controller_host }}/api/controller/v2"
-    controller_user: "admin"
-    controller_pass: "redhat"
-    controller_verify_tls: false
-    org_name: "Linux"
     export_dir: "{{ playbook_dir }}/export/{{ org_name | lower }}"
 
   tasks:
