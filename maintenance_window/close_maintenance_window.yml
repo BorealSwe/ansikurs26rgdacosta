@@ -4,31 +4,49 @@
   become: true
 
   tasks:
-    - name: Ensure maintenance window open fact is removed
-      ansible.builtin.file:
-        path: /etc/ansible/facts.d/custom.fact
-        state: absent
+    - name: Close maintenance window
+      block:
+        - name: Ensure maintenance window open fact is removed
+          ansible.builtin.file:
+            path: /etc/ansible/facts.d/custom.fact
+            state: absent
 
-    - name: Ensure regular logins are allowed when the maintenance window is closed
-      ansible.builtin.file:
-        path: /etc/nologin
-        state: absent
+        - name: Ensure regular logins are allowed when the maintenance window is closed
+          ansible.builtin.file:
+            path: /etc/nologin
+            state: absent
 
-    - name: Ensure root SSH login restricted to key-based only
-      ansible.builtin.lineinfile:
-        dest: /etc/ssh/sshd_config
-        state: present
-        regexp: '^PermitRootLogin'
-        line: PermitRootLogin prohibit-password
+        - name: Ensure root SSH login restricted to key-based only
+          ansible.builtin.lineinfile:
+            dest: /etc/ssh/sshd_config
+            state: present
+            regexp: '^PermitRootLogin'
+            line: PermitRootLogin prohibit-password
 
-    - name: Ensure sshd is reloaded to apply root login changes
-      ansible.builtin.service:
-        name: sshd
-        state: reloaded
+        - name: Ensure sshd is reloaded to apply root login changes
+          ansible.builtin.service:
+            name: sshd
+            state: reloaded
 
-    - name: Ensure cron jobs are started when window is closed
-      ansible.builtin.service:
-        name: crond
-        state: started
+        - name: Ensure cron jobs are started when window is closed
+          ansible.builtin.service:
+            name: crond
+            state: started
+
+      rescue:
+        - name: Force remove nologin file
+          ansible.builtin.file:
+            path: /etc/nologin
+            state: absent
+
+        - name: Force start cron jobs
+          ansible.builtin.service:
+            name: crond
+            state: started
+          ignore_errors: true
+
+        - name: Fail the play after partial cleanup
+          ansible.builtin.fail:
+            msg: "Closing maintenance window failed - nologin removed but other steps may need manual attention"
 
 ...

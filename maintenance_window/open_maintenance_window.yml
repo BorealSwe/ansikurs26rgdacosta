@@ -4,33 +4,67 @@
   become: true
 
   tasks:
-    - name: Ensure maintenance window open fact is set
-      ansible.builtin.copy:
-        dest: /etc/ansible/facts.d/
-        src: custom.fact
-        mode: '0644'
+    - name: Open maintenance window
+      block:
+        - name: Ensure maintenance window open fact is set
+          ansible.builtin.copy:
+            dest: /etc/ansible/facts.d/
+            src: custom.fact
+            mode: '0644'
 
-    - name: Ensure root login via SSH with the maintenance window open
-      ansible.builtin.lineinfile:
-        dest: /etc/ssh/sshd_config
-        state: present
-        regexp: '^PermitRootLogin'
-        line: PermitRootLogin yes
+        - name: Ensure root login via SSH with the maintenance window open
+          ansible.builtin.lineinfile:
+            dest: /etc/ssh/sshd_config
+            state: present
+            regexp: '^PermitRootLogin'
+            line: PermitRootLogin yes
 
-    - name: Ensure sshd is reloaded to apply root login changes
-      ansible.builtin.service:
-        name: sshd
-        state: reloaded
+        - name: Ensure sshd is reloaded to apply root login changes
+          ansible.builtin.service:
+            name: sshd
+            state: reloaded
 
-    - name: Ensure regular logins are disallowed while the maintenance window is open
-      ansible.builtin.copy:
-        dest: /etc/nologin
-        content: "Maintenance window is currently open so no logins are allowed"
-        mode: '0644'
+        - name: Ensure regular logins are disallowed while the maintenance window is open
+          ansible.builtin.copy:
+            dest: /etc/nologin
+            content: "Maintenance window is currently open so no logins are allowed"
+            mode: '0644'
 
-    - name: Ensure cron jobs are stopped during maintenance window
-      ansible.builtin.service:
-        name: crond
-        state: stopped
+        - name: Ensure cron jobs are stopped during maintenance window
+          ansible.builtin.service:
+            name: crond
+            state: stopped
+
+      rescue:
+        - name: Revert - allow regular logins
+          ansible.builtin.file:
+            path: /etc/nologin
+            state: absent
+
+        - name: Revert - restrict root SSH to key-based only
+          ansible.builtin.lineinfile:
+            dest: /etc/ssh/sshd_config
+            state: present
+            regexp: '^PermitRootLogin'
+            line: PermitRootLogin prohibit-password
+
+        - name: Revert - reload sshd
+          ansible.builtin.service:
+            name: sshd
+            state: reloaded
+
+        - name: Revert - remove maintenance window fact
+          ansible.builtin.file:
+            path: /etc/ansible/facts.d/custom.fact
+            state: absent
+
+        - name: Revert - start cron jobs
+          ansible.builtin.service:
+            name: crond
+            state: started
+
+        - name: Fail the play after cleanup
+          ansible.builtin.fail:
+            msg: "Opening maintenance window failed and changes have been reverted"
 
 ...
