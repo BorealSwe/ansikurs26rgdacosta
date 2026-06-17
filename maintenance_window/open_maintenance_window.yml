@@ -14,7 +14,7 @@
       ansible.builtin.lineinfile:
         dest: /etc/ssh/sshd_config
         state: present
-        regexp: PermitRootLogin no
+        regexp: '^PermitRootLogin'
         line: PermitRootLogin yes
 
     - name: Ensure sshd is reloaded to apply root login changes

@@ -14,12 +14,12 @@
         path: /etc/nologin
         state: absent
 
-    - name: Ensure root SSH login disallowed with the maintenance window closed
+    - name: Ensure root SSH login restricted to key-based only
       ansible.builtin.lineinfile:
         dest: /etc/ssh/sshd_config
         state: present
-        regexp: PermitRootLogin yes
-        line: PermitRootLogin no
+        regexp: '^PermitRootLogin'
+        line: PermitRootLogin prohibit-password
 
     - name: Ensure sshd is reloaded to apply root login changes
       ansible.builtin.service:
