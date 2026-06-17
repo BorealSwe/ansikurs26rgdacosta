@@ -1,0 +1,521 @@
+---
+- name: Import AAP Controller organization resources
+  hosts: localhost
+  gather_facts: false
+  connection: local
+
+  vars_files:
+    - important_vars.yml
+
+  vars:
+    controller_api: "{{ controller_host }}/api/controller/v2"
+    source_dir: "{{ playbook_dir }}/export/{{ org_name | lower }}"
+    target_org: "{{ import_org_name | default('Linux-Test') }}"
+
+  tasks:
+
+    # ── Load exported data ───────────────────────────────────────
+
+    - name: Load exported organization data
+      ansible.builtin.set_fact:
+        exp_org: "{{ lookup('file', source_dir + '/organization.yml') | from_yaml }}"
+        exp_creds: "{{ lookup('file', source_dir + '/credentials/all.yml') | from_yaml }}"
+        exp_inventories: "{{ lookup('file', source_dir + '/inventories/inventories.yml') | from_yaml }}"
+        exp_hosts: "{{ lookup('file', source_dir + '/inventories/hosts.yml') | from_yaml }}"
+        exp_groups: "{{ lookup('file', source_dir + '/inventories/groups.yml') | from_yaml }}"
+        exp_projects: "{{ lookup('file', source_dir + '/projects/all.yml') | from_yaml }}"
+        exp_jts: "{{ lookup('file', source_dir + '/job_templates/all.yml') | from_yaml }}"
+        exp_wfts: "{{ lookup('file', source_dir + '/workflow_templates/all.yml') | from_yaml }}"
+        exp_notifs: "{{ lookup('file', source_dir + '/notification_templates/all.yml') | from_yaml }}"
+        exp_notif_assocs: "{{ lookup('file', source_dir + '/notification_templates/associations.yml') | from_yaml | default([]) }}"
+
+    # ── Organization ─────────────────────────────────────────────
+
+    - name: Create target organization
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/organizations/"
+        method: POST
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+        body_format: json
+        body:
+          name: "{{ target_org }}"
+          description: "Imported from {{ org_name }} organization"
+        status_code: [201]
+      register: org_create
+
+    - name: Set target organization ID
+      ansible.builtin.set_fact:
+        target_org_id: "{{ org_create.json.id }}"
+
+    # ── Credentials ──────────────────────────────────────────────
+
+    - name: Look up credential type IDs
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/credential_types/?name={{ item | urlencode }}"
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+      loop: "{{ exp_creds | map(attribute='credential_type') | unique | list }}"
+      register: cred_type_results
+
+    - name: Build credential type map
+      ansible.builtin.set_fact:
+        cred_type_map: "{{ cred_type_map | default({}) | combine({item.item: item.json.results[0].id}) }}"
+      loop: "{{ cred_type_results.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+
+    - name: Create credentials
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/credentials/"
+        method: POST
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+        body_format: json
+        body:
+          name: "{{ item.name }}"
+          description: "{{ item.description }}"
+          organization: "{{ target_org_id }}"
+          credential_type: "{{ cred_type_map[item.credential_type] }}"
+          inputs: "{{ item.inputs | dict2items | rejectattr('value', 'equalto', '$encrypted$') | list | items2dict }}"
+        status_code: [201]
+      loop: "{{ exp_creds }}"
+      loop_control:
+        label: "{{ item.name }}"
+      register: cred_results
+
+    - name: Build credential name map
+      ansible.builtin.set_fact:
+        cred_map: "{{ cred_map | default({}) | combine({item.item.name: item.json.id}) }}"
+      loop: "{{ cred_results.results }}"
+      loop_control:
+        label: "{{ item.item.name }}"
+
+    # ── Inventories ──────────────────────────────────────────────
+
+    - name: Create inventories
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/inventories/"
+        method: POST
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+        body_format: json
+        body:
+          name: "{{ item.name }}"
+          description: "{{ item.description }}"
+          organization: "{{ target_org_id }}"
+        status_code: [201]
+      loop: "{{ exp_inventories }}"
+      loop_control:
+        label: "{{ item.name }}"
+      register: inv_results
+
+    - name: Build inventory name map
+      ansible.builtin.set_fact:
+        inv_map: "{{ inv_map | default({}) | combine({item.item.name: item.json.id}) }}"
+      loop: "{{ inv_results.results }}"
+      loop_control:
+        label: "{{ item.item.name }}"
+
+    # ── Hosts ────────────────────────────────────────────────────
+
+    - name: Create hosts
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/hosts/"
+        method: POST
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+        body_format: json
+        body:
+          name: "{{ item.name }}"
+          description: "{{ item.description }}"
+          inventory: "{{ inv_map[item.inventory] }}"
+          enabled: "{{ item.enabled }}"
+        status_code: [201]
+      loop: "{{ exp_hosts }}"
+      loop_control:
+        label: "{{ item.name }}"
+      register: host_results
+
+    - name: Build host name map
+      ansible.builtin.set_fact:
+        host_map: "{{ host_map | default({}) | combine({item.item.name: item.json.id}) }}"
+      loop: "{{ host_results.results }}"
+      loop_control:
+        label: "{{ item.item.name }}"
+
+    # ── Groups ───────────────────────────────────────────────────
+
+    - name: Create groups
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/groups/"
+        method: POST
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+        body_format: json
+        body:
+          name: "{{ item.name }}"
+          description: "{{ item.description }}"
+          inventory: "{{ inv_map[item.inventory] }}"
+        status_code: [201]
+      loop: "{{ exp_groups }}"
+      loop_control:
+        label: "{{ item.name }}"
+      register: group_results
+
+    - name: Build group name map
+      ansible.builtin.set_fact:
+        group_map: "{{ group_map | default({}) | combine({item.item.name: item.json.id}) }}"
+      loop: "{{ group_results.results }}"
+      loop_control:
+        label: "{{ item.item.name }}"
+
+    - name: Add hosts to groups
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/groups/{{ group_map[item.0.name] }}/hosts/"
+        method: POST
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+        body_format: json
+        body:
+          id: "{{ host_map[item.1] }}"
+        status_code: [204]
+      loop: "{{ exp_groups | subelements('hosts', skip_missing=True) }}"
+      loop_control:
+        label: "{{ item.0.name }} <- {{ item.1 }}"
+
+    # ── Projects ─────────────────────────────────────────────────
+
+    - name: Create projects
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/projects/"
+        method: POST
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+        body_format: json
+        body:
+          name: "{{ item.name }}"
+          description: "{{ item.description }}"
+          organization: "{{ target_org_id }}"
+          scm_type: "{{ item.scm_type }}"
+          scm_url: "{{ item.scm_url }}"
+          scm_branch: "{{ item.scm_branch }}"
+          scm_clean: "{{ item.scm_clean }}"
+          scm_delete_on_update: "{{ item.scm_delete_on_update }}"
+          scm_update_on_launch: "{{ item.scm_update_on_launch }}"
+        status_code: [201]
+      loop: "{{ exp_projects }}"
+      loop_control:
+        label: "{{ item.name }}"
+      register: proj_results
+
+    - name: Build project name map
+      ansible.builtin.set_fact:
+        project_map: "{{ project_map | default({}) | combine({item.item.name: item.json.id}) }}"
+      loop: "{{ proj_results.results }}"
+      loop_control:
+        label: "{{ item.item.name }}"
+
+    - name: Wait for project sync to complete
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/projects/{{ project_map[item.name] }}/"
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+      register: project_sync
+      until: project_sync.json.status in ['successful', 'failed', 'error', 'canceled']
+      retries: 30
+      delay: 10
+      loop: "{{ exp_projects }}"
+      loop_control:
+        label: "{{ item.name }}"
+
+    - name: Ensure project sync succeeded
+      ansible.builtin.fail:
+        msg: "Project '{{ item.item.name }}' sync failed with status: {{ item.json.status }}"
+      loop: "{{ project_sync.results }}"
+      when: item.json.status != 'successful'
+      loop_control:
+        label: "{{ item.item.name }}"
+
+    # ── Job Templates ────────────────────────────────────────────
+
+    - name: Create job templates
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/job_templates/"
+        method: POST
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+        body_format: json
+        body:
+          name: "{{ item.name }}"
+          description: "{{ item.description }}"
+          organization: "{{ target_org_id }}"
+          job_type: "{{ item.job_type }}"
+          playbook: "{{ item.playbook }}"
+          inventory: "{{ inv_map[item.inventory] }}"
+          project: "{{ project_map[item.project] }}"
+          become_enabled: "{{ item.become_enabled }}"
+          forks: "{{ item.forks }}"
+          verbosity: "{{ item.verbosity }}"
+          diff_mode: "{{ item.diff_mode }}"
+        status_code: [201]
+      loop: "{{ exp_jts }}"
+      loop_control:
+        label: "{{ item.name }}"
+      register: jt_results
+
+    - name: Build job template name map
+      ansible.builtin.set_fact:
+        jt_map: "{{ jt_map | default({}) | combine({item.item.name: item.json.id}) }}"
+      loop: "{{ jt_results.results }}"
+      loop_control:
+        label: "{{ item.item.name }}"
+
+    - name: Associate credentials with job templates
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/job_templates/{{ jt_map[item.0.name] }}/credentials/"
+        method: POST
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+        body_format: json
+        body:
+          id: "{{ cred_map[item.1] }}"
+        status_code: [204]
+      loop: "{{ exp_jts | subelements('credentials') }}"
+      loop_control:
+        label: "{{ item.0.name }} <- {{ item.1 }}"
+
+    # ── Workflow Templates ───────────────────────────────────────
+
+    - name: Build unified job template map
+      ansible.builtin.set_fact:
+        ujt_map: "{{ jt_map | combine(project_map) }}"
+
+    - name: Create workflow templates
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/workflow_job_templates/"
+        method: POST
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+        body_format: json
+        body:
+          name: "{{ item.name }}"
+          description: "{{ item.description }}"
+          organization: "{{ target_org_id }}"
+          survey_enabled: "{{ item.survey_enabled }}"
+          allow_simultaneous: "{{ item.allow_simultaneous }}"
+        status_code: [201]
+      loop: "{{ exp_wfts }}"
+      loop_control:
+        label: "{{ item.name }}"
+      register: wft_results
+
+    - name: Build workflow template name map
+      ansible.builtin.set_fact:
+        wft_map: "{{ wft_map | default({}) | combine({item.item.name: item.json.id}) }}"
+      loop: "{{ wft_results.results }}"
+      loop_control:
+        label: "{{ item.item.name }}"
+
+    # ── Workflow Nodes ───────────────────────────────────────────
+
+    - name: Create regular workflow nodes
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/workflow_job_templates/{{ wft_map[item.0.name] }}/workflow_nodes/"
+        method: POST
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+        body_format: json
+        body:
+          unified_job_template: "{{ ujt_map[item.1.unified_job_template] }}"
+          all_parents_must_converge: "{{ item.1.all_parents_must_converge }}"
+        status_code: [201]
+      loop: "{{ exp_wfts | subelements('nodes') }}"
+      when: item.1.unified_job_type != 'workflow_approval'
+      loop_control:
+        label: "{{ item.1.unified_job_template }}"
+      register: regular_node_results
+
+    - name: Create approval workflow nodes
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/workflow_job_templates/{{ wft_map[item.0.name] }}/workflow_nodes/"
+        method: POST
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+        body_format: json
+        body:
+          all_parents_must_converge: "{{ item.1.all_parents_must_converge }}"
+        status_code: [201]
+      loop: "{{ exp_wfts | subelements('nodes') }}"
+      when: item.1.unified_job_type == 'workflow_approval'
+      loop_control:
+        label: "{{ item.1.unified_job_template }}"
+      register: approval_node_results
+
+    - name: Create approval templates on approval nodes
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/workflow_nodes/{{ item.json.id }}/create_approval_template/"
+        method: POST
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+        body_format: json
+        body:
+          name: "{{ item.item.1.unified_job_template }}"
+          description: ""
+          timeout: 0
+        status_code: [201]
+      loop: "{{ approval_node_results.results | selectattr('json', 'defined') | list }}"
+      loop_control:
+        label: "{{ item.item.1.unified_job_template }}"
+
+    - name: Build node ID map
+      ansible.builtin.set_fact:
+        node_id_map: "{{ node_id_map | default({}) | combine({(item.item.1.id | string): item.json.id}) }}"
+      loop: "{{ (regular_node_results.results + approval_node_results.results) | selectattr('json', 'defined') | list }}"
+      loop_control:
+        label: "{{ item.item.1.unified_job_template }}"
+
+    # ── Workflow Edges ───────────────────────────────────────────
+
+    - name: Build workflow edge operations
+      ansible.builtin.set_fact:
+        edge_ops: "{{ _edges | from_yaml | default([]) }}"
+      vars:
+        _edges: |
+          {% for wf in exp_wfts %}
+          {% for n in wf.nodes %}
+          {% for t in n.success_nodes %}
+          - source: {{ n.id }}
+            target: {{ t }}
+            type: success_nodes
+          {% endfor %}
+          {% for t in n.failure_nodes %}
+          - source: {{ n.id }}
+            target: {{ t }}
+            type: failure_nodes
+          {% endfor %}
+          {% for t in n.always_nodes %}
+          - source: {{ n.id }}
+            target: {{ t }}
+            type: always_nodes
+          {% endfor %}
+          {% endfor %}
+          {% endfor %}
+
+    - name: Wire workflow edges
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/workflow_nodes/{{ node_id_map[item.source | string] }}/{{ item.type }}/"
+        method: POST
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+        body_format: json
+        body:
+          id: "{{ node_id_map[item.target | string] }}"
+        status_code: [204]
+      loop: "{{ edge_ops }}"
+      loop_control:
+        label: "{{ item.source }} --{{ item.type }}--> {{ item.target }}"
+
+    # ── Notification Templates ───────────────────────────────────
+
+    - name: Create notification templates
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/notification_templates/"
+        method: POST
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+        body_format: json
+        body:
+          name: "{{ item.name }}"
+          description: "{{ item.description }}"
+          organization: "{{ target_org_id }}"
+          notification_type: "{{ item.notification_type }}"
+          notification_configuration: "{{ item.notification_configuration }}"
+        status_code: [201]
+      loop: "{{ exp_notifs }}"
+      loop_control:
+        label: "{{ item.name }}"
+      register: notif_results
+
+    - name: Build notification template name map
+      ansible.builtin.set_fact:
+        notif_map: "{{ notif_map | default({}) | combine({item.item.name: item.json.id}) }}"
+      loop: "{{ notif_results.results }}"
+      loop_control:
+        label: "{{ item.item.name }}"
+
+    - name: Associate approval notifications with workflow templates
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/workflow_job_templates/{{ wft_map[item.0.workflow_template] }}/notification_templates_approvals/"
+        method: POST
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+        body_format: json
+        body:
+          id: "{{ notif_map[item.1] }}"
+        status_code: [204]
+      loop: "{{ exp_notif_assocs | subelements('approval_notifications') }}"
+      loop_control:
+        label: "{{ item.0.workflow_template }} <- {{ item.1 }}"
+
+    # ── Summary ──────────────────────────────────────────────────
+
+    - name: Display import summary
+      ansible.builtin.debug:
+        msg:
+          - "Import complete to organization: {{ target_org }}"
+          - "Source: {{ org_name }}"
+          - "Credentials: {{ exp_creds | length }}"
+          - "Inventories: {{ exp_inventories | length }}"
+          - "Hosts: {{ exp_hosts | length }}"
+          - "Groups: {{ exp_groups | length }}"
+          - "Projects: {{ exp_projects | length }}"
+          - "Job Templates: {{ exp_jts | length }}"
+          - "Workflow Templates: {{ exp_wfts | length }}"
+          - "Notification Templates: {{ exp_notifs | length }}"
+          - "Workflow Edges: {{ edge_ops | length }}"
+          - ""
+          - "NOTE: Credential secrets were not imported."
+          - "Credentials exist as shells without functional secrets."
+          - "Supply secrets manually if operational use is needed."
+          - ""
+          - "To clean up, delete the '{{ target_org }}' organization"
+          - "in AAP - this cascades to all child resources."
+
+...

@@ -4,3 +4,4 @@ controller_user: "admin"
 controller_pass: "redhat"
 controller_verify_tls: false
 org_name: "Linux"
+import_org_name: "Linux-Test"
