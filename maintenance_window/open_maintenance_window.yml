@@ -17,6 +17,11 @@
         regexp: PermitRootLogin no
         line: PermitRootLogin yes
 
+    - name: Ensure sshd is reloaded to apply root login changes
+      ansible.builtin.service:
+        name: sshd
+        state: reloaded
+
     - name: Ensure regular logins are disallowed while the maintenance window is open
       ansible.builtin.copy:
         dest: /etc/nologin
