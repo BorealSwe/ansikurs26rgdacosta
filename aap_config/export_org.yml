@@ -1,0 +1,382 @@
+---
+- name: Export AAP Controller organization resources
+  hosts: localhost
+  gather_facts: false
+  connection: local
+
+  vars:
+    controller_host: "https://aap.lab.example.com"
+    controller_api: "{{ controller_host }}/api/controller/v2"
+    controller_user: "admin"
+    controller_pass: "redhat"
+    controller_verify_tls: false
+    org_name: "Linux"
+    export_dir: "{{ playbook_dir }}/export/{{ org_name | lower }}"
+
+  tasks:
+    - name: Create export directory structure
+      ansible.builtin.file:
+        path: "{{ export_dir }}/{{ item }}"
+        state: directory
+        mode: '0755'
+      loop:
+        - ""
+        - credentials
+        - inventories
+        - projects
+        - job_templates
+        - workflow_templates
+        - notification_templates
+
+    - name: Look up organization
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/organizations/?name={{ org_name | urlencode }}"
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+      register: org_result
+
+    - name: Set organization ID
+      ansible.builtin.set_fact:
+        org_id: "{{ org_result.json.results[0].id }}"
+
+    - name: Save organization
+      ansible.builtin.copy:
+        content: |
+          ---
+          {% for o in org_result.json.results %}
+          - name: {{ o.name }}
+            description: "{{ o.description }}"
+          {% endfor %}
+        dest: "{{ export_dir }}/organization.yml"
+        mode: '0644'
+
+    # ── Credentials ──────────────────────────────────────────────
+
+    - name: Fetch credentials
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/credentials/?organization={{ org_id }}&page_size=100"
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+      register: creds_result
+
+    - name: Save credentials
+      ansible.builtin.copy:
+        content: |
+          ---
+          {% for c in creds_result.json.results %}
+          - name: {{ c.name }}
+            description: "{{ c.description }}"
+            credential_type: "{{ c.summary_fields.credential_type.name }}"
+            inputs:
+          {% for key, val in c.inputs.items() %}
+              {{ key }}: "{{ val }}"
+          {% endfor %}
+          {% endfor %}
+        dest: "{{ export_dir }}/credentials/all.yml"
+        mode: '0644'
+
+    # ── Inventories ──────────────────────────────────────────────
+
+    - name: Fetch inventories
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/inventories/?organization={{ org_id }}&page_size=100"
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+      register: inv_result
+
+    - name: Save inventories
+      ansible.builtin.copy:
+        content: |
+          ---
+          {% for i in inv_result.json.results %}
+          - name: {{ i.name }}
+            description: "{{ i.description }}"
+            variables: "{{ i.variables | default('') }}"
+          {% endfor %}
+        dest: "{{ export_dir }}/inventories/inventories.yml"
+        mode: '0644'
+
+    - name: Fetch hosts for each inventory
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/inventories/{{ item.id }}/hosts/?page_size=200"
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+      loop: "{{ inv_result.json.results }}"
+      loop_control:
+        label: "{{ item.name }}"
+      register: hosts_result
+
+    - name: Save hosts
+      ansible.builtin.copy:
+        content: |
+          ---
+          {% for inv_hosts in hosts_result.results %}
+          {% for h in inv_hosts.json.results %}
+          - name: {{ h.name }}
+            inventory: "{{ inv_hosts.item.name }}"
+            enabled: {{ h.enabled | lower }}
+            description: "{{ h.description }}"
+            variables: "{{ h.variables | default('') }}"
+          {% endfor %}
+          {% endfor %}
+        dest: "{{ export_dir }}/inventories/hosts.yml"
+        mode: '0644'
+
+    - name: Fetch groups for each inventory
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/inventories/{{ item.id }}/groups/?page_size=200"
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+      loop: "{{ inv_result.json.results }}"
+      loop_control:
+        label: "{{ item.name }}"
+      register: groups_result
+
+    - name: Collect all groups
+      ansible.builtin.set_fact:
+        all_groups: "{{ groups_result.results | map(attribute='json') | map(attribute='results') | flatten }}"
+
+    - name: Fetch hosts in each group
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/groups/{{ item.id }}/hosts/?page_size=200"
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+      loop: "{{ all_groups }}"
+      loop_control:
+        label: "{{ item.name }}"
+      register: group_hosts_result
+      when: all_groups | length > 0
+
+    - name: Save groups with host memberships
+      ansible.builtin.copy:
+        content: |
+          ---
+          {% for idx in range(all_groups | length) %}
+          {% set g = all_groups[idx] %}
+          - name: {{ g.name }}
+            inventory: "{{ g.summary_fields.inventory.name }}"
+            description: "{{ g.description }}"
+            variables: "{{ g.variables | default('') }}"
+            hosts:
+          {% if group_hosts_result.results is defined and group_hosts_result.results[idx].json is defined %}
+          {% for h in group_hosts_result.results[idx].json.results %}
+              - {{ h.name }}
+          {% endfor %}
+          {% endif %}
+          {% endfor %}
+        dest: "{{ export_dir }}/inventories/groups.yml"
+        mode: '0644'
+
+    # ── Projects ─────────────────────────────────────────────────
+
+    - name: Fetch projects
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/projects/?organization={{ org_id }}&page_size=100"
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+      register: proj_result
+
+    - name: Save projects
+      ansible.builtin.copy:
+        content: |
+          ---
+          {% for p in proj_result.json.results %}
+          - name: {{ p.name }}
+            description: "{{ p.description }}"
+            scm_type: {{ p.scm_type }}
+            scm_url: {{ p.scm_url }}
+            scm_branch: "{{ p.scm_branch }}"
+            scm_clean: {{ p.scm_clean | lower }}
+            scm_delete_on_update: {{ p.scm_delete_on_update | lower }}
+            scm_update_on_launch: {{ p.scm_update_on_launch | lower }}
+          {% endfor %}
+        dest: "{{ export_dir }}/projects/all.yml"
+        mode: '0644'
+
+    # ── Job Templates ────────────────────────────────────────────
+
+    - name: Fetch job templates
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/job_templates/?organization={{ org_id }}&page_size=100"
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+      register: jt_result
+
+    - name: Fetch credentials for each job template
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/job_templates/{{ item.id }}/credentials/?page_size=50"
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+      loop: "{{ jt_result.json.results }}"
+      loop_control:
+        label: "{{ item.name }}"
+      register: jt_creds_result
+
+    - name: Save job templates
+      ansible.builtin.copy:
+        content: |
+          ---
+          {% for idx in range(jt_result.json.results | length) %}
+          {% set jt = jt_result.json.results[idx] %}
+          {% set creds = jt_creds_result.results[idx].json.results %}
+          - name: {{ jt.name }}
+            description: "{{ jt.description }}"
+            job_type: {{ jt.job_type }}
+            playbook: {{ jt.playbook }}
+            inventory: "{{ jt.summary_fields.inventory.name | default('') }}"
+            project: "{{ jt.summary_fields.project.name | default('') }}"
+            credentials:
+          {% for c in creds %}
+              - "{{ c.name }}"
+          {% endfor %}
+            become_enabled: {{ jt.become_enabled | lower }}
+            forks: {{ jt.forks }}
+            verbosity: {{ jt.verbosity }}
+            extra_vars: "{{ jt.extra_vars | default('') }}"
+            limit: "{{ jt.limit | default('') }}"
+            job_tags: "{{ jt.job_tags | default('') }}"
+            skip_tags: "{{ jt.skip_tags | default('') }}"
+            diff_mode: {{ jt.diff_mode | lower }}
+          {% endfor %}
+        dest: "{{ export_dir }}/job_templates/all.yml"
+        mode: '0644'
+
+    # ── Workflow Templates ───────────────────────────────────────
+
+    - name: Fetch workflow templates
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/workflow_job_templates/?organization={{ org_id }}&page_size=100"
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+      register: wfjt_result
+
+    - name: Fetch workflow nodes for each workflow template
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/workflow_job_templates/{{ item.id }}/workflow_nodes/?page_size=200"
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+      loop: "{{ wfjt_result.json.results }}"
+      loop_control:
+        label: "{{ item.name }}"
+      register: wf_nodes_result
+
+    - name: Save workflow templates
+      ansible.builtin.copy:
+        content: |
+          ---
+          {% for idx in range(wfjt_result.json.results | length) %}
+          {% set wf = wfjt_result.json.results[idx] %}
+          {% set nodes = wf_nodes_result.results[idx].json.results %}
+          - name: {{ wf.name }}
+            description: "{{ wf.description }}"
+            survey_enabled: {{ wf.survey_enabled | lower }}
+            allow_simultaneous: {{ wf.allow_simultaneous | lower }}
+            nodes:
+          {% for n in nodes %}
+              - id: {{ n.id }}
+                unified_job_template: "{{ n.summary_fields.unified_job_template.name | default('') }}"
+                unified_job_type: "{{ n.summary_fields.unified_job_template.unified_job_type | default('') }}"
+                success_nodes: {{ n.success_nodes }}
+                failure_nodes: {{ n.failure_nodes }}
+                always_nodes: {{ n.always_nodes }}
+                all_parents_must_converge: {{ n.all_parents_must_converge | lower }}
+          {% endfor %}
+          {% endfor %}
+        dest: "{{ export_dir }}/workflow_templates/all.yml"
+        mode: '0644'
+
+    # ── Notification Templates ───────────────────────────────────
+
+    - name: Fetch notification templates
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/notification_templates/?organization={{ org_id }}&page_size=100"
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+      register: notif_result
+
+    - name: Save notification templates
+      ansible.builtin.copy:
+        content: |
+          ---
+          {% for n in notif_result.json.results %}
+          - name: {{ n.name }}
+            description: "{{ n.description }}"
+            notification_type: {{ n.notification_type }}
+            notification_configuration: {{ n.notification_configuration | to_json }}
+          {% endfor %}
+        dest: "{{ export_dir }}/notification_templates/all.yml"
+        mode: '0644'
+
+    - name: Fetch notification associations for workflow templates
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/workflow_job_templates/{{ item.id }}/notification_templates_approvals/?page_size=50"
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+      loop: "{{ wfjt_result.json.results }}"
+      loop_control:
+        label: "{{ item.name }}"
+      register: notif_assoc_result
+
+    - name: Save notification associations
+      ansible.builtin.copy:
+        content: |
+          ---
+          {% for r in notif_assoc_result.results %}
+          {% if r.json.results | length > 0 %}
+          - workflow_template: "{{ r.item.name }}"
+            approval_notifications:
+          {% for n in r.json.results %}
+              - "{{ n.name }}"
+          {% endfor %}
+          {% endif %}
+          {% endfor %}
+        dest: "{{ export_dir }}/notification_templates/associations.yml"
+        mode: '0644'
+
+    # ── Summary ──────────────────────────────────────────────────
+
+    - name: Display export summary
+      ansible.builtin.debug:
+        msg:
+          - "Export complete: {{ export_dir }}"
+          - "Organization: {{ org_name }}"
+          - "Credentials: {{ creds_result.json.count }}"
+          - "Inventories: {{ inv_result.json.count }}"
+          - "Hosts: {{ hosts_result.results | map(attribute='json') | map(attribute='count') | sum }}"
+          - "Groups: {{ all_groups | length }}"
+          - "Projects: {{ proj_result.json.count }}"
+          - "Job Templates: {{ jt_result.json.count }}"
+          - "Workflow Templates: {{ wfjt_result.json.count }}"
+          - "Notification Templates: {{ notif_result.json.count }}"
+          - ""
+          - "NOTE: Credential secrets (passwords, SSH keys) are not"
+          - "exported. The API returns $encrypted$ for secret values."
+          - "You will need to supply secrets when importing."
+
+...

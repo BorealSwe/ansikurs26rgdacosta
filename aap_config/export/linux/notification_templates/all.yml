@@ -1,0 +1,9 @@
+---
+- name: Approval Panel Webhook
+  description: ""
+  notification_type: webhook
+  notification_configuration: {"url": "http://workstation.lab.example.com:5002/webhook", "headers": {}, "password": "", "username": "", "http_method": "POST", "disable_ssl_verification": false}
+- name: Maintenance Panel Webhook
+  description: ""
+  notification_type: webhook
+  notification_configuration: {"url": "http://workstation.lab.example.com:5001/webhook", "headers": {}, "password": "", "username": "", "http_method": "POST", "disable_ssl_verification": false}

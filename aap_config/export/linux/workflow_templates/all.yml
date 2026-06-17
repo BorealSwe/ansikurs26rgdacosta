@@ -1,0 +1,123 @@
+---
+- name: Deploy world app stack
+  description: ""
+  survey_enabled: false
+  allow_simultaneous: false
+  nodes:
+    - id: 1
+      unified_job_template: "Linux Playbooks"
+      unified_job_type: "project_update"
+      success_nodes: []
+      failure_nodes: []
+      always_nodes: [3]
+      all_parents_must_converge: false
+    - id: 2
+      unified_job_template: "Deploy world frontend"
+      unified_job_type: "job"
+      success_nodes: [5]
+      failure_nodes: [7]
+      always_nodes: []
+      all_parents_must_converge: false
+    - id: 3
+      unified_job_template: "Deploy world db server"
+      unified_job_type: "job"
+      success_nodes: [4]
+      failure_nodes: [8]
+      always_nodes: []
+      all_parents_must_converge: false
+    - id: 4
+      unified_job_template: "Deploy world API"
+      unified_job_type: "job"
+      success_nodes: [2]
+      failure_nodes: [9]
+      always_nodes: []
+      all_parents_must_converge: false
+    - id: 5
+      unified_job_template: "Deploy world loadbalancer"
+      unified_job_type: "job"
+      success_nodes: []
+      failure_nodes: []
+      always_nodes: []
+      all_parents_must_converge: false
+    - id: 6
+      unified_job_template: "Teardown world app stack"
+      unified_job_type: "job"
+      success_nodes: []
+      failure_nodes: []
+      always_nodes: []
+      all_parents_must_converge: false
+    - id: 7
+      unified_job_template: "Teardown world app stack"
+      unified_job_type: "job"
+      success_nodes: []
+      failure_nodes: [6]
+      always_nodes: []
+      all_parents_must_converge: false
+    - id: 8
+      unified_job_template: "Teardown world app stack"
+      unified_job_type: "job"
+      success_nodes: []
+      failure_nodes: []
+      always_nodes: []
+      all_parents_must_converge: false
+    - id: 9
+      unified_job_template: "Teardown world app stack"
+      unified_job_type: "job"
+      success_nodes: []
+      failure_nodes: []
+      always_nodes: []
+      all_parents_must_converge: false
+- name: Patch Linux Servers
+  description: "Opens maintenance window, requires manager approval, patches hosts, reboots if needed, closes window, and generates fleet report."
+  survey_enabled: false
+  allow_simultaneous: false
+  nodes:
+    - id: 18
+      unified_job_template: "Linux Playbooks"
+      unified_job_type: "project_update"
+      success_nodes: [24]
+      failure_nodes: []
+      always_nodes: []
+      all_parents_must_converge: false
+    - id: 19
+      unified_job_template: "Open maintenance window"
+      unified_job_type: "job"
+      success_nodes: [20]
+      failure_nodes: []
+      always_nodes: []
+      all_parents_must_converge: false
+    - id: 20
+      unified_job_template: "Rolling patch"
+      unified_job_type: "job"
+      success_nodes: [21]
+      failure_nodes: [22]
+      always_nodes: []
+      all_parents_must_converge: false
+    - id: 21
+      unified_job_template: "Reboot management"
+      unified_job_type: "job"
+      success_nodes: []
+      failure_nodes: []
+      always_nodes: [22]
+      all_parents_must_converge: false
+    - id: 22
+      unified_job_template: "Close maintenance window"
+      unified_job_type: "job"
+      success_nodes: []
+      failure_nodes: []
+      always_nodes: [23]
+      all_parents_must_converge: false
+    - id: 23
+      unified_job_template: "Fleet report"
+      unified_job_type: "job"
+      success_nodes: []
+      failure_nodes: []
+      always_nodes: []
+      all_parents_must_converge: false
+    - id: 24
+      unified_job_template: "Manager approval required"
+      unified_job_type: "workflow_approval"
+      success_nodes: [19]
+      failure_nodes: []
+      always_nodes: []
+      all_parents_must_converge: false

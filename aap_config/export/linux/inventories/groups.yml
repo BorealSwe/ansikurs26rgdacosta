@@ -1,0 +1,31 @@
+---
+- name: api
+  inventory: "Linux Systems"
+  description: ""
+  variables: ""
+  hosts:
+    - serverc
+- name: db
+  inventory: "Linux Systems"
+  description: ""
+  variables: ""
+  hosts:
+    - serverd
+- name: fe
+  inventory: "Linux Systems"
+  description: ""
+  variables: ""
+  hosts:
+    - serverb
+- name: lb
+  inventory: "Linux Systems"
+  description: ""
+  variables: ""
+  hosts:
+    - servera
+- name: RHEL
+  inventory: "Linux Systems"
+  description: ""
+  variables: ""
+  hosts:
+    - servera

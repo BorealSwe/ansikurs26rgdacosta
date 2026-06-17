@@ -1,0 +1,209 @@
+---
+- name: Close maintenance window
+  description: ""
+  job_type: run
+  playbook: maintenance_window/close_maintenance_window.yml
+  inventory: "Linux Systems"
+  project: "Linux Playbooks"
+  credentials:
+    - "root SSH credential"
+  become_enabled: true
+  forks: 0
+  verbosity: 0
+  extra_vars: ""
+  limit: ""
+  job_tags: ""
+  skip_tags: ""
+  diff_mode: false
+- name: Deploy world API
+  description: ""
+  job_type: run
+  playbook: demo/world/api.yml
+  inventory: "Linux Systems"
+  project: "Linux Playbooks"
+  credentials:
+    - "SSH credential"
+  become_enabled: true
+  forks: 0
+  verbosity: 0
+  extra_vars: ""
+  limit: ""
+  job_tags: ""
+  skip_tags: ""
+  diff_mode: false
+- name: Deploy world db server
+  description: ""
+  job_type: run
+  playbook: demo/world/db.yml
+  inventory: "Linux Systems"
+  project: "Linux Playbooks"
+  credentials:
+    - "SSH credential"
+  become_enabled: true
+  forks: 0
+  verbosity: 0
+  extra_vars: ""
+  limit: ""
+  job_tags: ""
+  skip_tags: ""
+  diff_mode: false
+- name: Deploy world frontend
+  description: ""
+  job_type: run
+  playbook: demo/world/fe.yml
+  inventory: "Linux Systems"
+  project: "Linux Playbooks"
+  credentials:
+    - "SSH credential"
+  become_enabled: true
+  forks: 0
+  verbosity: 0
+  extra_vars: ""
+  limit: ""
+  job_tags: ""
+  skip_tags: ""
+  diff_mode: false
+- name: Deploy world loadbalancer
+  description: ""
+  job_type: run
+  playbook: demo/world/lb.yml
+  inventory: "Linux Systems"
+  project: "Linux Playbooks"
+  credentials:
+    - "SSH credential"
+  become_enabled: true
+  forks: 0
+  verbosity: 0
+  extra_vars: ""
+  limit: ""
+  job_tags: ""
+  skip_tags: ""
+  diff_mode: false
+- name: Fleet report
+  description: ""
+  job_type: run
+  playbook: demo/fleet_report.yml
+  inventory: "Linux Systems"
+  project: "Linux Playbooks"
+  credentials:
+    - "SSH credential"
+  become_enabled: true
+  forks: 0
+  verbosity: 0
+  extra_vars: ""
+  limit: ""
+  job_tags: ""
+  skip_tags: ""
+  diff_mode: false
+- name: Gather facts
+  description: ""
+  job_type: run
+  playbook: demo/gather_facts.yml
+  inventory: "Linux Systems"
+  project: "Linux Playbooks"
+  credentials:
+    - "SSH credential"
+  become_enabled: false
+  forks: 0
+  verbosity: 0
+  extra_vars: ""
+  limit: ""
+  job_tags: ""
+  skip_tags: ""
+  diff_mode: false
+- name: Manage Software
+  description: "Install, update, remove software using YUM/DNF on Linux systems"
+  job_type: run
+  playbook: demo/manage_software.yml
+  inventory: "Linux Systems"
+  project: "Linux Playbooks"
+  credentials:
+    - "SSH credential"
+  become_enabled: true
+  forks: 0
+  verbosity: 0
+  extra_vars: ""
+  limit: ""
+  job_tags: ""
+  skip_tags: ""
+  diff_mode: false
+- name: Open maintenance window
+  description: ""
+  job_type: run
+  playbook: maintenance_window/open_maintenance_window.yml
+  inventory: "Linux Systems"
+  project: "Linux Playbooks"
+  credentials:
+    - "root SSH credential"
+  become_enabled: true
+  forks: 0
+  verbosity: 0
+  extra_vars: ""
+  limit: ""
+  job_tags: ""
+  skip_tags: ""
+  diff_mode: false
+- name: Reboot management
+  description: ""
+  job_type: run
+  playbook: demo/reboot_mgmt.yml
+  inventory: "Linux Systems"
+  project: "Linux Playbooks"
+  credentials:
+    - "root SSH credential"
+  become_enabled: true
+  forks: 0
+  verbosity: 0
+  extra_vars: ""
+  limit: ""
+  job_tags: ""
+  skip_tags: ""
+  diff_mode: false
+- name: Rolling patch
+  description: ""
+  job_type: run
+  playbook: demo/rolling_patch.yml
+  inventory: "Linux Systems"
+  project: "Linux Playbooks"
+  credentials:
+    - "root SSH credential"
+  become_enabled: true
+  forks: 0
+  verbosity: 0
+  extra_vars: ""
+  limit: ""
+  job_tags: ""
+  skip_tags: ""
+  diff_mode: false
+- name: Teardown world app stack
+  description: ""
+  job_type: run
+  playbook: demo/world/teardown.yml
+  inventory: "Linux Systems"
+  project: "Linux Playbooks"
+  credentials:
+    - "SSH credential"
+  become_enabled: true
+  forks: 0
+  verbosity: 0
+  extra_vars: ""
+  limit: ""
+  job_tags: ""
+  skip_tags: ""
+  diff_mode: false
+- name: Update software
+  description: ""
+  job_type: run
+  playbook: demo/when_update_software.yml
+  inventory: "Linux Systems"
+  project: "Linux Playbooks"
+  credentials:
+    - "SSH credential"
+  become_enabled: false
+  forks: 0
+  verbosity: 0
+  extra_vars: ""
+  limit: ""
+  job_tags: ""
+  skip_tags: ""
+  diff_mode: false

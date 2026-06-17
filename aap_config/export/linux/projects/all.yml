@@ -1,0 +1,9 @@
+---
+- name: Linux Playbooks
+  description: ""
+  scm_type: git
+  scm_url: https://gitlab.com/rgdacosta/ansible
+  scm_branch: ""
+  scm_clean: false
+  scm_delete_on_update: false
+  scm_update_on_launch: true
