@@ -380,7 +380,7 @@
 
     - name: Create approval templates on approval nodes
       ansible.builtin.uri:
-        url: "{{ controller_api }}/workflow_nodes/{{ item.json.id }}/create_approval_template/"
+        url: "{{ controller_api }}/workflow_job_template_nodes/{{ item.json.id }}/create_approval_template/"
         method: POST
         user: "{{ controller_user }}"
         password: "{{ controller_pass }}"
@@ -432,7 +432,7 @@
 
     - name: Wire workflow edges
       ansible.builtin.uri:
-        url: "{{ controller_api }}/workflow_nodes/{{ node_id_map[item.source | string] }}/{{ item.type }}/"
+        url: "{{ controller_api }}/workflow_job_template_nodes/{{ node_id_map[item.source | string] }}/{{ item.type }}/"
         method: POST
         user: "{{ controller_user }}"
         password: "{{ controller_pass }}"
