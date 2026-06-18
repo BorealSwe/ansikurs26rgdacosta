@@ -4,9 +4,6 @@
   gather_facts: false
   connection: local
 
-  vars_files:
-    - important_vars.yml
-
   vars:
     controller_api: "{{ controller_host }}/api/controller/v2"
     source_dir: "{{ playbook_dir }}/export/{{ org_name | lower }}"
@@ -83,7 +80,13 @@
           description: "{{ item.description }}"
           organization: "{{ target_org_id }}"
           credential_type: "{{ cred_type_map[item.credential_type] }}"
-          inputs: "{{ item.inputs | dict2items | rejectattr('value', 'equalto', '$encrypted$') | list | items2dict }}"
+          inputs: >-
+            {{ item.inputs
+               | combine({'ssh_key_data': lookup('file', ssh_key_file)})
+               | dict2items
+               | rejectattr('value', 'equalto', '$encrypted$')
+               | list
+               | items2dict }}
         status_code: [201]
       loop: "{{ exp_creds }}"
       loop_control:
@@ -507,9 +510,7 @@
           - "Notification Templates: {{ exp_notifs | length }}"
           - "Workflow Edges: {{ edge_ops | length }}"
           - ""
-          - "NOTE: Credential secrets were not imported."
-          - "Credentials exist as shells without functional secrets."
-          - "Supply secrets manually if operational use is needed."
+          - "SSH key injected from: {{ ssh_key_file }}"
           - ""
           - "To clean up, delete the '{{ target_org }}' organization"
           - "in AAP - this cascades to all child resources."

@@ -4,9 +4,6 @@
   gather_facts: false
   connection: local
 
-  vars_files:
-    - important_vars.yml
-
   vars:
     controller_api: "{{ controller_host }}/api/controller/v2"
     export_dir: "{{ playbook_dir }}/export/{{ org_name | lower }}"

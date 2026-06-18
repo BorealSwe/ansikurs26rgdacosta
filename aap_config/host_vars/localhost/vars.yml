@@ -5,3 +5,4 @@ controller_pass: "redhat"
 controller_verify_tls: false
 org_name: "Linux"
 import_org_name: "Linux-Test"
+ssh_key_file: "~/.ssh/lab_rsa"
