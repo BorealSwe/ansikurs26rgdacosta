@@ -7,7 +7,7 @@
   vars:
     controller_api: "{{ controller_host }}/api/controller/v2"
     source_dir: "{{ playbook_dir }}/export/{{ org_name | lower }}"
-    target_org: "{{ import_org_name | default('Linux-Test') }}"
+    target_org: "{{ import_org_name | default('Linux') }}"
 
   tasks:
 
@@ -32,6 +32,38 @@
         exp_roles: "{{ lookup('file', source_dir + '/roles/all.yml') | from_yaml | default([], true) }}"
         exp_schedules: "{{ lookup('file', source_dir + '/schedules/all.yml') | from_yaml | default([], true) }}"
 
+    # ── Delete default AAP resources ────────────────────────────
+
+    - name: Look up default resources to delete
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/{{ item.endpoint }}/?name={{ item.name | urlencode }}"
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+      loop:
+        - { name: "Demo Job Template", endpoint: "job_templates" }
+        - { name: "Demo Project", endpoint: "projects" }
+        - { name: "Demo Credential", endpoint: "credentials" }
+        - { name: "Demo Inventory", endpoint: "inventories" }
+      loop_control:
+        label: "{{ item.name }}"
+      register: default_lookup
+
+    - name: Delete default resources
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/{{ item.item.endpoint }}/{{ item.json.results[0].id }}/"
+        method: DELETE
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+        status_code: [202, 204]
+      loop: "{{ default_lookup.results }}"
+      loop_control:
+        label: "{{ item.item.name }}"
+      when: item.json.count > 0
+
     # ── Organization ─────────────────────────────────────────────
 
     - name: Create target organization
@@ -52,6 +84,30 @@
     - name: Set target organization ID
       ansible.builtin.set_fact:
         target_org_id: "{{ org_create.json.id }}"
+
+    # ── Galaxy Credential Association ────────────────────────────
+
+    - name: Look up Ansible Galaxy credential
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/credentials/?name={{ 'Ansible Galaxy' | urlencode }}&managed=true"
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+      register: galaxy_cred
+
+    - name: Associate Galaxy credential with organization
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/organizations/{{ target_org_id }}/galaxy_credentials/"
+        method: POST
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+        body_format: json
+        body: "{{ {'id': (galaxy_cred.json.results[0].id | int)} | to_json }}"
+        status_code: [204]
+      when: galaxy_cred.json.count > 0
 
     # ── Users ────────────────────────────────────────────────────
 
@@ -732,6 +788,8 @@
         msg:
           - "Import complete to organization: {{ target_org }}"
           - "Source: {{ org_name }}"
+          - "Default resources cleaned up: Demo Job Template, Demo Project, Demo Credential, Demo Inventory"
+          - "Galaxy credential associated: {{ galaxy_cred.json.count | default(0) | int > 0 }}"
           - "Users: {{ exp_users | length }}"
           - "Teams: {{ exp_teams | length }}"
           - "Org Roles: {{ exp_roles | length }}"
@@ -749,8 +807,5 @@
           - "Workflow Edges: {{ edge_ops | length }}"
           - ""
           - "SSH key injected from: {{ ssh_key_file }}"
-          - ""
-          - "To clean up, delete the '{{ target_org }}' organization"
-          - "in AAP - this cascades to all child resources."
 
 ...

@@ -37,7 +37,7 @@ controller_user: "admin"
 controller_pass: "redhat"
 controller_verify_tls: false
 org_name: "Linux"                # Source organization to export
-import_org_name: "Linux-Test"    # Target organization for import
+import_org_name: "Linux"         # Target organization for import
 ssh_key_file: "~/.ssh/lab_rsa"   # SSH key injected into machine credentials
 ```
 
@@ -57,7 +57,11 @@ Exports the organization specified by `org_name` to `aap_config/export/<org>/`.
 ansible-playbook aap_config/import_org.yml
 ```
 
-Imports into the organization specified by `import_org_name`. To import into a different org, override at runtime:
+Imports into the organization specified by `import_org_name`. The import playbook automatically:
+- Deletes default AAP resources (Demo Job Template, Demo Project, Demo Credential, Demo Inventory)
+- Associates the Ansible Galaxy credential with the target organization (required for collection installs)
+
+To import into a different org, override at runtime:
 
 ```bash
 ansible-playbook aap_config/import_org.yml -e import_org_name="My-Org"
@@ -72,7 +76,7 @@ Delete the target organization in the AAP UI or via API. This cascade-deletes al
 ```bash
 # Find the org ID
 curl -sk -u admin:redhat \
-  "https://aap.lab.example.com/api/controller/v2/organizations/?name=Linux-Test" \
+  "https://aap.lab.example.com/api/controller/v2/organizations/?name=Linux" \
   | python3 -c "import sys,json; print(json.load(sys.stdin)['results'][0]['id'])"
 
 # Delete it
@@ -86,3 +90,5 @@ curl -sk -u admin:redhat -X DELETE \
 - The import playbook accepts `status_code: [201, 400]` for user creation, so re-runs are safe when users already exist globally.
 - Workflow node topology (success/failure/always edges) and approval nodes are fully preserved.
 - Notification associations cover all four types: started, success, error, and approval.
+- Default AAP resources (Demo Job Template, Demo Project, Demo Credential, Demo Inventory) are automatically deleted during import.
+- The Ansible Galaxy credential is associated with the target organization so projects can install collections from `galaxy.ansible.com`.
