@@ -22,6 +22,10 @@
         - job_templates
         - workflow_templates
         - notification_templates
+        - users
+        - teams
+        - roles
+        - schedules
 
     - name: Look up organization
       ansible.builtin.uri:
@@ -250,8 +254,66 @@
             job_tags: "{{ jt.job_tags | default('') }}"
             skip_tags: "{{ jt.skip_tags | default('') }}"
             diff_mode: {{ jt.diff_mode | lower }}
+            survey_enabled: {{ jt.survey_enabled | lower }}
           {% endfor %}
         dest: "{{ export_dir }}/job_templates/all.yml"
+        mode: '0644'
+
+    # ── Job Template Surveys ─────────────────────────────────────
+
+    - name: Fetch survey specs for job templates
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/job_templates/{{ item.id }}/survey_spec/"
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+      loop: "{{ jt_result.json.results | selectattr('survey_enabled') | list }}"
+      loop_control:
+        label: "{{ item.name }}"
+      register: jt_survey_result
+
+    - name: Save job template surveys
+      ansible.builtin.copy:
+        content: |
+          ---
+          {% for r in jt_survey_result.results | default([]) %}
+          {% if r.json.spec is defined and r.json.spec | length > 0 %}
+          - job_template: "{{ r.item.name }}"
+            survey_spec: {{ r.json | to_json }}
+          {% endif %}
+          {% endfor %}
+        dest: "{{ export_dir }}/job_templates/surveys.yml"
+        mode: '0644'
+
+    # ── Schedules ────────────────────────────────────────────────
+
+    - name: Fetch schedules for each job template
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/job_templates/{{ item.id }}/schedules/?page_size=50"
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+      loop: "{{ jt_result.json.results }}"
+      loop_control:
+        label: "{{ item.name }}"
+      register: jt_sched_result
+
+    - name: Save schedules
+      ansible.builtin.copy:
+        content: |
+          ---
+          {% for r in jt_sched_result.results %}
+          {% for s in r.json.results %}
+          - name: "{{ s.name }}"
+            job_template: "{{ r.item.name }}"
+            rrule: "{{ s.rrule }}"
+            enabled: {{ s.enabled | lower }}
+            description: "{{ s.description }}"
+          {% endfor %}
+          {% endfor %}
+        dest: "{{ export_dir }}/schedules/all.yml"
         mode: '0644'
 
     # ── Workflow Templates ───────────────────────────────────────
@@ -288,6 +350,7 @@
             description: "{{ wf.description }}"
             survey_enabled: {{ wf.survey_enabled | lower }}
             allow_simultaneous: {{ wf.allow_simultaneous | lower }}
+            extra_vars: "{{ wf.extra_vars | default('') }}"
             nodes:
           {% for n in nodes %}
               - id: {{ n.id }}
@@ -300,6 +363,33 @@
           {% endfor %}
           {% endfor %}
         dest: "{{ export_dir }}/workflow_templates/all.yml"
+        mode: '0644'
+
+    # ── Workflow Template Surveys ────────────────────────────────
+
+    - name: Fetch survey specs for workflow templates
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/workflow_job_templates/{{ item.id }}/survey_spec/"
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+      loop: "{{ wfjt_result.json.results | selectattr('survey_enabled') | list }}"
+      loop_control:
+        label: "{{ item.name }}"
+      register: wft_survey_result
+
+    - name: Save workflow template surveys
+      ansible.builtin.copy:
+        content: |
+          ---
+          {% for r in wft_survey_result.results | default([]) %}
+          {% if r.json.spec is defined and r.json.spec | length > 0 %}
+          - workflow_template: "{{ r.item.name }}"
+            survey_spec: {{ r.json | to_json }}
+          {% endif %}
+          {% endfor %}
+        dest: "{{ export_dir }}/workflow_templates/surveys.yml"
         mode: '0644'
 
     # ── Notification Templates ───────────────────────────────────
@@ -326,7 +416,43 @@
         dest: "{{ export_dir }}/notification_templates/all.yml"
         mode: '0644'
 
-    - name: Fetch notification associations for workflow templates
+    - name: Fetch started notification associations for workflow templates
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/workflow_job_templates/{{ item.id }}/notification_templates_started/?page_size=50"
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+      loop: "{{ wfjt_result.json.results }}"
+      loop_control:
+        label: "{{ item.name }}"
+      register: notif_started_result
+
+    - name: Fetch success notification associations for workflow templates
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/workflow_job_templates/{{ item.id }}/notification_templates_success/?page_size=50"
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+      loop: "{{ wfjt_result.json.results }}"
+      loop_control:
+        label: "{{ item.name }}"
+      register: notif_success_result
+
+    - name: Fetch error notification associations for workflow templates
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/workflow_job_templates/{{ item.id }}/notification_templates_error/?page_size=50"
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+      loop: "{{ wfjt_result.json.results }}"
+      loop_control:
+        label: "{{ item.name }}"
+      register: notif_error_result
+
+    - name: Fetch approval notification associations for workflow templates
       ansible.builtin.uri:
         url: "{{ controller_api }}/workflow_job_templates/{{ item.id }}/notification_templates_approvals/?page_size=50"
         user: "{{ controller_user }}"
@@ -336,22 +462,149 @@
       loop: "{{ wfjt_result.json.results }}"
       loop_control:
         label: "{{ item.name }}"
-      register: notif_assoc_result
+      register: notif_approval_result
 
     - name: Save notification associations
       ansible.builtin.copy:
         content: |
           ---
-          {% for r in notif_assoc_result.results %}
-          {% if r.json.results | length > 0 %}
-          - workflow_template: "{{ r.item.name }}"
+          {% for idx in range(wfjt_result.json.results | length) %}
+          {% set wf = wfjt_result.json.results[idx] %}
+          {% set started = notif_started_result.results[idx].json.results %}
+          {% set success = notif_success_result.results[idx].json.results %}
+          {% set error = notif_error_result.results[idx].json.results %}
+          {% set approval = notif_approval_result.results[idx].json.results %}
+          {% if started | length > 0 or success | length > 0 or error | length > 0 or approval | length > 0 %}
+          - workflow_template: "{{ wf.name }}"
+            started_notifications:
+          {% for n in started %}
+              - "{{ n.name }}"
+          {% endfor %}
+            success_notifications:
+          {% for n in success %}
+              - "{{ n.name }}"
+          {% endfor %}
+            error_notifications:
+          {% for n in error %}
+              - "{{ n.name }}"
+          {% endfor %}
             approval_notifications:
-          {% for n in r.json.results %}
+          {% for n in approval %}
               - "{{ n.name }}"
           {% endfor %}
           {% endif %}
           {% endfor %}
         dest: "{{ export_dir }}/notification_templates/associations.yml"
+        mode: '0644'
+
+    # ── Users ────────────────────────────────────────────────────
+
+    - name: Fetch organization users
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/organizations/{{ org_id }}/users/?page_size=100"
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+      register: users_result
+
+    - name: Save users
+      ansible.builtin.copy:
+        content: |
+          ---
+          {% for u in users_result.json.results %}
+          {% if u.username != 'admin' %}
+          - username: {{ u.username }}
+            first_name: "{{ u.first_name }}"
+            last_name: "{{ u.last_name }}"
+            email: "{{ u.email }}"
+            is_superuser: {{ u.is_superuser | lower }}
+          {% endif %}
+          {% endfor %}
+        dest: "{{ export_dir }}/users/all.yml"
+        mode: '0644'
+
+    # ── Teams ────────────────────────────────────────────────────
+
+    - name: Fetch organization teams
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/organizations/{{ org_id }}/teams/?page_size=100"
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+      register: teams_result
+
+    - name: Fetch members for each team
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/teams/{{ item.id }}/users/?page_size=100"
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+      loop: "{{ teams_result.json.results }}"
+      loop_control:
+        label: "{{ item.name }}"
+      register: team_members_result
+      when: teams_result.json.results | length > 0
+
+    - name: Save teams with members
+      ansible.builtin.copy:
+        content: |
+          ---
+          {% for idx in range(teams_result.json.results | length) %}
+          {% set t = teams_result.json.results[idx] %}
+          - name: "{{ t.name }}"
+            description: "{{ t.description }}"
+            members:
+          {% if team_members_result.results is defined and team_members_result.results[idx].json is defined %}
+          {% for u in team_members_result.results[idx].json.results %}
+              - {{ u.username }}
+          {% endfor %}
+          {% endif %}
+          {% endfor %}
+        dest: "{{ export_dir }}/teams/all.yml"
+        mode: '0644'
+
+    # ── Organization Roles ───────────────────────────────────────
+
+    - name: Fetch organization object roles
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/organizations/{{ org_id }}/object_roles/?page_size=100"
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+      register: org_roles_result
+
+    - name: Fetch users for each org role
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/roles/{{ item.id }}/users/?page_size=100"
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+      loop: "{{ org_roles_result.json.results }}"
+      loop_control:
+        label: "{{ item.name }}"
+      register: role_users_result
+
+    - name: Save organization roles
+      ansible.builtin.copy:
+        content: |
+          ---
+          {% for idx in range(org_roles_result.json.results | length) %}
+          {% set role = org_roles_result.json.results[idx] %}
+          {% set role_users = role_users_result.results[idx].json.results | rejectattr('username', 'equalto', 'admin') | list %}
+          {% if role_users | length > 0 %}
+          - role_name: "{{ role.name }}"
+            users:
+          {% for u in role_users %}
+              - {{ u.username }}
+          {% endfor %}
+          {% endif %}
+          {% endfor %}
+        dest: "{{ export_dir }}/roles/all.yml"
         mode: '0644'
 
     # ── Summary ──────────────────────────────────────────────────
@@ -367,11 +620,13 @@
           - "Groups: {{ all_groups | length }}"
           - "Projects: {{ proj_result.json.count }}"
           - "Job Templates: {{ jt_result.json.count }}"
+          - "  Surveys: {{ jt_survey_result.results | default([]) | length }}"
+          - "  Schedules: {{ jt_sched_result.results | map(attribute='json') | map(attribute='count') | sum }}"
           - "Workflow Templates: {{ wfjt_result.json.count }}"
+          - "  Surveys: {{ wft_survey_result.results | default([]) | length }}"
           - "Notification Templates: {{ notif_result.json.count }}"
-          - ""
-          - "NOTE: Credential secrets (passwords, SSH keys) are not"
-          - "exported. The API returns $encrypted$ for secret values."
-          - "You will need to supply secrets when importing."
+          - "Users: {{ users_result.json.results | rejectattr('username', 'equalto', 'admin') | list | length }}"
+          - "Teams: {{ teams_result.json.count }}"
+          - "Org Roles: {{ role_users_result.results | length }}"
 
 ...

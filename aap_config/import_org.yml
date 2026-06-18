@@ -22,9 +22,15 @@
         exp_groups: "{{ lookup('file', source_dir + '/inventories/groups.yml') | from_yaml }}"
         exp_projects: "{{ lookup('file', source_dir + '/projects/all.yml') | from_yaml }}"
         exp_jts: "{{ lookup('file', source_dir + '/job_templates/all.yml') | from_yaml }}"
+        exp_jt_surveys: "{{ lookup('file', source_dir + '/job_templates/surveys.yml') | from_yaml | default([]) }}"
         exp_wfts: "{{ lookup('file', source_dir + '/workflow_templates/all.yml') | from_yaml }}"
+        exp_wft_surveys: "{{ lookup('file', source_dir + '/workflow_templates/surveys.yml') | from_yaml | default([]) }}"
         exp_notifs: "{{ lookup('file', source_dir + '/notification_templates/all.yml') | from_yaml }}"
         exp_notif_assocs: "{{ lookup('file', source_dir + '/notification_templates/associations.yml') | from_yaml | default([]) }}"
+        exp_users: "{{ lookup('file', source_dir + '/users/all.yml') | from_yaml | default([]) }}"
+        exp_teams: "{{ lookup('file', source_dir + '/teams/all.yml') | from_yaml | default([]) }}"
+        exp_roles: "{{ lookup('file', source_dir + '/roles/all.yml') | from_yaml | default([]) }}"
+        exp_schedules: "{{ lookup('file', source_dir + '/schedules/all.yml') | from_yaml | default([]) }}"
 
     # ── Organization ─────────────────────────────────────────────
 
@@ -46,6 +52,126 @@
     - name: Set target organization ID
       ansible.builtin.set_fact:
         target_org_id: "{{ org_create.json.id }}"
+
+    # ── Users ────────────────────────────────────────────────────
+
+    - name: Create users
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/users/"
+        method: POST
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+        body_format: json
+        body:
+          username: "{{ item.username }}"
+          first_name: "{{ item.first_name | default('') }}"
+          last_name: "{{ item.last_name | default('') }}"
+          email: "{{ item.email | default('') }}"
+          password: "redhat"
+          is_superuser: "{{ item.is_superuser | default(false) }}"
+        status_code: [201, 400]
+      loop: "{{ exp_users }}"
+      loop_control:
+        label: "{{ item.username }}"
+      register: user_results
+
+    - name: Look up user IDs
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/users/?username={{ item.username | urlencode }}"
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+      loop: "{{ exp_users }}"
+      loop_control:
+        label: "{{ item.username }}"
+      register: user_lookup_results
+
+    - name: Build user name map
+      ansible.builtin.set_fact:
+        user_map: "{{ user_map | default({}) | combine({item.item.username: item.json.results[0].id}) }}"
+      loop: "{{ user_lookup_results.results }}"
+      loop_control:
+        label: "{{ item.item.username }}"
+
+    # ── Teams ────────────────────────────────────────────────────
+
+    - name: Create teams
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/teams/"
+        method: POST
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+        body_format: json
+        body:
+          name: "{{ item.name }}"
+          description: "{{ item.description | default('') }}"
+          organization: "{{ target_org_id }}"
+        status_code: [201]
+      loop: "{{ exp_teams }}"
+      loop_control:
+        label: "{{ item.name }}"
+      register: team_results
+
+    - name: Build team name map
+      ansible.builtin.set_fact:
+        team_map: "{{ team_map | default({}) | combine({item.item.name: item.json.id}) }}"
+      loop: "{{ team_results.results }}"
+      loop_control:
+        label: "{{ item.item.name }}"
+
+    - name: Add users to teams
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/teams/{{ team_map[item.0.name] }}/users/"
+        method: POST
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+        body_format: json
+        body: "{{ {'id': (user_map[item.1] | int)} | to_json }}"
+        status_code: [204]
+      loop: "{{ exp_teams | subelements('members', skip_missing=True) }}"
+      loop_control:
+        label: "{{ item.0.name }} <- {{ item.1 }}"
+
+    # ── Organization Roles ───────────────────────────────────────
+
+    - name: Fetch target organization object roles
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/organizations/{{ target_org_id }}/object_roles/?page_size=100"
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+      register: target_org_roles
+
+    - name: Build target org role map
+      ansible.builtin.set_fact:
+        target_role_map: "{{ target_role_map | default({}) | combine({item.name: item.id}) }}"
+      loop: "{{ target_org_roles.json.results }}"
+      loop_control:
+        label: "{{ item.name }}"
+
+    - name: Assign users to organization roles
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/roles/{{ target_role_map[item.0.role_name] }}/users/"
+        method: POST
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+        body_format: json
+        body: "{{ {'id': (user_map[item.1] | int)} | to_json }}"
+        status_code: [204]
+      loop: "{{ exp_roles | subelements('users') }}"
+      loop_control:
+        label: "{{ item.0.role_name }} <- {{ item.1 }}"
+      when: item.0.role_name in target_role_map
 
     # ── Credentials ──────────────────────────────────────────────
 
@@ -280,6 +406,11 @@
           forks: "{{ item.forks }}"
           verbosity: "{{ item.verbosity }}"
           diff_mode: "{{ item.diff_mode }}"
+          extra_vars: "{{ item.extra_vars | default('') }}"
+          limit: "{{ item.limit | default('') }}"
+          job_tags: "{{ item.job_tags | default('') }}"
+          skip_tags: "{{ item.skip_tags | default('') }}"
+          survey_enabled: "{{ item.survey_enabled | default(false) }}"
         status_code: [201]
       loop: "{{ exp_jts }}"
       loop_control:
@@ -308,6 +439,44 @@
       loop_control:
         label: "{{ item.0.name }} <- {{ item.1 }}"
 
+    # ── Job Template Surveys ─────────────────────────────────────
+
+    - name: Import job template survey specs
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/job_templates/{{ jt_map[item.job_template] }}/survey_spec/"
+        method: POST
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+        body_format: json
+        body: "{{ item.survey_spec }}"
+        status_code: [200]
+      loop: "{{ exp_jt_surveys }}"
+      loop_control:
+        label: "{{ item.job_template }}"
+
+    # ── Job Template Schedules ───────────────────────────────────
+
+    - name: Import schedules
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/job_templates/{{ jt_map[item.job_template] }}/schedules/"
+        method: POST
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+        body_format: json
+        body:
+          name: "{{ item.name }}"
+          description: "{{ item.description | default('') }}"
+          rrule: "{{ item.rrule }}"
+          enabled: "{{ item.enabled }}"
+        status_code: [201]
+      loop: "{{ exp_schedules }}"
+      loop_control:
+        label: "{{ item.name }}"
+
     # ── Workflow Templates ───────────────────────────────────────
 
     - name: Build unified job template map
@@ -329,6 +498,7 @@
           organization: "{{ target_org_id }}"
           survey_enabled: "{{ item.survey_enabled }}"
           allow_simultaneous: "{{ item.allow_simultaneous }}"
+          extra_vars: "{{ item.extra_vars | default('') }}"
         status_code: [201]
       loop: "{{ exp_wfts }}"
       loop_control:
@@ -448,6 +618,23 @@
       loop_control:
         label: "{{ item.source }} --{{ item.type }}--> {{ item.target }}"
 
+    # ── Workflow Template Surveys ────────────────────────────────
+
+    - name: Import workflow template survey specs
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/workflow_job_templates/{{ wft_map[item.workflow_template] }}/survey_spec/"
+        method: POST
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+        body_format: json
+        body: "{{ item.survey_spec }}"
+        status_code: [200]
+      loop: "{{ exp_wft_surveys }}"
+      loop_control:
+        label: "{{ item.workflow_template }}"
+
     # ── Notification Templates ───────────────────────────────────
 
     - name: Create notification templates
@@ -478,6 +665,51 @@
       loop_control:
         label: "{{ item.item.name }}"
 
+    - name: Associate started notifications with workflow templates
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/workflow_job_templates/{{ wft_map[item.0.workflow_template] }}/notification_templates_started/"
+        method: POST
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+        body_format: json
+        body: "{{ {'id': (notif_map[item.1] | int)} | to_json }}"
+        status_code: [204]
+      loop: "{{ exp_notif_assocs | subelements('started_notifications', skip_missing=True) }}"
+      loop_control:
+        label: "{{ item.0.workflow_template }} started <- {{ item.1 }}"
+
+    - name: Associate success notifications with workflow templates
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/workflow_job_templates/{{ wft_map[item.0.workflow_template] }}/notification_templates_success/"
+        method: POST
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+        body_format: json
+        body: "{{ {'id': (notif_map[item.1] | int)} | to_json }}"
+        status_code: [204]
+      loop: "{{ exp_notif_assocs | subelements('success_notifications', skip_missing=True) }}"
+      loop_control:
+        label: "{{ item.0.workflow_template }} success <- {{ item.1 }}"
+
+    - name: Associate error notifications with workflow templates
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/workflow_job_templates/{{ wft_map[item.0.workflow_template] }}/notification_templates_error/"
+        method: POST
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+        body_format: json
+        body: "{{ {'id': (notif_map[item.1] | int)} | to_json }}"
+        status_code: [204]
+      loop: "{{ exp_notif_assocs | subelements('error_notifications', skip_missing=True) }}"
+      loop_control:
+        label: "{{ item.0.workflow_template }} error <- {{ item.1 }}"
+
     - name: Associate approval notifications with workflow templates
       ansible.builtin.uri:
         url: "{{ controller_api }}/workflow_job_templates/{{ wft_map[item.0.workflow_template] }}/notification_templates_approvals/"
@@ -489,9 +721,9 @@
         body_format: json
         body: "{{ {'id': (notif_map[item.1] | int)} | to_json }}"
         status_code: [204]
-      loop: "{{ exp_notif_assocs | subelements('approval_notifications') }}"
+      loop: "{{ exp_notif_assocs | subelements('approval_notifications', skip_missing=True) }}"
       loop_control:
-        label: "{{ item.0.workflow_template }} <- {{ item.1 }}"
+        label: "{{ item.0.workflow_template }} approval <- {{ item.1 }}"
 
     # ── Summary ──────────────────────────────────────────────────
 
@@ -500,13 +732,19 @@
         msg:
           - "Import complete to organization: {{ target_org }}"
           - "Source: {{ org_name }}"
+          - "Users: {{ exp_users | length }}"
+          - "Teams: {{ exp_teams | length }}"
+          - "Org Roles: {{ exp_roles | length }}"
           - "Credentials: {{ exp_creds | length }}"
           - "Inventories: {{ exp_inventories | length }}"
           - "Hosts: {{ exp_hosts | length }}"
           - "Groups: {{ exp_groups | length }}"
           - "Projects: {{ exp_projects | length }}"
           - "Job Templates: {{ exp_jts | length }}"
+          - "  Surveys: {{ exp_jt_surveys | length }}"
+          - "  Schedules: {{ exp_schedules | length }}"
           - "Workflow Templates: {{ exp_wfts | length }}"
+          - "  Surveys: {{ exp_wft_surveys | length }}"
           - "Notification Templates: {{ exp_notifs | length }}"
           - "Workflow Edges: {{ edge_ops | length }}"
           - ""
