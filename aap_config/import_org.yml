@@ -22,15 +22,15 @@
         exp_groups: "{{ lookup('file', source_dir + '/inventories/groups.yml') | from_yaml }}"
         exp_projects: "{{ lookup('file', source_dir + '/projects/all.yml') | from_yaml }}"
         exp_jts: "{{ lookup('file', source_dir + '/job_templates/all.yml') | from_yaml }}"
-        exp_jt_surveys: "{{ lookup('file', source_dir + '/job_templates/surveys.yml') | from_yaml | default([]) }}"
+        exp_jt_surveys: "{{ lookup('file', source_dir + '/job_templates/surveys.yml') | from_yaml | default([], true) }}"
         exp_wfts: "{{ lookup('file', source_dir + '/workflow_templates/all.yml') | from_yaml }}"
-        exp_wft_surveys: "{{ lookup('file', source_dir + '/workflow_templates/surveys.yml') | from_yaml | default([]) }}"
+        exp_wft_surveys: "{{ lookup('file', source_dir + '/workflow_templates/surveys.yml') | from_yaml | default([], true) }}"
         exp_notifs: "{{ lookup('file', source_dir + '/notification_templates/all.yml') | from_yaml }}"
-        exp_notif_assocs: "{{ lookup('file', source_dir + '/notification_templates/associations.yml') | from_yaml | default([]) }}"
-        exp_users: "{{ lookup('file', source_dir + '/users/all.yml') | from_yaml | default([]) }}"
-        exp_teams: "{{ lookup('file', source_dir + '/teams/all.yml') | from_yaml | default([]) }}"
-        exp_roles: "{{ lookup('file', source_dir + '/roles/all.yml') | from_yaml | default([]) }}"
-        exp_schedules: "{{ lookup('file', source_dir + '/schedules/all.yml') | from_yaml | default([]) }}"
+        exp_notif_assocs: "{{ lookup('file', source_dir + '/notification_templates/associations.yml') | from_yaml | default([], true) }}"
+        exp_users: "{{ lookup('file', source_dir + '/users/all.yml') | from_yaml | default([], true) }}"
+        exp_teams: "{{ lookup('file', source_dir + '/teams/all.yml') | from_yaml | default([], true) }}"
+        exp_roles: "{{ lookup('file', source_dir + '/roles/all.yml') | from_yaml | default([], true) }}"
+        exp_schedules: "{{ lookup('file', source_dir + '/schedules/all.yml') | from_yaml | default([], true) }}"
 
     # ── Organization ─────────────────────────────────────────────
 
