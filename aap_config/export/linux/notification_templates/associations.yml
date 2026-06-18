@@ -1,5 +1,14 @@
 ---
 - workflow_template: "Patch Linux Servers"
+  started_notifications:
+    - "Approval Panel Webhook"
+    - "Maintenance Panel Webhook"
+  success_notifications:
+    - "Approval Panel Webhook"
+    - "Maintenance Panel Webhook"
+  error_notifications:
+    - "Approval Panel Webhook"
+    - "Maintenance Panel Webhook"
   approval_notifications:
     - "Approval Panel Webhook"
     - "Maintenance Panel Webhook"

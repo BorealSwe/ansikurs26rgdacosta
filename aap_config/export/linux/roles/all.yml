@@ -1,0 +1,9 @@
+---
+- role_name: "Admin"
+  users:
+    - anatoliy
+- role_name: "Member"
+  users:
+    - anatoliy
+    - josh
+    - kalpesh

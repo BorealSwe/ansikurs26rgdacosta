@@ -1,0 +1,6 @@
+---
+- name: "Daily fact gathering"
+  job_template: "Gather facts"
+  rrule: "DTSTART:20260616T050000Z RRULE:FREQ=DAILY;INTERVAL=1"
+  enabled: true
+  description: ""

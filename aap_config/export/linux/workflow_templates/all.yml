@@ -3,6 +3,7 @@
   description: ""
   survey_enabled: false
   allow_simultaneous: false
+  extra_vars: ""
   nodes:
     - id: 1
       unified_job_template: "Linux Playbooks"
@@ -71,6 +72,7 @@
   description: "Opens maintenance window, requires manager approval, patches hosts, reboots if needed, closes window, and generates fleet report."
   survey_enabled: false
   allow_simultaneous: false
+  extra_vars: ""
   nodes:
     - id: 18
       unified_job_template: "Linux Playbooks"
