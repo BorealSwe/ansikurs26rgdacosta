@@ -13,7 +13,7 @@
 
     # ── Load exported data ───────────────────────────────────────
 
-    - name: Load exported organization data
+    - name: Exported organization data is loaded
       ansible.builtin.set_fact:
         exp_org: "{{ lookup('file', source_dir + '/organization.yml') | from_yaml }}"
         exp_creds: "{{ lookup('file', source_dir + '/credentials/all.yml') | from_yaml }}"
@@ -34,7 +34,7 @@
 
     # ── Delete default AAP resources ────────────────────────────
 
-    - name: Look up default resources to delete
+    - name: Default resources are identified
       ansible.builtin.uri:
         url: "{{ controller_api }}/{{ item.endpoint }}/?name={{ item.name | urlencode }}"
         user: "{{ controller_user }}"
@@ -50,7 +50,7 @@
         label: "{{ item.name }}"
       register: default_lookup
 
-    - name: Delete default resources
+    - name: Default resources are absent
       ansible.builtin.uri:
         url: "{{ controller_api }}/{{ item.item.endpoint }}/{{ item.json.results[0].id }}/"
         method: DELETE
@@ -66,7 +66,7 @@
 
     # ── Organization ─────────────────────────────────────────────
 
-    - name: Create target organization
+    - name: Target organization is present
       ansible.builtin.uri:
         url: "{{ controller_api }}/organizations/"
         method: POST
@@ -81,13 +81,13 @@
         status_code: [201]
       register: org_create
 
-    - name: Set target organization ID
+    - name: Target organization ID is set
       ansible.builtin.set_fact:
         target_org_id: "{{ org_create.json.id }}"
 
     # ── Galaxy Credential Association ────────────────────────────
 
-    - name: Look up Ansible Galaxy credential
+    - name: Ansible Galaxy credential is identified
       ansible.builtin.uri:
         url: "{{ controller_api }}/credentials/?name={{ 'Ansible Galaxy' | urlencode }}&managed=true"
         user: "{{ controller_user }}"
@@ -96,7 +96,7 @@
         force_basic_auth: true
       register: galaxy_cred
 
-    - name: Associate Galaxy credential with organization
+    - name: Galaxy credential is associated with organization
       ansible.builtin.uri:
         url: "{{ controller_api }}/organizations/{{ target_org_id }}/galaxy_credentials/"
         method: POST
@@ -111,7 +111,7 @@
 
     # ── Users ────────────────────────────────────────────────────
 
-    - name: Create users
+    - name: Users are present
       ansible.builtin.uri:
         url: "{{ controller_api }}/users/"
         method: POST
@@ -133,7 +133,7 @@
         label: "{{ item.username }}"
       register: user_results
 
-    - name: Look up user IDs
+    - name: User IDs are retrieved
       ansible.builtin.uri:
         url: "{{ controller_api }}/users/?username={{ item.username | urlencode }}"
         user: "{{ controller_user }}"
@@ -145,7 +145,7 @@
         label: "{{ item.username }}"
       register: user_lookup_results
 
-    - name: Build user name map
+    - name: User name map is built
       ansible.builtin.set_fact:
         user_map: "{{ user_map | default({}) | combine({item.item.username: item.json.results[0].id}) }}"
       loop: "{{ user_lookup_results.results }}"
@@ -154,7 +154,7 @@
 
     # ── Teams ────────────────────────────────────────────────────
 
-    - name: Create teams
+    - name: Teams are present
       ansible.builtin.uri:
         url: "{{ controller_api }}/teams/"
         method: POST
@@ -173,14 +173,14 @@
         label: "{{ item.name }}"
       register: team_results
 
-    - name: Build team name map
+    - name: Team name map is built
       ansible.builtin.set_fact:
         team_map: "{{ team_map | default({}) | combine({item.item.name: item.json.id}) }}"
       loop: "{{ team_results.results }}"
       loop_control:
         label: "{{ item.item.name }}"
 
-    - name: Add users to teams
+    - name: Users are added to teams
       ansible.builtin.uri:
         url: "{{ controller_api }}/teams/{{ team_map[item.0.name] }}/users/"
         method: POST
@@ -197,7 +197,7 @@
 
     # ── Organization Roles ───────────────────────────────────────
 
-    - name: Fetch target organization object roles
+    - name: Target organization roles are retrieved
       ansible.builtin.uri:
         url: "{{ controller_api }}/organizations/{{ target_org_id }}/object_roles/?page_size=100"
         user: "{{ controller_user }}"
@@ -206,14 +206,14 @@
         force_basic_auth: true
       register: target_org_roles
 
-    - name: Build target org role map
+    - name: Target org role map is built
       ansible.builtin.set_fact:
         target_role_map: "{{ target_role_map | default({}) | combine({item.name: item.id}) }}"
       loop: "{{ target_org_roles.json.results }}"
       loop_control:
         label: "{{ item.name }}"
 
-    - name: Assign users to organization roles
+    - name: Users are assigned to organization roles
       ansible.builtin.uri:
         url: "{{ controller_api }}/roles/{{ target_role_map[item.0.role_name] }}/users/"
         method: POST
@@ -231,7 +231,7 @@
 
     # ── Credentials ──────────────────────────────────────────────
 
-    - name: Look up credential type IDs
+    - name: Credential type IDs are retrieved
       ansible.builtin.uri:
         url: "{{ controller_api }}/credential_types/?name={{ item | urlencode }}"
         user: "{{ controller_user }}"
@@ -241,14 +241,14 @@
       loop: "{{ exp_creds | map(attribute='credential_type') | unique | list }}"
       register: cred_type_results
 
-    - name: Build credential type map
+    - name: Credential type map is built
       ansible.builtin.set_fact:
         cred_type_map: "{{ cred_type_map | default({}) | combine({item.item: item.json.results[0].id}) }}"
       loop: "{{ cred_type_results.results }}"
       loop_control:
         label: "{{ item.item }}"
 
-    - name: Create credentials
+    - name: Credentials are present
       ansible.builtin.uri:
         url: "{{ controller_api }}/credentials/"
         method: POST
@@ -275,7 +275,7 @@
         label: "{{ item.name }}"
       register: cred_results
 
-    - name: Build credential name map
+    - name: Credential name map is built
       ansible.builtin.set_fact:
         cred_map: "{{ cred_map | default({}) | combine({item.item.name: item.json.id}) }}"
       loop: "{{ cred_results.results }}"
@@ -284,7 +284,7 @@
 
     # ── Inventories ──────────────────────────────────────────────
 
-    - name: Create inventories
+    - name: Inventories are present
       ansible.builtin.uri:
         url: "{{ controller_api }}/inventories/"
         method: POST
@@ -303,7 +303,7 @@
         label: "{{ item.name }}"
       register: inv_results
 
-    - name: Build inventory name map
+    - name: Inventory name map is built
       ansible.builtin.set_fact:
         inv_map: "{{ inv_map | default({}) | combine({item.item.name: item.json.id}) }}"
       loop: "{{ inv_results.results }}"
@@ -312,7 +312,7 @@
 
     # ── Hosts ────────────────────────────────────────────────────
 
-    - name: Create hosts
+    - name: Hosts are present
       ansible.builtin.uri:
         url: "{{ controller_api }}/hosts/"
         method: POST
@@ -332,7 +332,7 @@
         label: "{{ item.name }}"
       register: host_results
 
-    - name: Build host name map
+    - name: Host name map is built
       ansible.builtin.set_fact:
         host_map: "{{ host_map | default({}) | combine({item.item.name: item.json.id}) }}"
       loop: "{{ host_results.results }}"
@@ -341,7 +341,7 @@
 
     # ── Groups ───────────────────────────────────────────────────
 
-    - name: Create groups
+    - name: Groups are present
       ansible.builtin.uri:
         url: "{{ controller_api }}/groups/"
         method: POST
@@ -360,14 +360,14 @@
         label: "{{ item.name }}"
       register: group_results
 
-    - name: Build group name map
+    - name: Group name map is built
       ansible.builtin.set_fact:
         group_map: "{{ group_map | default({}) | combine({item.item.name: item.json.id}) }}"
       loop: "{{ group_results.results }}"
       loop_control:
         label: "{{ item.item.name }}"
 
-    - name: Add hosts to groups
+    - name: Hosts are added to groups
       ansible.builtin.uri:
         url: "{{ controller_api }}/groups/{{ group_map[item.0.name] }}/hosts/"
         method: POST
@@ -384,7 +384,7 @@
 
     # ── Projects ─────────────────────────────────────────────────
 
-    - name: Create projects
+    - name: Projects are present
       ansible.builtin.uri:
         url: "{{ controller_api }}/projects/"
         method: POST
@@ -409,14 +409,14 @@
         label: "{{ item.name }}"
       register: proj_results
 
-    - name: Build project name map
+    - name: Project name map is built
       ansible.builtin.set_fact:
         project_map: "{{ project_map | default({}) | combine({item.item.name: item.json.id}) }}"
       loop: "{{ proj_results.results }}"
       loop_control:
         label: "{{ item.item.name }}"
 
-    - name: Wait for project sync to complete
+    - name: Project sync is complete
       ansible.builtin.uri:
         url: "{{ controller_api }}/projects/{{ project_map[item.name] }}/"
         user: "{{ controller_user }}"
@@ -431,7 +431,7 @@
       loop_control:
         label: "{{ item.name }}"
 
-    - name: Ensure project sync succeeded
+    - name: Project sync is verified
       ansible.builtin.fail:
         msg: "Project '{{ item.item.name }}' sync failed with status: {{ item.json.status }}"
       loop: "{{ project_sync.results }}"
@@ -441,7 +441,7 @@
 
     # ── Job Templates ────────────────────────────────────────────
 
-    - name: Create job templates
+    - name: Job templates are present
       ansible.builtin.uri:
         url: "{{ controller_api }}/job_templates/"
         method: POST
@@ -473,14 +473,14 @@
         label: "{{ item.name }}"
       register: jt_results
 
-    - name: Build job template name map
+    - name: Job template name map is built
       ansible.builtin.set_fact:
         jt_map: "{{ jt_map | default({}) | combine({item.item.name: item.json.id}) }}"
       loop: "{{ jt_results.results }}"
       loop_control:
         label: "{{ item.item.name }}"
 
-    - name: Associate credentials with job templates
+    - name: Credentials are associated with job templates
       ansible.builtin.uri:
         url: "{{ controller_api }}/job_templates/{{ jt_map[item.0.name] }}/credentials/"
         method: POST
@@ -497,7 +497,7 @@
 
     # ── Job Template Surveys ─────────────────────────────────────
 
-    - name: Import job template survey specs
+    - name: Job template survey specs are imported
       ansible.builtin.uri:
         url: "{{ controller_api }}/job_templates/{{ jt_map[item.job_template] }}/survey_spec/"
         method: POST
@@ -514,7 +514,7 @@
 
     # ── Job Template Schedules ───────────────────────────────────
 
-    - name: Import schedules
+    - name: Schedules are imported
       ansible.builtin.uri:
         url: "{{ controller_api }}/job_templates/{{ jt_map[item.job_template] }}/schedules/"
         method: POST
@@ -535,11 +535,11 @@
 
     # ── Workflow Templates ───────────────────────────────────────
 
-    - name: Build unified job template map
+    - name: Unified job template map is built
       ansible.builtin.set_fact:
         ujt_map: "{{ jt_map | combine(project_map) }}"
 
-    - name: Create workflow templates
+    - name: Workflow templates are present
       ansible.builtin.uri:
         url: "{{ controller_api }}/workflow_job_templates/"
         method: POST
@@ -561,7 +561,7 @@
         label: "{{ item.name }}"
       register: wft_results
 
-    - name: Build workflow template name map
+    - name: Workflow template name map is built
       ansible.builtin.set_fact:
         wft_map: "{{ wft_map | default({}) | combine({item.item.name: item.json.id}) }}"
       loop: "{{ wft_results.results }}"
@@ -570,7 +570,7 @@
 
     # ── Workflow Nodes ───────────────────────────────────────────
 
-    - name: Create regular workflow nodes
+    - name: Regular workflow nodes are present
       ansible.builtin.uri:
         url: "{{ controller_api }}/workflow_job_templates/{{ wft_map[item.0.name] }}/workflow_nodes/"
         method: POST
@@ -589,7 +589,7 @@
         label: "{{ item.1.unified_job_template }}"
       register: regular_node_results
 
-    - name: Create approval workflow nodes
+    - name: Approval workflow nodes are present
       ansible.builtin.uri:
         url: "{{ controller_api }}/workflow_job_templates/{{ wft_map[item.0.name] }}/workflow_nodes/"
         method: POST
@@ -607,7 +607,7 @@
         label: "{{ item.1.unified_job_template }}"
       register: approval_node_results
 
-    - name: Create approval templates on approval nodes
+    - name: Approval templates are present on approval nodes
       ansible.builtin.uri:
         url: "{{ controller_api }}/workflow_job_template_nodes/{{ item.json.id }}/create_approval_template/"
         method: POST
@@ -625,7 +625,7 @@
       loop_control:
         label: "{{ item.item.1.unified_job_template }}"
 
-    - name: Build node ID map
+    - name: Node ID map is built
       ansible.builtin.set_fact:
         node_id_map: "{{ node_id_map | default({}) | combine({(item.item.1.id | string): item.json.id}) }}"
       loop: "{{ (regular_node_results.results + approval_node_results.results) | selectattr('json', 'defined') | list }}"
@@ -634,7 +634,7 @@
 
     # ── Workflow Edges ───────────────────────────────────────────
 
-    - name: Build workflow edge operations
+    - name: Workflow edge operations are built
       ansible.builtin.set_fact:
         edge_ops: "{{ _edges | from_yaml | default([]) }}"
       vars:
@@ -659,7 +659,7 @@
           {% endfor %}
           {% endfor %}
 
-    - name: Wire workflow edges
+    - name: Workflow edges are wired
       ansible.builtin.uri:
         url: "{{ controller_api }}/workflow_job_template_nodes/{{ node_id_map[item.source | string] }}/{{ item.type }}/"
         method: POST
@@ -676,7 +676,7 @@
 
     # ── Workflow Template Surveys ────────────────────────────────
 
-    - name: Import workflow template survey specs
+    - name: Workflow template survey specs are imported
       ansible.builtin.uri:
         url: "{{ controller_api }}/workflow_job_templates/{{ wft_map[item.workflow_template] }}/survey_spec/"
         method: POST
@@ -693,7 +693,7 @@
 
     # ── Notification Templates ───────────────────────────────────
 
-    - name: Create notification templates
+    - name: Notification templates are present
       ansible.builtin.uri:
         url: "{{ controller_api }}/notification_templates/"
         method: POST
@@ -714,14 +714,14 @@
         label: "{{ item.name }}"
       register: notif_results
 
-    - name: Build notification template name map
+    - name: Notification template name map is built
       ansible.builtin.set_fact:
         notif_map: "{{ notif_map | default({}) | combine({item.item.name: item.json.id}) }}"
       loop: "{{ notif_results.results }}"
       loop_control:
         label: "{{ item.item.name }}"
 
-    - name: Associate started notifications with workflow templates
+    - name: Started notifications are associated with workflow templates
       ansible.builtin.uri:
         url: "{{ controller_api }}/workflow_job_templates/{{ wft_map[item.0.workflow_template] }}/notification_templates_started/"
         method: POST
@@ -736,7 +736,7 @@
       loop_control:
         label: "{{ item.0.workflow_template }} started <- {{ item.1 }}"
 
-    - name: Associate success notifications with workflow templates
+    - name: Success notifications are associated with workflow templates
       ansible.builtin.uri:
         url: "{{ controller_api }}/workflow_job_templates/{{ wft_map[item.0.workflow_template] }}/notification_templates_success/"
         method: POST
@@ -751,7 +751,7 @@
       loop_control:
         label: "{{ item.0.workflow_template }} success <- {{ item.1 }}"
 
-    - name: Associate error notifications with workflow templates
+    - name: Error notifications are associated with workflow templates
       ansible.builtin.uri:
         url: "{{ controller_api }}/workflow_job_templates/{{ wft_map[item.0.workflow_template] }}/notification_templates_error/"
         method: POST
@@ -766,7 +766,7 @@
       loop_control:
         label: "{{ item.0.workflow_template }} error <- {{ item.1 }}"
 
-    - name: Associate approval notifications with workflow templates
+    - name: Approval notifications are associated with workflow templates
       ansible.builtin.uri:
         url: "{{ controller_api }}/workflow_job_templates/{{ wft_map[item.0.workflow_template] }}/notification_templates_approvals/"
         method: POST
@@ -783,7 +783,7 @@
 
     # ── Summary ──────────────────────────────────────────────────
 
-    - name: Display import summary
+    - name: Import summary
       ansible.builtin.debug:
         msg:
           - "Import complete to organization: {{ target_org }}"
