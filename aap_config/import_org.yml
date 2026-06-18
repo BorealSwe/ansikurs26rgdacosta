@@ -191,8 +191,7 @@
         validate_certs: "{{ controller_verify_tls }}"
         force_basic_auth: true
         body_format: json
-        body:
-          id: "{{ host_map[item.1] | int }}"
+        body: "{{ {'id': (host_map[item.1] | int)} | to_json }}"
         status_code: [204]
       loop: "{{ exp_groups | subelements('hosts', skip_missing=True) }}"
       loop_control:
@@ -300,8 +299,7 @@
         validate_certs: "{{ controller_verify_tls }}"
         force_basic_auth: true
         body_format: json
-        body:
-          id: "{{ cred_map[item.1] | int }}"
+        body: "{{ {'id': (cred_map[item.1] | int)} | to_json }}"
         status_code: [204]
       loop: "{{ exp_jts | subelements('credentials') }}"
       loop_control:
@@ -441,8 +439,7 @@
         validate_certs: "{{ controller_verify_tls }}"
         force_basic_auth: true
         body_format: json
-        body:
-          id: "{{ node_id_map[item.target | string] | int }}"
+        body: "{{ {'id': (node_id_map[item.target | string] | int)} | to_json }}"
         status_code: [204]
       loop: "{{ edge_ops }}"
       loop_control:
@@ -487,8 +484,7 @@
         validate_certs: "{{ controller_verify_tls }}"
         force_basic_auth: true
         body_format: json
-        body:
-          id: "{{ notif_map[item.1] | int }}"
+        body: "{{ {'id': (notif_map[item.1] | int)} | to_json }}"
         status_code: [204]
       loop: "{{ exp_notif_assocs | subelements('approval_notifications') }}"
       loop_control:
