@@ -153,7 +153,7 @@
   diff_mode: false
   survey_enabled: false
 - name: Reboot management
-  description: ""
+  description: "Reboot a server with configurable delay and message"
   job_type: run
   playbook: demo/reboot_mgmt.yml
   inventory: "Linux Systems"
@@ -168,7 +168,7 @@
   job_tags: ""
   skip_tags: ""
   diff_mode: false
-  survey_enabled: false
+  survey_enabled: true
 - name: Rolling patch
   description: ""
   job_type: run
@@ -220,3 +220,105 @@
   skip_tags: ""
   diff_mode: false
   survey_enabled: false
+- name: User management
+  description: "Create, modify, or remove user accounts on Linux systems"
+  job_type: run
+  playbook: demo/user_mgmt.yml
+  inventory: "Linux Systems"
+  project: "Linux Playbooks"
+  credentials:
+    - "SSH credential"
+  become_enabled: true
+  forks: 0
+  verbosity: 0
+  extra_vars: ""
+  limit: ""
+  job_tags: ""
+  skip_tags: ""
+  diff_mode: false
+  survey_enabled: true
+- name: Service management
+  description: "Start, stop, restart, or enable services on Linux systems"
+  job_type: run
+  playbook: demo/service_mgmt.yml
+  inventory: "Linux Systems"
+  project: "Linux Playbooks"
+  credentials:
+    - "SSH credential"
+  become_enabled: true
+  forks: 0
+  verbosity: 0
+  extra_vars: ""
+  limit: ""
+  job_tags: ""
+  skip_tags: ""
+  diff_mode: false
+  survey_enabled: true
+- name: Group management
+  description: "Create, modify, or remove groups on Linux systems"
+  job_type: run
+  playbook: demo/group_mgmt.yml
+  inventory: "Linux Systems"
+  project: "Linux Playbooks"
+  credentials:
+    - "SSH credential"
+  become_enabled: true
+  forks: 0
+  verbosity: 0
+  extra_vars: ""
+  limit: ""
+  job_tags: ""
+  skip_tags: ""
+  diff_mode: false
+  survey_enabled: true
+- name: User offboarding
+  description: "Lock account, revoke access, archive home directory"
+  job_type: run
+  playbook: demo/user_offboarding.yml
+  inventory: "Linux Systems"
+  project: "Linux Playbooks"
+  credentials:
+    - "root SSH credential"
+  become_enabled: true
+  forks: 0
+  verbosity: 0
+  extra_vars: ""
+  limit: ""
+  job_tags: ""
+  skip_tags: ""
+  diff_mode: false
+  survey_enabled: true
+- name: Secrets rotation
+  description: "Rotate database passwords and update application configs"
+  job_type: run
+  playbook: demo/secrets_rotation.yml
+  inventory: "Linux Systems"
+  project: "Linux Playbooks"
+  credentials:
+    - "SSH credential"
+  become_enabled: true
+  forks: 0
+  verbosity: 0
+  extra_vars: ""
+  limit: ""
+  job_tags: ""
+  skip_tags: ""
+  diff_mode: false
+  survey_enabled: true
+- name: DR validation
+  description: "Validate disaster recovery readiness: backups, connectivity, capacity"
+  job_type: run
+  playbook: demo/dr_validation.yml
+  inventory: "Linux Systems"
+  project: "Linux Playbooks"
+  credentials:
+    - "SSH credential"
+  become_enabled: true
+  forks: 0
+  verbosity: 0
+  extra_vars: ""
+  limit: ""
+  job_tags: ""
+  skip_tags: ""
+  diff_mode: false
+  survey_enabled: true

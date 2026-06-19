@@ -1,0 +1,173 @@
+---
+- name: Create demo organizations for multi-tenancy
+  hosts: localhost
+  gather_facts: false
+
+  vars:
+    controller_api: "{{ controller_host }}/api/controller/v2"
+    demo_orgs:
+      - name: Windows
+        teams:
+          - name: Windows Admins
+            members:
+              - josh
+              - kalpesh
+      - name: Cloud
+        teams:
+          - name: Cloud Engineers
+            members:
+              - anatoliy
+              - josh
+      - name: Networking
+        teams:
+          - name: Network Ops
+            members:
+              - kalpesh
+              - anatoliy
+
+  tasks:
+    - name: Organizations are present
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/organizations/"
+        method: POST
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+        body_format: json
+        body:
+          name: "{{ item.name }}"
+        status_code: [201, 400]
+      loop: "{{ demo_orgs }}"
+      loop_control:
+        label: "{{ item.name }}"
+
+    - name: Organization IDs are retrieved
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/organizations/?name={{ item.name | urlencode }}"
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+      loop: "{{ demo_orgs }}"
+      loop_control:
+        label: "{{ item.name }}"
+      register: org_lookup
+
+    - name: Organization ID map is built
+      ansible.builtin.set_fact:
+        org_map: "{{ org_map | default({}) | combine({item.item.name: item.json.results[0].id}) }}"
+      loop: "{{ org_lookup.results }}"
+      loop_control:
+        label: "{{ item.item.name }}"
+
+    - name: Ansible Galaxy credential is identified
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/credentials/?name={{ 'Ansible Galaxy' | urlencode }}&managed=true"
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+      register: galaxy_cred
+
+    - name: Galaxy credential is associated with organizations
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/organizations/{{ org_map[item.name] }}/galaxy_credentials/"
+        method: POST
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+        body_format: json
+        body: "{{ {'id': (galaxy_cred.json.results[0].id | int)} | to_json }}"
+        status_code: [204, 400]
+      loop: "{{ demo_orgs }}"
+      loop_control:
+        label: "{{ item.name }}"
+      when: galaxy_cred.json.count > 0
+
+    - name: User IDs are retrieved
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/users/?username={{ item | urlencode }}"
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+      loop: "{{ demo_orgs | map(attribute='teams') | flatten | map(attribute='members') | flatten | unique }}"
+      loop_control:
+        label: "{{ item }}"
+      register: user_lookup
+
+    - name: User ID map is built
+      ansible.builtin.set_fact:
+        user_map: "{{ user_map | default({}) | combine({item.item: item.json.results[0].id}) }}"
+      loop: "{{ user_lookup.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+      when: item.json.count > 0
+
+    - name: Teams are present
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/teams/"
+        method: POST
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+        body_format: json
+        body:
+          name: "{{ item.1.name }}"
+          organization: "{{ org_map[item.0.name] }}"
+        status_code: [201, 400]
+      loop: "{{ demo_orgs | subelements('teams') }}"
+      loop_control:
+        label: "{{ item.0.name }} / {{ item.1.name }}"
+
+    - name: Team IDs are retrieved
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/teams/?name={{ item.1.name | urlencode }}&organization={{ org_map[item.0.name] }}"
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+      loop: "{{ demo_orgs | subelements('teams') }}"
+      loop_control:
+        label: "{{ item.0.name }} / {{ item.1.name }}"
+      register: team_lookup
+
+    - name: Team ID map is built
+      ansible.builtin.set_fact:
+        team_map: "{{ team_map | default({}) | combine({item.item.0.name + '/' + item.item.1.name: item.json.results[0].id}) }}"
+      loop: "{{ team_lookup.results }}"
+      loop_control:
+        label: "{{ item.item.0.name }} / {{ item.item.1.name }}"
+
+    - name: Team membership list is built
+      ansible.builtin.set_fact:
+        team_members: "{{ team_members | default([]) + [{'team_key': item.0.0.name + '/' + item.0.1.name, 'username': item.1}] }}"
+      loop: "{{ demo_orgs | subelements('teams') | subelements('1.members') }}"
+      loop_control:
+        label: "{{ item.0.0.name }} / {{ item.0.1.name }} / {{ item.1 }}"
+
+    - name: Users are added to teams
+      ansible.builtin.uri:
+        url: "{{ controller_api }}/teams/{{ team_map[item.team_key] }}/users/"
+        method: POST
+        user: "{{ controller_user }}"
+        password: "{{ controller_pass }}"
+        validate_certs: "{{ controller_verify_tls }}"
+        force_basic_auth: true
+        body_format: json
+        body: "{{ {'id': (user_map[item.username] | int)} | to_json }}"
+        status_code: [204, 400]
+      loop: "{{ team_members }}"
+      loop_control:
+        label: "{{ item.team_key }} / {{ item.username }}"
+      when: item.username in user_map
+
+    - name: Summary is displayed
+      ansible.builtin.debug:
+        msg:
+          - "Organizations created: {{ demo_orgs | map(attribute='name') | list | join(', ') }}"
+          - "Teams created: {{ demo_orgs | map(attribute='teams') | flatten | map(attribute='name') | list | join(', ') }}"
+          - "User memberships assigned: {{ team_members | length }}"

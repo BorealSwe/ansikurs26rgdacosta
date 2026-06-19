@@ -808,4 +808,6 @@
           - ""
           - "SSH key injected from: {{ ssh_key_file }}"
 
-...
+
+- name: Create additional demo organizations
+  ansible.builtin.import_playbook: create_other_orgs.yml
