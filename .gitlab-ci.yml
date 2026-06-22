@@ -1,0 +1,137 @@
+# GitLab CI Pipeline for Execution Environment Automation
+# Place this at the repository root as .gitlab-ci.yml
+
+stages:
+  - validate
+  - build
+  - test
+  - publish
+  - monitor
+
+variables:
+  EE_DIR: execution_environments/custom-ee
+  PIPELINE_DIR: execution_environments/pipeline
+  QUAY_ORG: rgdacosta
+  ANSIBLE_FORCE_COLOR: "true"
+
+# Run on pushes to main that touch EE files, or manual triggers
+workflow:
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+    - if: '$CI_PIPELINE_SOURCE == "trigger"'
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      changes:
+        - execution_environments/custom-ee/**/*
+    - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"'
+      changes:
+        - execution_environments/custom-ee/**/*
+
+# Validate EE definition before building
+validate:ee-definition:
+  stage: validate
+  image: quay.io/ansible/ansible-builder:latest
+  script:
+    - cd $EE_DIR
+    - ansible-builder create --verbosity 2
+    - echo "EE definition is valid"
+  artifacts:
+    paths:
+      - $EE_DIR/context
+    expire_in: 1 hour
+
+# Build the EE image
+build:ee-image:
+  stage: build
+  image: quay.io/buildah/stable
+  services:
+    - docker:dind
+  variables:
+    BUILDAH_ISOLATION: chroot
+    BUILDAH_LAYERS: "true"
+  before_script:
+    - buildah login -u $QUAY_USERNAME -p $QUAY_PASSWORD quay.io
+    - buildah login -u $RH_REGISTRY_USERNAME -p $RH_REGISTRY_PASSWORD registry.redhat.io
+  script:
+    - cd $EE_DIR
+    - |
+      ansible-builder build \
+        --tag quay.io/$QUAY_ORG/custom-ee:$CI_COMMIT_SHORT_SHA \
+        --tag quay.io/$QUAY_ORG/custom-ee:latest \
+        --container-runtime buildah \
+        --verbosity 3
+  artifacts:
+    paths:
+      - $EE_DIR/context
+    expire_in: 1 day
+  needs:
+    - validate:ee-definition
+
+# Smoke test the built EE
+test:smoke-test:
+  stage: test
+  image: quay.io/$QUAY_ORG/custom-ee:$CI_COMMIT_SHORT_SHA
+  script:
+    - ansible --version
+    - ansible-galaxy collection list
+    - python3 -c "import jmespath, requests; print('Python deps OK')"
+  needs:
+    - build:ee-image
+
+# Push to Quay.io
+publish:quay:
+  stage: publish
+  image: quay.io/podman/stable
+  before_script:
+    - podman login -u $QUAY_USERNAME -p $QUAY_PASSWORD quay.io
+  script:
+    - podman pull quay.io/$QUAY_ORG/custom-ee:$CI_COMMIT_SHORT_SHA
+    - podman push quay.io/$QUAY_ORG/custom-ee:$CI_COMMIT_SHORT_SHA
+    - podman push quay.io/$QUAY_ORG/custom-ee:latest
+    - echo "Published to quay.io/$QUAY_ORG/custom-ee:$CI_COMMIT_SHORT_SHA"
+  needs:
+    - test:smoke-test
+  only:
+    - main
+
+# Notify AAP Controller of new EE
+publish:notify-aap:
+  stage: publish
+  image: registry.access.redhat.com/ubi9/ubi:latest
+  before_script:
+    - dnf install -y ansible-core
+  script:
+    - |
+      ansible-playbook $PIPELINE_DIR/build-ee.yml \
+        --tags notify \
+        -e build_tag=$CI_COMMIT_SHORT_SHA
+  needs:
+    - publish:quay
+  only:
+    - main
+  when: manual
+
+# Scheduled job: Monitor base image for updates (runs daily)
+monitor:base-image:
+  stage: monitor
+  image: registry.access.redhat.com/ubi9/ubi:latest
+  before_script:
+    - dnf install -y ansible-core podman git
+  script:
+    - ansible-playbook $PIPELINE_DIR/monitor-base-image.yml
+  only:
+    - schedules
+  rules:
+    - if: '$SCHEDULE_TYPE == "base-image-monitor"'
+
+# Scheduled job: Check for collection updates (runs weekly)
+monitor:collections:
+  stage: monitor
+  image: registry.access.redhat.com/ubi9/ubi:latest
+  before_script:
+    - dnf install -y ansible-core git gh
+  script:
+    - ansible-playbook $PIPELINE_DIR/update-collections.yml
+  only:
+    - schedules
+  rules:
+    - if: '$SCHEDULE_TYPE == "collection-updates"'
