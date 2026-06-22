@@ -90,8 +90,8 @@ publish:quay:
     - echo "Published to quay.io/$QUAY_ORG/custom-ee:$CI_COMMIT_SHORT_SHA"
   needs:
     - test:smoke-test
-  only:
-    - main
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
 
 # Notify AAP Controller of new EE
 publish:notify-aap:
@@ -106,9 +106,9 @@ publish:notify-aap:
         -e build_tag=$CI_COMMIT_SHORT_SHA
   needs:
     - publish:quay
-  only:
-    - main
-  when: manual
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      when: manual
 
 # Scheduled job: Monitor base image for updates (runs daily)
 monitor:base-image:
@@ -118,10 +118,8 @@ monitor:base-image:
     - dnf install -y ansible-core podman git
   script:
     - ansible-playbook $PIPELINE_DIR/monitor-base-image.yml
-  only:
-    - schedules
   rules:
-    - if: '$SCHEDULE_TYPE == "base-image-monitor"'
+    - if: '$CI_PIPELINE_SOURCE == "schedule" && $SCHEDULE_TYPE == "base-image-monitor"'
 
 # Scheduled job: Check for collection updates (runs weekly)
 monitor:collections:
@@ -131,7 +129,5 @@ monitor:collections:
     - dnf install -y ansible-core git gh
   script:
     - ansible-playbook $PIPELINE_DIR/update-collections.yml
-  only:
-    - schedules
   rules:
-    - if: '$SCHEDULE_TYPE == "collection-updates"'
+    - if: '$CI_PIPELINE_SOURCE == "schedule" && $SCHEDULE_TYPE == "collection-updates"'
