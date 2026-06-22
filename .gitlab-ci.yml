@@ -49,8 +49,8 @@ build:ee-image:
     BUILDAH_ISOLATION: chroot
     BUILDAH_LAYERS: "true"
   before_script:
-    - buildah login -u $QUAY_USERNAME -p $QUAY_PASSWORD quay.io
-    - buildah login -u $RH_REGISTRY_USERNAME -p $RH_REGISTRY_PASSWORD registry.redhat.io
+    - echo "$QUAY_PASSWORD" | buildah login -u $QUAY_USERNAME --password-stdin quay.io
+    - echo "$RH_REGISTRY_PASSWORD" | buildah login -u $RH_REGISTRY_USERNAME --password-stdin registry.redhat.io
   script:
     - cd $EE_DIR
     - |
