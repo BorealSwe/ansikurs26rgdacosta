@@ -42,13 +42,14 @@ validate:ee-definition:
 # Build the EE image
 build:ee-image:
   stage: build
-  image: quay.io/buildah/stable
+  image: quay.io/ansible/ansible-builder:latest
   services:
     - docker:dind
   variables:
     BUILDAH_ISOLATION: chroot
     BUILDAH_LAYERS: "true"
   before_script:
+    - dnf install -y buildah podman
     - echo "$QUAY_PASSWORD" | buildah login -u $QUAY_USERNAME --password-stdin quay.io
     - echo "$RH_REGISTRY_PASSWORD" | buildah login -u $RH_REGISTRY_USERNAME --password-stdin registry.redhat.io
   script:
