@@ -13,10 +13,10 @@ dependencies:
     package_pip: 'ansible-core==2.15.4'
   ansible_runner:
     package_pip: 'ansible-runner==2.2.0'
-  galaxy: requirements.yml
+  galaxy: requirements-pinned.yml  # Use pinned versions for reproducible builds
   python:
-    - requests
-    - jmespath
+    - requests==2.32.3
+    - jmespath==1.0.1
   system:
     - git
     - gcc

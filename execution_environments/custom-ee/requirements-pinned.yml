@@ -1,0 +1,35 @@
+---
+# Pinned collection versions for reproducible builds
+# Generated: 2026-06-19
+# Update via: ansible-playbook pipeline/update-collections.yml
+
+collections:
+
+  - name: rgdacosta.general
+    version: "1.0.0"
+  - name: ansible.posix
+    version: "1.5.4"
+  - name: ansible.utils
+    version: "4.1.0"
+  - name: community.kubernetes
+    version: "3.2.0"
+  - name: community.kubevirt
+    version: "1.5.0"
+  - name: community.crypto
+    version: "2.21.1"
+  - name: community.general
+    version: "9.4.0"
+  - name: community.libvirt
+    version: "1.3.0"
+  - name: kubernetes.core
+    version: "5.0.0"
+  - name: kubevirt.core
+    version: "1.5.0"
+  - name: redhat.openshift
+    version: "2.3.0"
+  - name: redhat.openshift_virtualization
+    version: "1.2.3"
+  - name: redhat.rhel_system_roles
+    version: "1.24.0"
+  - name: redhat.satellite
+    version: "4.1.0"

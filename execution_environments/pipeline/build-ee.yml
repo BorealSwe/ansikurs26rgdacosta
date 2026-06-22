@@ -1,0 +1,241 @@
+---
+- name: Build and publish execution environment
+  hosts: localhost
+  gather_facts: true
+
+  vars:
+    ee_name: "custom-ee"
+    ee_dir: "../custom-ee"
+    ee_tag_base: "quay.io/{{ quay_org }}/{{ ee_name }}"
+    quay_org: "{{ lookup('env', 'QUAY_ORG') | default('rgdacosta', true) }}"
+    build_tag: "{{ lookup('env', 'CI_COMMIT_SHORT_SHA') | default(ansible_date_time.date ~ '-' ~ ansible_date_time.time | replace(':', ''), true) }}"
+    smoke_test_playbook: "smoke-test.yml"
+
+  tasks:
+
+    - name: Build prerequisites are verified
+      block:
+
+        - name: ansible-builder is installed
+          ansible.builtin.command:
+            cmd: ansible-builder --version
+          register: builder_version
+          changed_when: false
+          failed_when: builder_version.rc != 0
+
+        - name: Podman is available
+          ansible.builtin.command:
+            cmd: podman --version
+          register: podman_version
+          changed_when: false
+          failed_when: podman_version.rc != 0
+
+        - name: Registry credentials are configured
+          ansible.builtin.command:
+            cmd: >
+              podman login
+              --username {{ lookup('env', 'QUAY_USERNAME') }}
+              --password {{ lookup('env', 'QUAY_PASSWORD') }}
+              quay.io
+          changed_when: false
+          no_log: true
+          failed_when: false
+
+        - name: Red Hat registry credentials are configured
+          ansible.builtin.command:
+            cmd: >
+              podman login
+              --username {{ lookup('env', 'RH_REGISTRY_USERNAME') }}
+              --password {{ lookup('env', 'RH_REGISTRY_PASSWORD') }}
+              registry.redhat.io
+          changed_when: false
+          no_log: true
+          failed_when: false
+
+    - name: Execution environment definition is validated
+      block:
+
+        - name: EE definition file exists
+          ansible.builtin.stat:
+            path: "{{ ee_dir }}/execution-environment.yml"
+          register: ee_def
+          failed_when: not ee_def.stat.exists
+
+        - name: EE definition is loaded
+          ansible.builtin.slurp:
+            path: "{{ ee_dir }}/execution-environment.yml"
+          register: ee_def_raw
+
+        - name: EE definition is parsed
+          ansible.builtin.set_fact:
+            ee_config: "{{ ee_def_raw.content | b64decode | from_yaml }}"
+
+        - name: Requirements file exists
+          ansible.builtin.stat:
+            path: "{{ ee_dir }}/requirements.yml"
+          register: req_file
+          failed_when: not req_file.stat.exists
+
+        - name: Requirements are loaded
+          ansible.builtin.slurp:
+            path: "{{ ee_dir }}/requirements.yml"
+          register: req_raw
+
+        - name: Requirements are parsed
+          ansible.builtin.set_fact:
+            requirements: "{{ req_raw.content | b64decode | from_yaml }}"
+
+        - name: Build validation summary is displayed
+          ansible.builtin.debug:
+            msg:
+              - "EE name: {{ ee_name }}"
+              - "Base image: {{ ee_config.images.base_image.name }}"
+              - "Collections: {{ requirements.collections | length }}"
+              - "Build tag: {{ build_tag }}"
+
+    - name: Execution environment is built
+      block:
+
+        - name: Build output directory is cleaned
+          ansible.builtin.file:
+            path: "{{ ee_dir }}/context"
+            state: absent
+
+        - name: Execution environment image is built
+          ansible.builtin.command:
+            cmd: >
+              ansible-builder build
+              --tag {{ ee_tag_base }}:{{ build_tag }}
+              --tag {{ ee_tag_base }}:latest
+              --container-runtime podman
+              --verbosity 3
+            chdir: "{{ ee_dir }}"
+          register: build_result
+          changed_when: build_result.rc == 0
+          failed_when: build_result.rc != 0
+
+        - name: Build artifacts are listed
+          ansible.builtin.command:
+            cmd: podman images {{ ee_tag_base }}
+          register: built_images
+          changed_when: false
+
+        - name: Build result is displayed
+          ansible.builtin.debug:
+            msg: "{{ built_images.stdout_lines }}"
+
+    - name: Execution environment is tested
+      block:
+
+        - name: Smoke test playbook is created
+          ansible.builtin.copy:
+            content: |
+              ---
+              - name: EE smoke test
+                hosts: localhost
+                gather_facts: true
+                tasks:
+                  - name: Ansible version is displayed
+                    ansible.builtin.debug:
+                      msg: "Ansible {{ ansible_version.full }}"
+
+                  - name: Collections are listed
+                    ansible.builtin.command:
+                      cmd: ansible-galaxy collection list
+                    register: collection_list
+                    changed_when: false
+
+                  - name: Collection inventory is displayed
+                    ansible.builtin.debug:
+                      msg: "{{ collection_list.stdout_lines }}"
+
+                  - name: Python packages are listed
+                    ansible.builtin.command:
+                      cmd: pip3 list
+                    register: pip_list
+                    changed_when: false
+
+                  - name: Critical collections are verified
+                    ansible.builtin.assert:
+                      that:
+                        - "'ansible.posix' in collection_list.stdout"
+                        - "'community.general' in collection_list.stdout"
+                        - "'kubernetes.core' in collection_list.stdout"
+                      fail_msg: "Required collections missing from EE"
+            dest: "/tmp/{{ smoke_test_playbook }}"
+            mode: "0644"
+
+        - name: Smoke test is executed inside EE
+          ansible.builtin.command:
+            cmd: >
+              podman run --rm
+              {{ ee_tag_base }}:{{ build_tag }}
+              ansible-playbook /tmp/{{ smoke_test_playbook }}
+          register: smoke_test
+          changed_when: false
+          failed_when: smoke_test.rc != 0
+
+        - name: Smoke test result is displayed
+          ansible.builtin.debug:
+            msg: "Smoke test passed. EE is functional."
+
+    - name: Execution environment is published
+      block:
+
+        - name: Build tag is pushed to registry
+          ansible.builtin.command:
+            cmd: podman push {{ ee_tag_base }}:{{ build_tag }}
+          register: push_build
+          changed_when: push_build.rc == 0
+
+        - name: Latest tag is pushed to registry
+          ansible.builtin.command:
+            cmd: podman push {{ ee_tag_base }}:latest
+          register: push_latest
+          changed_when: push_latest.rc == 0
+
+        - name: Registry URLs are displayed
+          ansible.builtin.debug:
+            msg:
+              - "Published to: {{ ee_tag_base }}:{{ build_tag }}"
+              - "Updated: {{ ee_tag_base }}:latest"
+
+    - name: AAP Controller is notified
+      when: lookup('env', 'AAP_CONTROLLER_URL') | length > 0
+      block:
+
+        - name: Projects using this EE are identified
+          ansible.builtin.uri:
+            url: "{{ lookup('env', 'AAP_CONTROLLER_URL') }}/api/v2/projects/?execution_environment__name={{ ee_name }}"
+            method: GET
+            user: "{{ lookup('env', 'AAP_CONTROLLER_USER') }}"
+            password: "{{ lookup('env', 'AAP_CONTROLLER_PASS') }}"
+            validate_certs: false
+            force_basic_auth: true
+          register: projects_using_ee
+
+        - name: Project sync is triggered
+          ansible.builtin.uri:
+            url: "{{ lookup('env', 'AAP_CONTROLLER_URL') }}/api/v2/projects/{{ item.id }}/update/"
+            method: POST
+            user: "{{ lookup('env', 'AAP_CONTROLLER_USER') }}"
+            password: "{{ lookup('env', 'AAP_CONTROLLER_PASS') }}"
+            validate_certs: false
+            force_basic_auth: true
+            status_code: [202]
+          loop: "{{ projects_using_ee.json.results }}"
+          loop_control:
+            label: "{{ item.name }}"
+
+        - name: Notification result is displayed
+          ansible.builtin.debug:
+            msg: "Triggered sync for {{ projects_using_ee.json.count }} project(s) using {{ ee_name }}"
+
+    - name: Build summary is displayed
+      ansible.builtin.debug:
+        msg:
+          - "===== EE Build Complete ====="
+          - "Image: {{ ee_tag_base }}:{{ build_tag }}"
+          - "Collections: {{ requirements.collections | length }}"
+          - "Status: Published and tested"
+          - "Next: AAP projects will pull updated EE on next sync"

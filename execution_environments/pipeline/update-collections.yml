@@ -1,0 +1,144 @@
+---
+- name: Update collection versions
+  hosts: localhost
+  gather_facts: false
+
+  vars:
+    requirements_file: "../custom-ee/requirements.yml"
+    branch_name: "collection-updates-{{ ansible_date_time.date }}"
+    galaxy_api: "https://galaxy.ansible.com/api/v3"
+
+  tasks:
+
+    - name: Current requirements are loaded
+      ansible.builtin.slurp:
+        path: "{{ requirements_file }}"
+      register: requirements_raw
+
+    - name: Requirements are parsed
+      ansible.builtin.set_fact:
+        current_requirements: "{{ requirements_raw.content | b64decode | from_yaml }}"
+
+    - name: Latest versions are retrieved from Galaxy
+      ansible.builtin.uri:
+        url: "{{ galaxy_api }}/plugin/ansible/content/published/collections/index/{{ item.name.split('.')[0] }}/{{ item.name.split('.')[1] }}/versions/?is_highest=true"
+        method: GET
+      loop: "{{ current_requirements.collections }}"
+      loop_control:
+        label: "{{ item.name }}"
+      register: galaxy_response
+
+    - name: Version comparison is built
+      ansible.builtin.set_fact:
+        version_map: >-
+          {{
+            version_map | default({}) | combine({
+              item.item.name: {
+                'current': item.item.version | default('not pinned'),
+                'latest': item.json.data[0].version,
+                'needs_update': (item.item.version | default('0.0.0')) is version(item.json.data[0].version, '<')
+              }
+            })
+          }}
+      loop: "{{ galaxy_response.results }}"
+      loop_control:
+        label: "{{ item.item.name }}"
+
+    - name: Update summary is displayed
+      ansible.builtin.debug:
+        msg: "{{ version_map }}"
+
+    - name: Updates are available
+      ansible.builtin.set_fact:
+        has_updates: "{{ version_map.values() | selectattr('needs_update', 'equalto', true) | list | length > 0 }}"
+
+    - name: Collection update branch is created
+      when: has_updates
+      block:
+
+        - name: Update branch is created
+          ansible.builtin.command:
+            cmd: git checkout -b {{ branch_name }}
+          changed_when: false
+          failed_when: false
+
+        - name: Updated requirements are built
+          ansible.builtin.set_fact:
+            updated_requirements:
+              collections: >-
+                {{
+                  current_requirements.collections | map('combine', {
+                    'version': version_map[item.name].latest
+                  }) | list
+                }}
+
+        - name: Requirements file is updated
+          ansible.builtin.copy:
+            content: "{{ updated_requirements | to_nice_yaml }}"
+            dest: "{{ requirements_file }}"
+            mode: "0644"
+
+        - name: Changelog is generated
+          ansible.builtin.set_fact:
+            changelog: |
+              # Collection Updates
+
+              {% for collection, versions in version_map.items() %}
+              {% if versions.needs_update %}
+              - **{{ collection }}**: {{ versions.current }} → {{ versions.latest }}
+              {% endif %}
+              {% endfor %}
+
+        - name: Changes are committed
+          ansible.builtin.command:
+            cmd: >
+              git commit -am "Update collections: {{ version_map.values() | selectattr('needs_update') | list | length }} updates available"
+          changed_when: false
+
+        - name: Branch is pushed
+          ansible.builtin.command:
+            cmd: git push -u origin {{ branch_name }}
+          changed_when: false
+
+        - name: Pull request body is written
+          ansible.builtin.copy:
+            content: |
+              ## Automated Collection Updates
+
+              This PR updates pinned collection versions to their latest stable releases.
+
+              {{ changelog }}
+
+              ## Testing
+
+              - [ ] Review changelog for breaking changes
+              - [ ] Test EE build with `ansible-builder build`
+              - [ ] Run smoke tests against updated collections
+
+              ## Merge Impact
+
+              Merging this PR will trigger an automated EE rebuild via CI pipeline.
+            dest: /tmp/pr-body.md
+            mode: "0644"
+
+        - name: Pull request is created
+          ansible.builtin.command:
+            cmd: >
+              gh pr create
+              --base main
+              --head {{ branch_name }}
+              --title "Update {{ version_map.values() | selectattr('needs_update') | list | length }} collection(s) to latest versions"
+              --body-file /tmp/pr-body.md
+              --label "dependencies,automated"
+          environment:
+            GH_TOKEN: "{{ lookup('env', 'GITHUB_TOKEN') }}"
+          changed_when: false
+
+        - name: PR creation result is displayed
+          ansible.builtin.debug:
+            msg: "Pull request created for {{ version_map.values() | selectattr('needs_update') | list | length }} collection updates"
+
+    - name: No updates notification is sent
+      when: not has_updates
+      ansible.builtin.debug:
+        msg: "All collections are at their latest versions. No updates required."

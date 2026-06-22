@@ -1,0 +1,96 @@
+---
+- name: Monitor base image for updates
+  hosts: localhost
+  gather_facts: false
+
+  vars:
+    base_image: "registry.redhat.io/ansible-automation-platform-25/ee-supported-rhel9:latest"
+    digest_file: "../custom-ee/.base-image-digest"
+    registry_user: "{{ lookup('env', 'RH_REGISTRY_USERNAME') }}"
+    registry_pass: "{{ lookup('env', 'RH_REGISTRY_PASSWORD') }}"
+
+  tasks:
+
+    - name: Current base image digest is retrieved
+      ansible.builtin.command:
+        cmd: >
+          podman inspect {{ base_image }}
+          --format '{% raw %}{{ .Digest }}{% endraw %}'
+      register: current_digest_raw
+      changed_when: false
+      failed_when: current_digest_raw.rc != 0
+
+    - name: Current digest is normalised
+      ansible.builtin.set_fact:
+        current_digest: "{{ current_digest_raw.stdout | trim }}"
+
+    - name: Stored digest is retrieved
+      ansible.builtin.slurp:
+        path: "{{ digest_file }}"
+      register: stored_digest_raw
+      failed_when: false
+
+    - name: Stored digest is normalised
+      ansible.builtin.set_fact:
+        stored_digest: "{{ (stored_digest_raw.content | b64decode | trim) if stored_digest_raw is not failed else '' }}"
+
+    - name: Digest comparison result is displayed
+      ansible.builtin.debug:
+        msg:
+          - "Current digest: {{ current_digest }}"
+          - "Stored digest:  {{ stored_digest }}"
+          - "Changed: {{ current_digest != stored_digest }}"
+
+    - name: Base image update is detected
+      when: current_digest != stored_digest
+      block:
+
+        - name: New digest is written to file
+          ansible.builtin.copy:
+            content: "{{ current_digest }}\n"
+            dest: "{{ digest_file }}"
+            mode: "0644"
+
+        - name: Git changes are committed
+          ansible.builtin.command:
+            cmd: git add {{ digest_file }}
+          changed_when: false
+
+        - name: Commit message is created
+          ansible.builtin.command:
+            cmd: >
+              git commit -m "Update base image digest to {{ current_digest[:12] }}"
+          register: git_commit
+          changed_when: git_commit.rc == 0
+          failed_when: git_commit.rc not in [0, 1]
+
+        - name: Changes are pushed
+          ansible.builtin.command:
+            cmd: git push origin main
+          when: git_commit.rc == 0
+          changed_when: false
+
+        - name: Build pipeline trigger URL is posted
+          ansible.builtin.uri:
+            url: "{{ lookup('env', 'GITLAB_TRIGGER_URL') }}"
+            method: POST
+            body_format: json
+            body:
+              token: "{{ lookup('env', 'GITLAB_TRIGGER_TOKEN') }}"
+              ref: "main"
+              variables:
+                TRIGGER_SOURCE: "base-image-update"
+                BASE_IMAGE_DIGEST: "{{ current_digest }}"
+            status_code: [201]
+          when:
+            - git_commit.rc == 0
+            - lookup('env', 'GITLAB_TRIGGER_URL') | length > 0
+
+        - name: Update notification is sent
+          ansible.builtin.debug:
+            msg: "Base image updated. New digest: {{ current_digest }}. Build triggered."
+
+    - name: No update notification is sent
+      when: current_digest == stored_digest
+      ansible.builtin.debug:
+        msg: "Base image unchanged. No action required."
