@@ -49,16 +49,15 @@ build:ee-image:
     BUILDAH_ISOLATION: chroot
     BUILDAH_LAYERS: "true"
   before_script:
-    - dnf install -y buildah podman
-    - echo "$QUAY_PASSWORD" | buildah login -u $QUAY_USERNAME --password-stdin quay.io
-    - echo "$RH_REGISTRY_PASSWORD" | buildah login -u $RH_REGISTRY_USERNAME --password-stdin registry.redhat.io
+    - echo "$QUAY_PASSWORD" | podman login -u $QUAY_USERNAME --password-stdin quay.io
+    - echo "$RH_REGISTRY_PASSWORD" | podman login -u $RH_REGISTRY_USERNAME --password-stdin registry.redhat.io
   script:
     - cd $EE_DIR
     - |
       ansible-builder build \
         --tag quay.io/$QUAY_ORG/custom-ee:$CI_COMMIT_SHORT_SHA \
         --tag quay.io/$QUAY_ORG/custom-ee:latest \
-        --container-runtime buildah \
+        --container-runtime podman \
         --verbosity 3
   artifacts:
     paths:
