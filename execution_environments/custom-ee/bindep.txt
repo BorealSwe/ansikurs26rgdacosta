@@ -1,0 +1,4 @@
+git [platform:rpm]
+gcc [platform:rpm]
+python3-devel [platform:rpm]
+libffi-devel [platform:rpm]

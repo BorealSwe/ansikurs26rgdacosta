@@ -1,35 +1,21 @@
 ---
-version: 3
-
-images:
-  base_image:
-    name: registry.redhat.io/ansible-automation-platform-25/ee-supported-rhel9:latest
+version: 1
 
 build_arg_defaults:
+  EE_BASE_IMAGE: 'registry.redhat.io/ansible-automation-platform-25/ee-supported-rhel9:latest'
   ANSIBLE_GALAXY_CLI_COLLECTION_OPTS: '--pre'
 
+ansible_config: ''
+
 dependencies:
-  ansible_core:
-    package_pip: 'ansible-core==2.15.4'
-  ansible_runner:
-    package_pip: 'ansible-runner==2.2.0'
-  galaxy: requirements-pinned.yml  # Use pinned versions for reproducible builds
-  python:
-    - requests==2.32.3
-    - jmespath==1.0.1
-  system:
-    - git
-    - gcc
-    - python3-devel
-    - libffi-devel
+  galaxy: requirements-pinned.yml
+  python: requirements.txt
+  system: bindep.txt
 
 additional_build_steps:
-  prepend_builder:
+  prepend:
     - RUN microdnf update -y && microdnf clean all
-  append_final:
+  append:
     - RUN pip3 install --upgrade pip
     - RUN export PIP_NO_CACHE_DIR=off
-
-options:
-  package_manager_path: /usr/bin/microdnf
 
