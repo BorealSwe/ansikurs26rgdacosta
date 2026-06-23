@@ -31,9 +31,16 @@ steps:
   # Build the EE image with podman
   build:
     image: registry.access.redhat.com/ubi9/ubi:latest
+    secrets:
+      - rh_registry_username
+      - rh_registry_password
     commands:
-      - dnf install -y ansible-core podman
+      # Install all required tools
+      - dnf install -y ansible-core podman python3-pip
       - pip3 install ansible-builder
+      # Login to Red Hat registry to pull base image
+      - echo "$RH_REGISTRY_PASSWORD" | podman login -u "$RH_REGISTRY_USERNAME" --password-stdin registry.redhat.io
+      # Build the EE
       - cd execution_environments/custom-ee
       - echo "Building EE image with ansible-builder..."
       - |
