@@ -2,11 +2,6 @@
 # Woodpecker CI Pipeline for Execution Environment Automation
 # Runs on belfast.zero-effort.net with privileged container builds
 
-variables:
-  - &ee_dir execution_environments/custom-ee
-  - &pipeline_dir execution_environments/pipeline
-  - &quay_org rdacosta
-
 when:
   - event: push
     branch: master
@@ -20,7 +15,7 @@ steps:
   validate:
     image: quay.io/ansible/ansible-builder:latest
     commands:
-      - cd *ee_dir
+      - cd execution_environments/custom-ee
       - ansible-builder create --verbosity 2
       - echo "✅ EE definition is valid"
 
@@ -28,12 +23,12 @@ steps:
   build:
     image: quay.io/ansible/ansible-builder:latest
     commands:
-      - cd *ee_dir
+      - cd execution_environments/custom-ee
       - echo "Building EE image with ansible-builder..."
       - |
         ansible-builder build \
-          --tag quay.io/*quay_org/custom-ee:${CI_COMMIT_SHA:0:8} \
-          --tag quay.io/*quay_org/custom-ee:latest \
+          --tag quay.io/rdacosta/custom-ee:${CI_COMMIT_SHA:0:8} \
+          --tag quay.io/rdacosta/custom-ee:latest \
           --container-runtime podman \
           --verbosity 3
     depends_on:
@@ -41,7 +36,7 @@ steps:
 
   # Smoke test the built EE
   test:
-    image: quay.io/*quay_org/custom-ee:${CI_COMMIT_SHA:0:8}
+    image: quay.io/rdacosta/custom-ee:${CI_COMMIT_SHA:0:8}
     commands:
       - ansible --version
       - ansible-galaxy collection list
@@ -57,9 +52,9 @@ steps:
       - quay_password
     commands:
       - echo "$QUAY_PASSWORD" | podman login -u "$QUAY_USERNAME" --password-stdin quay.io
-      - podman push quay.io/*quay_org/custom-ee:${CI_COMMIT_SHA:0:8}
-      - podman push quay.io/*quay_org/custom-ee:latest
-      - echo "✅ Published to quay.io/*quay_org/custom-ee:${CI_COMMIT_SHA:0:8}"
+      - podman push quay.io/rdacosta/custom-ee:${CI_COMMIT_SHA:0:8}
+      - podman push quay.io/rdacosta/custom-ee:latest
+      - echo "✅ Published to quay.io/rdacosta/custom-ee:${CI_COMMIT_SHA:0:8}"
     depends_on:
       - test
     when:
