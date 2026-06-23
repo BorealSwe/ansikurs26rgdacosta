@@ -5,7 +5,7 @@
 variables:
   - &ee_dir execution_environments/custom-ee
   - &pipeline_dir execution_environments/pipeline
-  - &quay_org rgdacosta
+  - &quay_org rdacosta
 
 when:
   - event: push
