@@ -37,10 +37,17 @@ steps:
         from_secret: rh_registry_username
       RH_PASS:
         from_secret: rh_registry_password
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     commands:
       # Install all required tools
       - dnf install -y ansible-core podman python3-pip
       - pip3 install ansible-builder
+      # Configure podman DNS for nested builds
+      - mkdir -p /etc/containers
+      - echo '[network]' > /etc/containers/containers.conf
+      - echo 'dns_servers = ["8.8.8.8", "1.1.1.1"]' >> /etc/containers/containers.conf
       # Login to Red Hat registry to pull base image
       - echo "RH_USER is set:" && test -n "$RH_USER" && echo "YES" || echo "NO"
       - echo "$RH_PASS" | podman login -u "$RH_USER" --password-stdin registry.redhat.io
