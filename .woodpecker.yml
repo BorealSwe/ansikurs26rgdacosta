@@ -28,9 +28,9 @@ steps:
       - ansible-builder create --verbosity 2
       - echo "✅ EE definition is valid"
 
-  # Build the EE image with podman (using official ansible-builder image)
+  # Build the EE image with podman (using public ansible-builder image)
   build:
-    image: registry.redhat.io/ansible-automation-platform-24/ansible-builder-rhel8:latest
+    image: quay.io/ansible/ansible-builder:latest
     privileged: true
     environment:
       RH_USER:
