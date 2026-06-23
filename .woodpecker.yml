@@ -28,9 +28,9 @@ steps:
       - ansible-builder create --verbosity 2
       - echo "✅ EE definition is valid"
 
-  # Build the EE image with podman (using public ansible-builder image)
+  # Build the EE image with podman (using Red Hat UBI9 base image)
   build:
-    image: quay.io/ansible/ansible-builder:latest
+    image: registry.access.redhat.com/ubi9/ubi:latest
     privileged: true
     environment:
       RH_USER:
@@ -41,6 +41,10 @@ steps:
       - 8.8.8.8
       - 1.1.1.1
     commands:
+      # Install build dependencies from UBI repos (podman is available, ansible-core is not)
+      - dnf install -y --disablerepo='*' --enablerepo='ubi-*' podman python3-pip
+      # Install ansible tooling via pip (official Python packages)
+      - pip3 install --no-cache-dir ansible-core ansible-builder
       # Configure podman DNS for nested builds
       - mkdir -p /etc/containers
       - echo '[network]' > /etc/containers/containers.conf
