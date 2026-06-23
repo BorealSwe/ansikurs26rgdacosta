@@ -41,6 +41,9 @@ steps:
       - 8.8.8.8
       - 1.1.1.1
     commands:
+      # Remove satellite-based repo configs
+      - rm -f /etc/yum.repos.d/redhat.repo
+      - subscription-manager config --rhsm.manage_repos=0 || true
       # Install all required tools
       - dnf install -y ansible-core podman python3-pip
       - pip3 install ansible-builder
