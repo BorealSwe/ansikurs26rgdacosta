@@ -69,11 +69,13 @@ steps:
   # Push to Quay.io
   publish:
     image: quay.io/podman/stable
-    secrets:
-      - quay_username
-      - quay_password
+    environment:
+      QUAY_USER:
+        from_secret: quay_username
+      QUAY_PASS:
+        from_secret: quay_password
     commands:
-      - echo "$QUAY_PASSWORD" | podman login -u "$QUAY_USERNAME" --password-stdin quay.io
+      - echo "$QUAY_PASS" | podman login -u "$QUAY_USER" --password-stdin quay.io
       - podman push quay.io/rdacosta/custom-ee:${CI_COMMIT_SHA:0:8}
       - podman push quay.io/rdacosta/custom-ee:latest
       - echo "✅ Published to quay.io/rdacosta/custom-ee:${CI_COMMIT_SHA:0:8}"
