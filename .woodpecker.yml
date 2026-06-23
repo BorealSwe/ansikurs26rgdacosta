@@ -28,9 +28,9 @@ steps:
       - ansible-builder create --verbosity 2
       - echo "✅ EE definition is valid"
 
-  # Build the EE image with podman
+  # Build the EE image with podman (using official ansible-builder image)
   build:
-    image: registry.access.redhat.com/ubi9/ubi:latest
+    image: registry.redhat.io/ansible-automation-platform-24/ansible-builder-rhel8:latest
     privileged: true
     environment:
       RH_USER:
@@ -41,16 +41,11 @@ steps:
       - 8.8.8.8
       - 1.1.1.1
     commands:
-      # Install build tools (podman and pip are in UBI repos, ansible-core is not)
-      - dnf install -y --disablerepo='*' --enablerepo='ubi-*' podman python3-pip
-      # Install ansible tooling via pip (not available in UBI repos)
-      - pip3 install ansible-core ansible-builder
       # Configure podman DNS for nested builds
       - mkdir -p /etc/containers
       - echo '[network]' > /etc/containers/containers.conf
       - echo 'dns_servers = ["8.8.8.8", "1.1.1.1"]' >> /etc/containers/containers.conf
-      # Login to Red Hat registry to pull base image
-      - echo "RH_USER is set:" && test -n "$RH_USER" && echo "YES" || echo "NO"
+      # Login to Red Hat registry to pull base EE image
       - echo "$RH_PASS" | podman login -u "$RH_USER" --password-stdin registry.redhat.io
       # Build the EE
       - cd execution_environments/custom-ee
