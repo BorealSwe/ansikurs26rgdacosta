@@ -41,13 +41,10 @@ steps:
       - 8.8.8.8
       - 1.1.1.1
     commands:
-      # Disable all non-UBI repos (satellite repos are being injected by host)
-      - sed -i 's/^enabled=1/enabled=0/' /etc/yum.repos.d/redhat.repo || true
-      - rm -f /etc/yum.repos.d/redhat.repo
-      - dnf clean all
-      # Install all required tools (only from UBI repos)
-      - dnf install -y --disablerepo='*' --enablerepo='ubi-*' ansible-core podman python3-pip
-      - pip3 install ansible-builder
+      # Install build tools (podman and pip are in UBI repos, ansible-core is not)
+      - dnf install -y --disablerepo='*' --enablerepo='ubi-*' podman python3-pip
+      # Install ansible tooling via pip (not available in UBI repos)
+      - pip3 install ansible-core ansible-builder
       # Configure podman DNS for nested builds
       - mkdir -p /etc/containers
       - echo '[network]' > /etc/containers/containers.conf
