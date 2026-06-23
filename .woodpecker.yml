@@ -39,7 +39,13 @@ steps:
       - dnf install -y ansible-core podman python3-pip
       - pip3 install ansible-builder
       # Login to Red Hat registry to pull base image
-      - echo "$RH_REGISTRY_PASSWORD" | podman login -u "$RH_REGISTRY_USERNAME" --password-stdin registry.redhat.io
+      - echo "DEBUG - RH_REGISTRY_USERNAME is set:" && test -n "$RH_REGISTRY_USERNAME" && echo "YES" || echo "NO (EMPTY)"
+      - |
+        if [ -n "$RH_REGISTRY_USERNAME" ]; then
+          echo "$RH_REGISTRY_PASSWORD" | podman login -u "$RH_REGISTRY_USERNAME" --password-stdin registry.redhat.io
+        else
+          echo "WARNING: RH registry credentials not set, build may fail if base image isn't cached"
+        fi
       # Build the EE
       - cd execution_environments/custom-ee
       - echo "Building EE image with ansible-builder..."
