@@ -30,8 +30,10 @@ steps:
 
   # Build the EE image with podman
   build:
-    image: quay.io/ansible/ansible-builder:latest
+    image: registry.access.redhat.com/ubi9/ubi:latest
     commands:
+      - dnf install -y ansible-core podman
+      - pip3 install ansible-builder
       - cd execution_environments/custom-ee
       - echo "Building EE image with ansible-builder..."
       - |
