@@ -31,6 +31,7 @@ steps:
   # Build the EE image with podman
   build:
     image: registry.access.redhat.com/ubi9/ubi:latest
+    privileged: true
     environment:
       RH_USER:
         from_secret: rh_registry_username
