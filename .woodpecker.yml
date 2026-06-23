@@ -2,6 +2,7 @@
 # Woodpecker CI Pipeline for Execution Environment Automation
 # Runs on belfast.zero-effort.net with privileged container builds
 
+# Only run on master branch (push or manual)
 when:
   - event: push
     branch: master
@@ -9,6 +10,14 @@ when:
       include:
         - execution_environments/custom-ee/**
   - event: manual
+    branch: master
+
+# Skip submodules during clone
+clone:
+  git:
+    image: woodpeckerci/plugin-git
+    settings:
+      recursive: false
 
 steps:
   # Validate EE definition before building
