@@ -28,25 +28,22 @@ steps:
       - ansible-builder create --verbosity 2
       - echo "✅ EE definition is valid"
 
-  # Build the EE image (using Red Hat's official single-command approach)
+  # Build the EE image on the host (avoids nested container DNS issues)
   build:
-    image: registry.access.redhat.com/ubi9/ubi:latest
-    privileged: true
+    backend: local
     environment:
       RH_USER:
         from_secret: rh_registry_username
       RH_PASS:
         from_secret: rh_registry_password
     commands:
-      # Install build dependencies from UBI repos (podman is available, ansible-core is not)
-      - dnf install -y --disablerepo='*' --enablerepo='ubi-*' podman python3-pip
-      # Install ansible tooling via pip (official Python packages)
-      - pip3 install --no-cache-dir ansible-core ansible-builder
-      # Authenticate to Red Hat registry to pull base EE image
+      # Ensure ansible-builder is installed on the host
+      - command -v ansible-builder >/dev/null 2>&1 || pip3 install --user ansible-core ansible-builder
+      # Authenticate to Red Hat registry
       - echo "$RH_PASS" | podman login -u "$RH_USER" --password-stdin registry.redhat.io
-      # Build EE using Red Hat's official single-command approach with explicit DNS (AU374 course method)
+      # Build EE using host's podman (no container nesting, official Red Hat method per AU374)
       - cd execution_environments/custom-ee
-      - ansible-builder build --tag quay.io/rdacosta/custom-ee:${CI_COMMIT_SHA:0:8} --tag quay.io/rdacosta/custom-ee:latest --extra-build-cli-args "--dns=8.8.8.8 --dns=8.8.4.4" --verbosity 3
+      - ansible-builder build --tag quay.io/rdacosta/custom-ee:${CI_COMMIT_SHA:0:8} --tag quay.io/rdacosta/custom-ee:latest --verbosity 3
     depends_on:
       - validate
 
