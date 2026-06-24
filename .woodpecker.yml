@@ -28,7 +28,7 @@ steps:
       - ansible-builder create --verbosity 2
       - echo "✅ EE definition is valid"
 
-  # Build the EE image with podman (using Red Hat UBI9 base image)
+  # Build the EE image (using Red Hat's official single-command approach)
   build:
     image: registry.access.redhat.com/ubi9/ubi:latest
     privileged: true
@@ -37,32 +37,16 @@ steps:
         from_secret: rh_registry_username
       RH_PASS:
         from_secret: rh_registry_password
-    dns:
-      - 8.8.8.8
-      - 1.1.1.1
     commands:
       # Install build dependencies from UBI repos (podman is available, ansible-core is not)
-      - dnf install -y --disablerepo='*' --enablerepo='ubi-*' podman python3-pip
+      - dnf install -y --disablerepo='*' --enablerepo='ubi-*' python3-pip
       # Install ansible tooling via pip (official Python packages)
       - pip3 install --no-cache-dir ansible-core ansible-builder
-      # Configure podman DNS for nested builds
-      - mkdir -p /etc/containers
-      - echo '[network]' > /etc/containers/containers.conf
-      - echo 'dns_servers = ["8.8.8.8", "1.1.1.1"]' >> /etc/containers/containers.conf
-      # Login to Red Hat registry to pull base EE image
+      # Authenticate to Red Hat registry to pull base EE image
       - echo "$RH_PASS" | podman login -u "$RH_USER" --password-stdin registry.redhat.io
-      # Build the EE (two-step: create Containerfile, then build with host network)
+      # Build EE using Red Hat's official single-command approach (AU374 course method)
       - cd execution_environments/custom-ee
-      - echo "Generating build context with ansible-builder..."
-      - ansible-builder create --verbosity 3
-      - echo "Building EE image with podman (using host network for DNS)..."
-      - |
-        podman build \
-          --network=host \
-          -f context/Containerfile \
-          -t quay.io/rdacosta/custom-ee:${CI_COMMIT_SHA:0:8} \
-          -t quay.io/rdacosta/custom-ee:latest \
-          context
+      - ansible-builder build --tag quay.io/rdacosta/custom-ee:${CI_COMMIT_SHA:0:8} --tag quay.io/rdacosta/custom-ee:latest --verbosity 3
     depends_on:
       - validate
 
