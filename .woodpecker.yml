@@ -42,6 +42,9 @@ steps:
       - dnf install -y --disablerepo='*' --enablerepo='ubi-*' podman python3-pip
       # Install ansible tooling via pip (official Python packages)
       - pip3 install --no-cache-dir ansible-core ansible-builder
+      # Fix DNS resolution in nested podman containers (slirp4netns sandbox mode issue)
+      - mkdir -p ~/.config/containers
+      - echo -e "[engine]\nno_pivot_root = true" > ~/.config/containers/containers.conf
       # Authenticate to Red Hat registry to pull base EE image
       - echo "$RH_PASS" | podman login -u "$RH_USER" --password-stdin registry.redhat.io
       # Build EE using Red Hat's official single-command approach (AU374 course method)
