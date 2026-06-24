@@ -28,22 +28,22 @@ steps:
       - ansible-builder create --verbosity 2
       - echo "✅ EE definition is valid"
 
-  # Build the EE image on the host (avoids nested container DNS issues)
+  # Build the EE image using manual two-step process with host networking
   build:
-    backend: local
+    image: quay.io/ansible/ansible-builder:latest
+    privileged: true
     environment:
       RH_USER:
         from_secret: rh_registry_username
       RH_PASS:
         from_secret: rh_registry_password
     commands:
-      # Ensure ansible-builder is installed on the host
-      - command -v ansible-builder >/dev/null 2>&1 || pip3 install --user ansible-core ansible-builder
       # Authenticate to Red Hat registry
       - echo "$RH_PASS" | podman login -u "$RH_USER" --password-stdin registry.redhat.io
-      # Build EE using host's podman (no container nesting, official Red Hat method per AU374)
+      # Two-step process: create build context, then build with host networking
       - cd execution_environments/custom-ee
-      - ansible-builder build --tag quay.io/rdacosta/custom-ee:${CI_COMMIT_SHA:0:8} --tag quay.io/rdacosta/custom-ee:latest --verbosity 3
+      - ansible-builder create --verbosity 3
+      - podman build --network=host -f context/Containerfile -t quay.io/rdacosta/custom-ee:${CI_COMMIT_SHA:0:8} -t quay.io/rdacosta/custom-ee:latest context
     depends_on:
       - validate
 
