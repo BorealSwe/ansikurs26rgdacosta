@@ -59,11 +59,8 @@ steps:
           --tag quay.io/rdacosta/custom-ee:${CI_COMMIT_SHA:0:8} \
           --tag quay.io/rdacosta/custom-ee:latest \
           --container-runtime podman \
-          --build-arg DNS_SERVER1=8.8.8.8 \
-          --build-arg DNS_SERVER2=1.1.1.1 \
-          --container-policy system \
-          --verbosity 3 \
-          -- --dns=8.8.8.8 --dns=1.1.1.1
+          --container-runtime-build-args='--network=host' \
+          --verbosity 3
     depends_on:
       - validate
 
