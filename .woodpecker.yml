@@ -30,7 +30,7 @@ steps:
 
   # Build the EE image using manual two-step process with host networking
   build:
-    image: quay.io/ansible/ansible-builder:latest
+    image: registry.access.redhat.com/ubi9/ubi:latest
     privileged: true
     environment:
       RH_USER:
@@ -38,6 +38,9 @@ steps:
       RH_PASS:
         from_secret: rh_registry_password
     commands:
+      # Install build dependencies
+      - dnf install -y --disablerepo='*' --enablerepo='ubi-*' podman python3-pip
+      - pip3 install --no-cache-dir ansible-core ansible-builder
       # Authenticate to Red Hat registry
       - echo "$RH_PASS" | podman login -u "$RH_USER" --password-stdin registry.redhat.io
       # Two-step process: create build context, then build with host networking
