@@ -39,7 +39,7 @@ steps:
         from_secret: rh_registry_password
     commands:
       # Install build dependencies from UBI repos (podman is available, ansible-core is not)
-      - dnf install -y --disablerepo='*' --enablerepo='ubi-*' python3-pip
+      - dnf install -y --disablerepo='*' --enablerepo='ubi-*' podman python3-pip
       # Install ansible tooling via pip (official Python packages)
       - pip3 install --no-cache-dir ansible-core ansible-builder
       # Authenticate to Red Hat registry to pull base EE image
