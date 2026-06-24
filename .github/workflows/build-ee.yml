@@ -1,0 +1,54 @@
+---
+name: Build Execution Environment
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'execution_environments/custom-ee/**'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install ansible-builder
+        run: |
+          pip install ansible-core ansible-builder
+
+      - name: Log in to Red Hat registry
+        run: |
+          echo "${{ secrets.RH_REGISTRY_PASSWORD }}" | podman login -u "${{ secrets.RH_REGISTRY_USERNAME }}" --password-stdin registry.redhat.io
+
+      - name: Log in to Quay.io
+        run: |
+          echo "${{ secrets.QUAY_PASSWORD }}" | podman login -u "${{ secrets.QUAY_USERNAME }}" --password-stdin quay.io
+
+      - name: Build execution environment
+        working-directory: execution_environments/custom-ee
+        run: |
+          ansible-builder build \
+            --tag quay.io/rdacosta/custom-ee:${{ github.sha }} \
+            --tag quay.io/rdacosta/custom-ee:latest \
+            --verbosity 3
+
+      - name: Push to Quay.io
+        run: |
+          podman push quay.io/rdacosta/custom-ee:${{ github.sha }}
+          podman push quay.io/rdacosta/custom-ee:latest
+
+      - name: Build summary
+        run: |
+          echo "✅ Built and pushed execution environment" >> $GITHUB_STEP_SUMMARY
+          echo "- Image: quay.io/rdacosta/custom-ee:${GITHUB_SHA:0:8}" >> $GITHUB_STEP_SUMMARY
+          echo "- Image: quay.io/rdacosta/custom-ee:latest" >> $GITHUB_STEP_SUMMARY
