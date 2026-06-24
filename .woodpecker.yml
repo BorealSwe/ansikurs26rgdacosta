@@ -51,16 +51,18 @@ steps:
       - echo 'dns_servers = ["8.8.8.8", "1.1.1.1"]' >> /etc/containers/containers.conf
       # Login to Red Hat registry to pull base EE image
       - echo "$RH_PASS" | podman login -u "$RH_USER" --password-stdin registry.redhat.io
-      # Build the EE
+      # Build the EE (two-step: create Containerfile, then build with host network)
       - cd execution_environments/custom-ee
-      - echo "Building EE image with ansible-builder..."
+      - echo "Generating build context with ansible-builder..."
+      - ansible-builder create --verbosity 3
+      - echo "Building EE image with podman (using host network for DNS)..."
       - |
-        ansible-builder build \
-          --tag quay.io/rdacosta/custom-ee:${CI_COMMIT_SHA:0:8} \
-          --tag quay.io/rdacosta/custom-ee:latest \
-          --container-runtime podman \
-          --container-runtime-build-args='--network=host' \
-          --verbosity 3
+        podman build \
+          --network=host \
+          -f context/Containerfile \
+          -t quay.io/rdacosta/custom-ee:${CI_COMMIT_SHA:0:8} \
+          -t quay.io/rdacosta/custom-ee:latest \
+          context
     depends_on:
       - validate
 
