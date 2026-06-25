@@ -11,7 +11,7 @@
     - name: Failed SSH login attempt
       condition: >
         event.journald.SYSLOG_IDENTIFIER == "sshd" and
-        event.journald.MESSAGE is search ".*Failed password.*"
+        event.journald.MESSAGE is regex ".*Failed password.*"
       action:
         run_playbook:
           name: handle_failed_ssh.yml
@@ -19,8 +19,8 @@
     - name: SELinux denial detected
       condition: >
         event.journald._COMM == "setenforce" or
-        event.journald.MESSAGE is search ".*SELinux.*denied.*" or
-        event.journald.MESSAGE is search ".*avc.*denied.*"
+        event.journald.MESSAGE is regex ".*SELinux.*denied.*" or
+        event.journald.MESSAGE is regex ".*avc.*denied.*"
       action:
         run_playbook:
           name: handle_selinux_denial.yml
@@ -28,15 +28,15 @@
     - name: Sudo command executed
       condition: >
         event.journald._COMM == "sudo" and
-        event.journald.MESSAGE is search ".*COMMAND=.*"
+        event.journald.MESSAGE is regex ".*COMMAND=.*"
       action:
         run_playbook:
           name: handle_sudo_usage.yml
 
     - name: Service failed to start
       condition: >
-        event.journald.MESSAGE is search ".*Failed to start.*" or
-        event.journald.MESSAGE is search ".*failed.*service.*"
+        event.journald.MESSAGE is regex ".*Failed to start.*" or
+        event.journald.MESSAGE is regex ".*failed.*service.*"
       action:
         debug:
           msg: |
