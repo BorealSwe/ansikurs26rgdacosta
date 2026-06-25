@@ -8,39 +8,24 @@
         match: "ALL"
 
   rules:
-    - name: Failed SSH login attempt
-      condition: >
-        event.journald.SYSLOG_IDENTIFIER == "sshd" and
-        event.journald.MESSAGE is regex ".*Failed password.*"
-      action:
-        run_playbook:
-          name: handle_failed_ssh.yml
-
-    - name: SELinux denial detected
-      condition: >
-        event.journald._COMM == "setenforce" or
-        event.journald.MESSAGE is regex ".*SELinux.*denied.*" or
-        event.journald.MESSAGE is regex ".*avc.*denied.*"
-      action:
-        run_playbook:
-          name: handle_selinux_denial.yml
-
     - name: Sudo command executed
-      condition: >
-        event.journald._COMM == "sudo" and
-        event.journald.MESSAGE is regex ".*COMMAND=.*"
+      condition: event.journald._COMM == "sudo"
       action:
         run_playbook:
           name: handle_sudo_usage.yml
 
+    - name: SELinux command executed
+      condition: event.journald._COMM == "setenforce"
+      action:
+        run_playbook:
+          name: handle_selinux_denial.yml
+
     - name: Service failed to start
-      condition: >
-        event.journald.MESSAGE is regex ".*Failed to start.*" or
-        event.journald.MESSAGE is regex ".*failed.*service.*"
+      condition: event.journald.PRIORITY is defined and event.journald.PRIORITY <= 3
       action:
         debug:
           msg: |
-            SERVICE FAILURE DETECTED:
+            HIGH PRIORITY SYSTEM EVENT:
             Message: {{ event.journald.MESSAGE }}
             Unit: {{ event.journald.UNIT | default('unknown') }}
             Priority: {{ event.journald.PRIORITY }}
