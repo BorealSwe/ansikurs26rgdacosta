@@ -204,27 +204,39 @@ Use screenshots from DO274 PDF:
 ### Section 5: Real-World Use Cases (5 minutes)
 **Script location:** Teleprompter lines 150-200
 
-**Three scenarios to highlight:**
+**Four scenarios from actual Red Hat customers:**
 
-1. **Ticket Enrichment**
-   - Monitoring event → Gather diagnostics → Create ServiceNow ticket with data
-   - Saves time for support teams
-   - Faster mean time to resolution
+1. **ServiceNow Bidirectional Integration**
+   - Monitoring event → Auto-gather diagnostics → Create ticket with context
+   - Automation completes → Update ticket status to "Resolved"
+   - Red Hat customers report 40-60% reduction in MTTR
+   - Example: https://github.com/nmartins0611/eda-snow-ticket
 
-2. **Self-Healing Infrastructure**
-   - Known issues remediated automatically
-   - Restart services, redeploy apps, fix configurations
-   - Reduces on-call burden
+2. **Network Operations - Arista CloudVision**
+   - BGP maintenance mode → Webhook to EDA
+   - EDA creates ServiceNow change ticket
+   - Sends Slack notification to NetOps team
+   - Drains traffic using automation playbooks
+   - Demonstrated at Red Hat Summit
+   - Example: https://github.com/nmartins0611/rhs-eda
 
-3. **Security & Compliance**
-   - Red Hat Insights integration
-   - Proactive security remediation
-   - Compliance audit trails (SOX, PCI-DSS, HIPAA)
+3. **ChatOps Integration - Slack/Teams**
+   - Critical infrastructure events → Real-time channel notifications
+   - Include alert details, remediation triggered, job run link
+   - Action buttons for approve/reject workflows
+   - Keeps teams informed without dashboard monitoring
+   - Example: https://github.com/nmartins0611/eda_chatops
 
-**Real examples from GitHub repos:**
-- Arista CloudVision integration (Red Hat Summit demo)
-- ServiceNow bidirectional integration
-- Slack ChatOps notifications
+4. **Security & Compliance**
+   - Red Hat Insights CVE events → Automatic remediation
+   - Certificate expiration → Auto-renewal workflows
+   - Complete audit trails (SOX, PCI-DSS, HIPAA)
+   - GitOps: Git push → Deploy application automatically
+
+**Additional production patterns:**
+- Multi-source correlation (webhook + journald + file_watch in one rulebook)
+- Cloud cost optimization (AWS/Azure events trigger resource cleanup)
+- CMDB updates (infrastructure changes auto-update config database)
 
 ---
 
@@ -359,14 +371,34 @@ sudo lsof -i :5001
 sudo ansible-rulebook ...
 ```
 
+**Symptom:** Parse error with `matches` operator
+**Fix:**
+This is a known issue with multi-line conditions. The journald rulebook has been simplified to use direct equality checks:
+```yaml
+# WORKS - simple condition
+condition: event.journald._COMM == "sudo"
+
+# FAILS - complex regex in multi-line
+condition: >
+  event.journald._COMM == "sudo" and
+  event.journald.MESSAGE matches ".*COMMAND=.*"
+```
+
 **Symptom:** No events triggering
 **Fix:**
 ```bash
 # Check journald is running
 systemctl status systemd-journald
-# Verify conditions in rulebook match actual journal fields
-sudo journalctl -f  # Watch live to see actual messages
+
+# See actual journal field names
+journalctl -o json -n 5 | python3 -c 'import sys, json; [print(json.loads(line).keys()) for line in sys.stdin]'
+
+# Watch for specific _COMM values
+journalctl -f | grep _COMM
 ```
+
+**Best practice for presentations:**
+Keep journald rules simple - match on _COMM (command name) rather than MESSAGE content.
 
 ### If Demo 3 (File Watcher) Fails:
 
