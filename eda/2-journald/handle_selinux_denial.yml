@@ -1,0 +1,63 @@
+---
+- name: Handle SELinux denial or policy change
+  hosts: localhost
+  gather_facts: false
+
+  tasks:
+    - name: Extract SELinux event details
+      ansible.builtin.set_fact:
+        selinux_message: "{{ ansible_eda.event.journald.MESSAGE }}"
+        selinux_command: "{{ ansible_eda.event.journald._COMM | default('unknown') }}"
+        selinux_hostname: "{{ ansible_eda.event.journald._HOSTNAME | default(ansible_hostname) }}"
+
+    - name: Display SELinux alert
+      ansible.builtin.debug:
+        msg: |
+          🛡️  SELINUX EVENT DETECTED
+          ================================================
+          Host: {{ selinux_hostname }}
+          Command: {{ selinux_command }}
+          Message: {{ selinux_message }}
+          ================================================
+
+    - name: Check current SELinux status
+      ansible.builtin.command:
+        cmd: getenforce
+      register: selinux_status
+      changed_when: false
+      failed_when: false
+
+    - name: Log SELinux status
+      ansible.builtin.debug:
+        msg: "Current SELinux mode: {{ selinux_status.stdout | default('unknown') }}"
+
+    - name: Enforce SELinux if disabled
+      ansible.builtin.command:
+        cmd: setenforce 1
+      when:
+        - selinux_status.stdout is defined
+        - selinux_status.stdout == "Permissive"
+      become: true
+      register: selinux_enforced
+
+    - name: Log remediation action
+      ansible.builtin.lineinfile:
+        path: /tmp/eda_selinux_events.log
+        line: "{{ ansible_date_time.iso8601 }} | SELINUX | {{ selinux_hostname }} | Mode changed to enforcing"
+        create: true
+        mode: '0600'
+      when: selinux_enforced is changed
+
+    - name: Alert security team
+      ansible.builtin.debug:
+        msg: |
+          ✅ REMEDIATION COMPLETE
+          SELinux has been set to enforcing mode
+          Security team should investigate the cause
+      when: selinux_enforced is changed
+
+    # In production, you might:
+    # - Create ServiceNow ticket for security review
+    # - Send alert to security team via Slack/Teams
+    # - Log to SIEM for compliance audit trail
+    # - Check for policy violations and auto-generate allow rules

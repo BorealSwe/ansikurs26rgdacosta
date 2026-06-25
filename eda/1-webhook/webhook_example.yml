@@ -1,0 +1,27 @@
+---
+- name: Listen for webhook events from monitoring systems
+  hosts: localhost
+
+  sources:
+    - ansible.eda.webhook:
+        host: 0.0.0.0
+        port: 5001
+
+  rules:
+    - name: Critical alert received
+      condition: event.payload.severity == "critical"
+      action:
+        run_playbook:
+          name: critical_alert_handler.yml
+
+    - name: Service deployment webhook
+      condition: event.payload.action == "deploy" and event.payload.service is defined
+      action:
+        run_playbook:
+          name: deploy_service.yml
+
+    - name: Log all webhook events
+      condition: event.payload is defined
+      action:
+        debug:
+          msg: "Webhook received from {{ event.payload.source | default('unknown') }}: {{ event.payload }}"

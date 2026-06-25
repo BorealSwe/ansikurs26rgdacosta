@@ -1,0 +1,56 @@
+---
+- name: Audit sudo command usage
+  hosts: localhost
+  gather_facts: false
+
+  tasks:
+    - name: Extract sudo command details
+      ansible.builtin.set_fact:
+        sudo_message: "{{ ansible_eda.event.journald.MESSAGE }}"
+        sudo_user: "{{ ansible_eda.event.journald._UID | default('unknown') }}"
+        sudo_hostname: "{{ ansible_eda.event.journald._HOSTNAME | default(ansible_hostname) }}"
+
+    - name: Display sudo usage alert
+      ansible.builtin.debug:
+        msg: |
+          🔐 PRIVILEGED COMMAND EXECUTED
+          ================================================
+          Host: {{ sudo_hostname }}
+          User ID: {{ sudo_user }}
+          Command: {{ sudo_message }}
+          ================================================
+
+    - name: Log sudo usage for compliance audit
+      ansible.builtin.lineinfile:
+        path: /tmp/eda_sudo_audit.log
+        line: "{{ ansible_date_time.iso8601 }} | SUDO | {{ sudo_hostname }} | UID:{{ sudo_user }} | {{ sudo_message }}"
+        create: true
+        mode: '0600'
+
+    - name: Check for sensitive commands
+      ansible.builtin.set_fact:
+        is_sensitive: true
+      when: >
+        sudo_message is search('rm -rf') or
+        sudo_message is search('mkfs') or
+        sudo_message is search('dd if=') or
+        sudo_message is search('fdisk') or
+        sudo_message is search('parted') or
+        sudo_message is search('userdel') or
+        sudo_message is search('passwd root')
+
+    - name: Alert on sensitive command
+      ansible.builtin.debug:
+        msg: |
+          ⚠️  HIGH-RISK COMMAND DETECTED
+          Sensitive system command executed via sudo
+          Immediate security team notification recommended
+          Command: {{ sudo_message }}
+      when: is_sensitive is defined and is_sensitive
+
+    # In production, you might:
+    # - Send high-priority alert for sensitive commands
+    # - Create audit trail for compliance (SOX, PCI-DSS, HIPAA)
+    # - Integrate with SIEM for correlation
+    # - Alert security team via PagerDuty for high-risk commands
+    # - Generate weekly compliance reports from audit log

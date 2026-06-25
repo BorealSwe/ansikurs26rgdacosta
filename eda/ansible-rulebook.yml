@@ -1,0 +1,153 @@
+# Event-Driven Ansible Configuration
+# Place in ~/.ansible-rulebook.yml or specify with --config flag
+#
+# Usage: ansible-rulebook --config ansible-rulebook.yml -r rulebook.yml -i inventory
+
+# Logging configuration
+log_level: info  # Options: debug, info, warning, error
+
+# Verbosity (equivalent to -v flags)
+# 0 = normal, 1 = -v, 2 = -vv, 3 = -vvv
+verbosity: 1
+
+# Worker configuration
+worker:
+  # Number of worker processes for handling events
+  count: 1
+
+  # Max queue size for events waiting to be processed
+  # Increase if you expect high event volumes
+  queue_size: 10000
+
+# Event source configuration
+event_source:
+  # Timeout for event source plugins (seconds)
+  timeout: 60
+
+  # Retry configuration for event sources
+  retry:
+    max_attempts: 3
+    delay: 5  # seconds between retries
+
+# Execution configuration
+execution:
+  # Where to run playbooks
+  # Options: local, controller
+  target: local
+
+  # Timeout for playbook execution (seconds)
+  # Set to 0 for no timeout
+  timeout: 3600
+
+# Controller integration (when using automation controller)
+controller:
+  # URL to automation controller
+  # url: https://controller.lab.example.com
+
+  # Token for authentication
+  # token: "your-controller-token-here"
+
+  # Verify SSL certificates
+  verify_ssl: true
+
+# Decision environment (containerized dependencies)
+# decision_environment:
+#   image: quay.io/ansible/default-decision-environment:latest
+#   pull_policy: missing  # Options: always, missing, never
+
+# Rulebook activation settings
+rulebook:
+  # Restart policy
+  # Options: always, on-failure, never
+  restart_policy: always
+
+  # Number of restart attempts before giving up
+  restart_attempts: 3
+
+  # Delay between restart attempts (seconds)
+  restart_delay: 10
+
+# Built-in actions configuration
+actions:
+  # Run playbook action settings
+  run_playbook:
+    # Set facts from event data
+    set_facts: true
+
+    # Post events back to ruleset
+    post_events: true
+
+    # Verbosity for playbook runs
+    verbosity: 0
+
+# Debugging and development
+debug:
+  # Enable debug mode
+  enabled: false
+
+  # Dump all events to this file for inspection
+  # event_log: /tmp/eda-events.json
+
+  # Enable performance profiling
+  profile: false
+
+# Advanced settings
+advanced:
+  # Enable or disable async event processing
+  async_events: true
+
+  # Maximum number of concurrent rule evaluations
+  max_concurrent_evaluations: 50
+
+  # Event expiry time (seconds)
+  # Events older than this are discarded
+  event_ttl: 300
+
+# Specific event source configurations
+# These override defaults for specific plugins
+sources:
+  # Webhook source defaults
+  webhook:
+    # Default host to bind to
+    host: "0.0.0.0"
+
+    # Default port (can be overridden in rulebook)
+    # port: 5000
+
+    # Token authentication
+    # token: "your-webhook-secret-token"
+
+    # HMAC verification
+    # hmac_secret: "your-hmac-secret"
+    # hmac_algo: sha256
+    # hmac_header: x-hub-signature-256
+
+  # Journald source defaults
+  journald:
+    # Match criteria
+    # match: ALL
+    # Specific unit to monitor
+    # unit: sshd.service
+
+  # File watch source defaults
+  file_watch:
+    # Recursive watching
+    # recursive: true
+
+    # Patterns to include
+    # patterns:
+    #   - "*.conf"
+    #   - "*.cfg"
+
+    # Patterns to ignore
+    # ignore_patterns:
+    #   - "*.tmp"
+    #   - "*.swp"
+    #   - ".git/*"
+
+# Custom facts that will be available in playbooks
+# as ansible_eda.config.*
+custom_facts:
+  environment: development
+  owner: platform-team
+  region: us-east-1

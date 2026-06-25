@@ -1,0 +1,68 @@
+---
+- name: Handle new file in logs directory
+  hosts: localhost
+  gather_facts: true
+
+  tasks:
+    - name: Extract file details
+      ansible.builtin.set_fact:
+        new_file: "{{ ansible_eda.event.file.src_path }}"
+        file_name: "{{ ansible_eda.event.file.src_path | basename }}"
+
+    - name: Display new file alert
+      ansible.builtin.debug:
+        msg: |
+          📝 NEW FILE DETECTED
+          ================================================
+          File: {{ new_file }}
+          Created: {{ ansible_date_time.iso8601 }}
+          ================================================
+
+    - name: Check if file is executable
+      ansible.builtin.stat:
+        path: "{{ new_file }}"
+      register: file_stat
+
+    - name: Alert on executable file
+      ansible.builtin.debug:
+        msg: |
+          ⚠️  SECURITY ALERT: Executable file in logs directory
+          ================================================
+          File: {{ new_file }}
+          Permissions: {{ file_stat.stat.mode }}
+          This is highly suspicious and should be investigated
+          ================================================
+      when:
+        - file_stat.stat.exists
+        - file_stat.stat.executable
+
+    - name: Log new file event
+      ansible.builtin.lineinfile:
+        path: /tmp/eda_file_events.log
+        line: "{{ ansible_date_time.iso8601 }} | NEW_FILE | {{ new_file }} | {{ 'EXECUTABLE' if (file_stat.stat.exists and file_stat.stat.executable) else 'NORMAL' }}"
+        create: true
+        mode: '0600'
+
+    - name: Check file size
+      ansible.builtin.debug:
+        msg: "File size: {{ file_stat.stat.size }} bytes"
+      when: file_stat.stat.exists
+
+    - name: Alert on large files
+      ansible.builtin.debug:
+        msg: |
+          ⚠️  Large file detected in logs directory
+          File: {{ new_file }}
+          Size: {{ file_stat.stat.size }} bytes
+          This may indicate log flooding or data exfiltration
+      when:
+        - file_stat.stat.exists
+        - file_stat.stat.size > 10485760  # 10 MB
+
+    # In production, you might:
+    # - Quarantine suspicious files
+    # - Run virus/malware scanner
+    # - Alert security team via PagerDuty
+    # - Block further writes to the directory
+    # - Capture file hash for forensics
+    # - Trigger incident response playbook

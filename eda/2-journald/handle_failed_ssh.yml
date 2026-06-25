@@ -1,0 +1,47 @@
+---
+- name: Handle failed SSH login attempt
+  hosts: localhost
+  gather_facts: false
+
+  tasks:
+    - name: Extract failed login details
+      ansible.builtin.set_fact:
+        ssh_message: "{{ ansible_eda.event.journald.MESSAGE }}"
+        ssh_timestamp: "{{ ansible_eda.event.journald.__REALTIME_TIMESTAMP | default('unknown') }}"
+        ssh_hostname: "{{ ansible_eda.event.journald._HOSTNAME | default(ansible_hostname) }}"
+
+    - name: Display security alert
+      ansible.builtin.debug:
+        msg: |
+          ⚠️  SECURITY ALERT: Failed SSH Login Attempt
+          ================================================
+          Time: {{ ssh_timestamp }}
+          Host: {{ ssh_hostname }}
+          Message: {{ ssh_message }}
+          ================================================
+
+    - name: Log security event to file
+      ansible.builtin.lineinfile:
+        path: /tmp/eda_security_events.log
+        line: "{{ ansible_date_time.iso8601 }} | SSH_FAILED | {{ ssh_hostname }} | {{ ssh_message }}"
+        create: true
+        mode: '0600'
+
+    - name: Check for repeat offenders
+      ansible.builtin.shell:
+        cmd: grep -c "Failed password" /tmp/eda_security_events.log || true
+      register: failed_attempts
+      changed_when: false
+
+    - name: Alert if multiple failures detected
+      ansible.builtin.debug:
+        msg: |
+          ⚠️  MULTIPLE FAILED ATTEMPTS DETECTED: {{ failed_attempts.stdout }} total
+          Consider blocking source IP or alerting security team
+      when: failed_attempts.stdout | int > 5
+
+    # In production, you might:
+    # - Update firewall rules to block the source IP
+    # - Create a ServiceNow incident ticket
+    # - Send Slack/Teams notification to security team
+    # - Update SIEM system with the event

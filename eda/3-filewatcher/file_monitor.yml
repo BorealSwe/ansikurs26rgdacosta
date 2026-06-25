@@ -1,0 +1,58 @@
+---
+- name: Monitor critical directories for file system changes
+  hosts: localhost
+
+  sources:
+    - name: Watch configuration directory
+      ansible.eda.file_watch:
+        path: /tmp/watched-config
+        recursive: true
+
+    - name: Watch log directory
+      ansible.eda.file_watch:
+        path: /tmp/watched-logs
+        recursive: true
+
+  rules:
+    - name: Configuration file created or modified
+      condition: >
+        (event.file.event_type == "created" or event.file.event_type == "modified") and
+        event.file.src_path is search("/tmp/watched-config") and
+        (event.file.src_path is search("\.conf$") or event.file.src_path is search("\.cfg$"))
+      action:
+        run_playbook:
+          name: handle_config_change.yml
+
+    - name: New file in logs directory
+      condition: >
+        event.file.event_type == "created" and
+        event.file.src_path is search("/tmp/watched-logs")
+      action:
+        run_playbook:
+          name: handle_new_file.yml
+
+    - name: File deleted from config directory
+      condition: >
+        event.file.event_type == "deleted" and
+        event.file.src_path is search("/tmp/watched-config")
+      action:
+        run_playbook:
+          name: handle_file_deletion.yml
+
+    - name: Suspicious executable created
+      condition: >
+        event.file.event_type == "created" and
+        (event.file.src_path is search("\.sh$") or
+         event.file.src_path is search("\.py$") or
+         event.file.src_path is search("\.pl$") or
+         event.file.src_path is search("\.elf$"))
+      action:
+        debug:
+          msg: |
+            ⚠️  SECURITY ALERT: Executable file created
+            ================================================
+            File: {{ event.file.src_path }}
+            Type: {{ event.file.event_type }}
+            This could indicate unauthorized activity
+            Security team should investigate immediately
+            ================================================

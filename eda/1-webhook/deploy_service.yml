@@ -1,0 +1,24 @@
+---
+- name: Deploy service via webhook trigger
+  hosts: localhost
+  gather_facts: false
+
+  tasks:
+    - name: Display deployment information
+      ansible.builtin.debug:
+        msg: |
+          DEPLOYMENT TRIGGERED:
+          Service: {{ ansible_eda.event.payload.service }}
+          Version: {{ ansible_eda.event.payload.version | default('latest') }}
+          Environment: {{ ansible_eda.event.payload.environment | default('production') }}
+          Triggered by: {{ ansible_eda.event.payload.user | default('webhook') }}
+
+    - name: Simulate deployment steps
+      ansible.builtin.debug:
+        msg: "Step {{ item }}: Deploying {{ ansible_eda.event.payload.service }}"
+      loop:
+        - "1 - Pull latest image"
+        - "2 - Run database migrations"
+        - "3 - Deploy new version"
+        - "4 - Health check"
+        - "5 - Update load balancer"

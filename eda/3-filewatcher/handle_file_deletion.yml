@@ -1,0 +1,75 @@
+---
+- name: Handle configuration file deletion
+  hosts: localhost
+  gather_facts: true
+
+  tasks:
+    - name: Extract deleted file details
+      ansible.builtin.set_fact:
+        deleted_file: "{{ ansible_eda.event.file.src_path }}"
+        file_name: "{{ ansible_eda.event.file.src_path | basename }}"
+
+    - name: Display file deletion alert
+      ansible.builtin.debug:
+        msg: |
+          🗑️  CRITICAL: Configuration File Deleted
+          ================================================
+          File: {{ deleted_file }}
+          Deleted: {{ ansible_date_time.iso8601 }}
+          ================================================
+
+    - name: Log deletion event
+      ansible.builtin.lineinfile:
+        path: /tmp/eda_config_changes.log
+        line: "{{ ansible_date_time.iso8601 }} | DELETED | {{ deleted_file }} | CRITICAL"
+        create: true
+        mode: '0600'
+
+    - name: Check for backup
+      ansible.builtin.find:
+        paths: /tmp/config-backups
+        patterns: "{{ file_name }}.*"
+      register: backup_files
+
+    - name: Display backup status
+      ansible.builtin.debug:
+        msg: |
+          Backup files found: {{ backup_files.matched }}
+          {% if backup_files.matched > 0 %}
+          Latest backup: {{ backup_files.files | sort(attribute='mtime') | last | json_query('path') }}
+          {% else %}
+          ⚠️  No backups available for this file
+          {% endif %}
+
+    - name: Restore from latest backup
+      ansible.builtin.copy:
+        src: "{{ backup_files.files | sort(attribute='mtime') | last | json_query('path') }}"
+        dest: "{{ deleted_file }}"
+        mode: '0644'
+      when: backup_files.matched > 0
+      register: file_restored
+
+    - name: Confirm restoration
+      ansible.builtin.debug:
+        msg: |
+          ✅ FILE RESTORED
+          File {{ deleted_file }} has been restored from backup
+          Timestamp: {{ ansible_date_time.iso8601 }}
+      when: file_restored is changed
+
+    - name: Alert if no backup available
+      ansible.builtin.debug:
+        msg: |
+          ⚠️  CANNOT RESTORE: No backup available
+          File: {{ deleted_file }}
+          Manual intervention required
+          Ops team should be notified immediately
+      when: backup_files.matched == 0
+
+    # In production, you might:
+    # - Restore from git repository
+    # - Restore from configuration management system
+    # - Create high-priority ServiceNow incident
+    # - Alert ops team via Slack/Teams/PagerDuty
+    # - Prevent service restart until file is restored
+    # - Audit who deleted the file (from system logs)

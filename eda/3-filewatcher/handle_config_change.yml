@@ -1,0 +1,78 @@
+---
+- name: Handle configuration file change
+  hosts: localhost
+  gather_facts: true
+
+  tasks:
+    - name: Extract file details
+      ansible.builtin.set_fact:
+        changed_file: "{{ ansible_eda.event.file.src_path }}"
+        event_type: "{{ ansible_eda.event.file.event_type }}"
+        file_name: "{{ ansible_eda.event.file.src_path | basename }}"
+
+    - name: Display configuration change alert
+      ansible.builtin.debug:
+        msg: |
+          ⚙️  CONFIGURATION CHANGE DETECTED
+          ================================================
+          File: {{ changed_file }}
+          Action: {{ event_type }}
+          Timestamp: {{ ansible_date_time.iso8601 }}
+          ================================================
+
+    - name: Create backup directory
+      ansible.builtin.file:
+        path: /tmp/config-backups
+        state: directory
+        mode: '0755'
+
+    - name: Backup the changed file
+      ansible.builtin.copy:
+        src: "{{ changed_file }}"
+        dest: "/tmp/config-backups/{{ file_name }}.{{ ansible_date_time.epoch }}"
+        mode: '0644'
+      when: event_type == "modified"
+
+    - name: Log configuration change
+      ansible.builtin.lineinfile:
+        path: /tmp/eda_config_changes.log
+        line: "{{ ansible_date_time.iso8601 }} | {{ event_type | upper }} | {{ changed_file }}"
+        create: true
+        mode: '0600'
+
+    - name: Read file contents for validation
+      ansible.builtin.slurp:
+        src: "{{ changed_file }}"
+      register: file_contents
+      when: event_type in ["created", "modified"]
+
+    - name: Display file contents
+      ansible.builtin.debug:
+        msg: |
+          File contents:
+          {{ file_contents['content'] | b64decode }}
+      when: file_contents is defined
+
+    - name: Check for suspicious content
+      ansible.builtin.set_fact:
+        is_suspicious: true
+      when:
+        - file_contents is defined
+        - file_contents['content'] | b64decode is search('rm -rf|curl.*sh|wget.*sh|eval|base64.*decode')
+
+    - name: Alert on suspicious content
+      ansible.builtin.debug:
+        msg: |
+          ⚠️  SUSPICIOUS CONTENT DETECTED
+          The configuration file contains potentially dangerous commands
+          File: {{ changed_file }}
+          Security review recommended
+      when: is_suspicious is defined and is_suspicious
+
+    # In production, you might:
+    # - Validate config syntax before allowing it
+    # - Compare against approved baseline from git
+    # - Auto-revert if validation fails
+    # - Create ServiceNow change ticket
+    # - Notify ops team via Slack
+    # - Trigger configuration management run to restore compliance
