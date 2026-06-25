@@ -192,10 +192,25 @@ sudo journalctl -f
 - Check SELinux isn't blocking journal access
 - Run with sudo if permission denied
 
+**Rulebook syntax errors:**
+The `matches` and `is search` operators can cause parse errors in multi-line conditions. This rulebook has been simplified to use direct equality checks:
+
+```yaml
+# WORKS - simple condition
+condition: event.journald._COMM == "sudo"
+
+# FAILS - complex regex with multi-line
+condition: >
+  event.journald._COMM == "sudo" and
+  event.journald.MESSAGE is search ".*COMMAND=.*"
+```
+
+**Best practice:** Match on structured fields like `_COMM` (command name), `_UID` (user ID), or `SYSLOG_IDENTIFIER` rather than parsing MESSAGE text.
+
 **Too many events:**
 - Refine your conditions to be more specific
 - Filter by SYSLOG_IDENTIFIER or other structured fields
-- Use the match keyword for pattern matching
+- Check actual journal field names: `journalctl -o json -n 5`
 
 ## Production Deployment Notes
 
