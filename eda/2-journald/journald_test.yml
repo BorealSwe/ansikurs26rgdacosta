@@ -8,14 +8,8 @@
         match: "ALL"
 
   rules:
-    - name: Any journal event
+    - name: Show raw journal event
       condition: event.journald is defined
       action:
         debug:
-          msg: |
-            📋 JOURNAL EVENT DETECTED
-            ================================================
-            COMM: {{ event.journald._COMM | default('N/A') }}
-            MESSAGE: {{ event.journald.MESSAGE | default('N/A') }}
-            SYSLOG_ID: {{ event.journald.SYSLOG_IDENTIFIER | default('N/A') }}
-            ================================================
+          msg: "RAW EVENT: {{ event }}"
