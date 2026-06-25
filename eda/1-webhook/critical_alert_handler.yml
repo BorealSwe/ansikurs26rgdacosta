@@ -14,20 +14,18 @@
           Time: {{ ansible_eda.event.payload.timestamp | default('unknown') }}
 
     - name: Log to syslog
-      ansible.builtin.shell:
-        cmd: logger -t eda-critical "Alert from {{ ansible_eda.event.payload.source | default('unknown') }}: {{ ansible_eda.event.payload.message | default('no message') }}"
+      ansible.builtin.command:
+        cmd: logger -t eda-critical "Critical alert received"
       changed_when: false
 
     - name: Create incident response directory
       ansible.builtin.file:
-        path: "/tmp/eda-incidents/{{ ansible_eda.event.payload.timestamp | default(ansible_date_time.epoch) }}"
+        path: "/tmp/eda-incidents"
         state: directory
         mode: '0755'
-      when: ansible_eda.event.payload.timestamp is defined
 
     - name: Save alert details to file
       ansible.builtin.copy:
         content: "{{ ansible_eda.event.payload | to_nice_json }}"
-        dest: "/tmp/eda-incidents/alert-{{ ansible_eda.event.payload.timestamp | default(ansible_date_time.epoch) }}.json"
+        dest: "/tmp/eda-incidents/alert-latest.json"
         mode: '0644'
-      when: ansible_eda.event.payload is defined
