@@ -1,15 +1,17 @@
 ---
-- name: Test journal monitoring
+- name: Test journal monitoring with specific units
   hosts: localhost
 
   sources:
     - name: Monitor system journal
       ansible.eda.journald:
-        match: "ALL"
+        units:
+          - sshd.service
+          - systemd-logind.service
 
   rules:
     - name: Show raw journal event
-      condition: event.journald is defined
+      condition: event is defined
       action:
         debug:
-          msg: "RAW EVENT: {{ event }}"
+          msg: "EVENT: {{ event }}"
