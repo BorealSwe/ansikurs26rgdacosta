@@ -1,0 +1,51 @@
+---
+- name: Backup IOS XE configurations
+  hosts: ios
+  gather_facts: false
+
+  tasks:
+
+    - name: Ensure local facts are gathered
+      delegate_to: localhost
+      delegate_facts: true
+      ansible.builtin.setup:
+
+    - name: Ensure fact is set
+      ansible.builtin.set_fact:
+        my_filename: "{{ inventory_hostname }}-{{ hostvars['localhost']['ansible_facts']['date_time']['date'] }}_{{ hostvars['localhost']['ansible_facts']['date_time']['hour'] }}:{{ hostvars['localhost']['ansible_facts']['date_time']['minute'] }}.txt"
+
+    - name: Backup IOS XE configurations
+      cisco.ios.ios_config:
+        backup: true
+        backup_options:
+          dir_path: ./backups/
+          filename: "{{ my_filename }}"
+
+- name: Backup Juniper Junos configurations
+  hosts: junos
+  gather_facts: false
+
+  tasks:
+
+    - name: Ensure local facts are gathered
+      delegate_to: localhost
+      delegate_facts: true
+      ansible.builtin.setup:
+
+    - name: Ensure fact is set
+      ansible.builtin.set_fact:
+        my_filename: "{{ inventory_hostname }}-{{ hostvars['localhost']['ansible_facts']['date_time']['date'] }}_{{ hostvars['localhost']['ansible_facts']['date_time']['hour'] }}:{{ hostvars['localhost']['ansible_facts']['date_time']['minute'] }}.txt"
+
+    - name: Enable the netconf service on port 830
+      vars:
+        ansible_connection: ansible.netcommon.network_cli
+      junipernetworks.junos.junos_netconf:
+        netconf_port: 830
+        state: present
+
+    - name: Backup Junos configurations
+      junipernetworks.junos.junos_config:
+        backup: true
+        backup_options:
+          dir_path: ./backups/
+          filename: "{{ my_filename }}" 

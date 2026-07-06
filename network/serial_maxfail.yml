@@ -1,5 +1,5 @@
 - name: Gather common properties of our systems
-  hosts: 
+  hosts:
     - switches:&eos
     - routers:&ios
     - loadbalancers:!gtm

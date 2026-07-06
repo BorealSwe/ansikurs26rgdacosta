@@ -5,7 +5,7 @@
   tasks:
 
     - name: Ensure banner is configured on IOS devices
-      notify: Ensure changes are saved 
+      notify: Ensure changes are saved
       cisco.ios.ios_banner:
         banner: login
         text: Managed by Ansible Automation Platform

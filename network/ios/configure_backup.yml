@@ -10,7 +10,7 @@
         path: backups
         state: directory
 
-    - name: Ensure configuration backup is taken 
+    - name: Ensure configuration backup is taken
       cisco.ios.ios_config:
         backup: true
         backup_options:

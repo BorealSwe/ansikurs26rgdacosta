@@ -6,7 +6,7 @@
 
   tasks:
 
-    - name: Ensure backup is taken 
+    - name: Ensure backup is taken
       when: ansible_network_os is defined
       ansible.builtin.include_role:
         name: net_backup
