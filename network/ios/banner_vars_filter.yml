@@ -1,15 +1,15 @@
 - name: Configure login banners
-  hosts: ios
+  hosts: "{{ my_host }}"
   gather_facts: false
-  
+
   tasks:
 
     - name: Manage login banner on IOS devices
-      notify: Ensure changes are saved 
+      notify: Ensure changes are saved
       cisco.ios.ios_banner:
         banner: login
-        text: "{{ login_banner | default('WARNING: Local changes are subject to being replaced by Ansible Automation') }}" 
-        state: "{{ my_state | default('present') }}" 
+        text: "{{ my_banner | default('WARNING: Local changes are subject to being replaced by Ansible Automation') }}"
+        state: "{{ my_state | default('present') }}"
 
   handlers:
 
