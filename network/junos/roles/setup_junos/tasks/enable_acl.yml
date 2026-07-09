@@ -1,8 +1,8 @@
-- name: Ensure ACLs are configured 
+- name: Ensure ACLs are configured
   loop: "{{ my_acl }}"
   loop_control:
     loop_var: my_acl_item
   junipernetworks.junos.junos_acls:
     state: overridden
-    config: 
+    config:
       - "{{ my_acl_item }}"

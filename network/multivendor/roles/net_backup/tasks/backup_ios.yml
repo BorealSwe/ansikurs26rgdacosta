@@ -1,4 +1,4 @@
-- name: Ensure IOS XE backup 
+- name: Ensure IOS XE backup
   cisco.ios.ios_config:
     backup: true
     backup_options:

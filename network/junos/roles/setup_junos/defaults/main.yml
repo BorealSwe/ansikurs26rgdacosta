@@ -29,7 +29,7 @@ my_search:
 my_dns:
   - 172.25.250.220
 
-my_location: Westford, MA 
+my_location: Westford, MA
 my_contact: 'Network Engineering | neteng@example.com'
 my_communities:
   - name: rocommunity2n4g!

@@ -1,4 +1,4 @@
-- name: Ensure netconf service is enabled 
+- name: Ensure netconf service is enabled
   vars:
     ansible_connection: ansible.netcommon.network_cli
   junipernetworks.junos.junos_netconf:

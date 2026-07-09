@@ -16,10 +16,11 @@
 
   tasks:
 
-    - name: Create the '{{ config_dir }}' directory
+    - name: Ensure config directory exists
       ansible.builtin.file:
         path: "{{ config_dir }}"
         state: directory
+        mode: "0755"
 
     - name: Generate Arista configuration files
       loop: "{{ groups['eos'] }}"

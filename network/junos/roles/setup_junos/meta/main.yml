@@ -1,17 +1,17 @@
 galaxy_info:
-  author: Ricardo da Costa 
-  description: Setup junos devices 
-  company: Red Hat 
+  author: Ricardo da Costa
+  description: Setup junos devices
+  company: Red Hat
 
-  issue_tracker_url: https://gitlab.com/rgdacosta/ansible/-/issues  
+  issue_tracker_url: https://gitlab.com/rgdacosta/ansible/-/issues
 
-  license: license (GPL-2.0-or-later, MIT, etc)
+  license: GPL-2.0-or-later
 
-  min_ansible_version: 2.9
+  min_ansible_version: "2.9"
 
   platforms:
-   - name: junos
-     versions: all
+    - name: junos
+      versions: all
 
   galaxy_tags:
     - network

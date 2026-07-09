@@ -1,4 +1,4 @@
-- name: Ensure Junos backup 
+- name: Ensure Junos backup
   junipernetworks.junos.junos_config:
     backup: true
     backup_options:

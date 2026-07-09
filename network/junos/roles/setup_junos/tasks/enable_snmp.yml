@@ -1,13 +1,12 @@
-- name: Ensure SNMP is configured 
+- name: Ensure SNMP is configured
   loop: "{{ my_communities }}"
   loop_control:
     loop_var: my_communities_item
   junipernetworks.junos.junos_snmp_server:
     state: merged
     config:
-      location: "{{ my_location }}" 
-      contact: "{{ my_contact }}" 
+      location: "{{ my_location }}"
+      contact: "{{ my_contact }}"
       description: "SNMP Server"
       communities:
         - "{{ my_communities_item }}"
-
