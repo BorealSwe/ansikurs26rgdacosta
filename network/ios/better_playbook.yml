@@ -1,7 +1,7 @@
+---
 - name: Display Cisco IOS XE information
   hosts: ios
   gather_facts: false
-  become: true
 
   tasks:
 

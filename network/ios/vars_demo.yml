@@ -1,3 +1,4 @@
+---
 - name: Demonstrate variable precedence
   hosts: localhost
   gather_facts: false
@@ -28,8 +29,8 @@
   gather_facts: false
   become: false
 
-  tasks: 
-    
+  tasks:
+
     - name: Ensure variable from the previous play is displayed
       ansible.builtin.debug:
         var: my_string

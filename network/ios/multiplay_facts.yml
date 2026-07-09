@@ -1,21 +1,22 @@
+---
 - name: Display message and facts from non-network inventory host (play 1)
   hosts:
     - git
     - utility
   become: false
-  gather_facts: "{{ variable_facts | default('true') }}"
+  gather_facts: "{{ variable_facts | default(true) }}"
 
   tasks:
 
-    - name: Ensure IP address is displayed 
+    - name: Ensure IP address is displayed
       ansible.builtin.debug:
         msg: |
-          Hello World! 
+          Hello World!
 
-          This system is known as {{ inventory_hostname }} 
+          This system is known as {{ inventory_hostname }}
 
           The IP address is {{ ansible_facts['default_ipv4']['address'] }}
-       
+
 - name: Gather and display facts for Cisco Network Devices (play 2)
   hosts: ios
   become: false
@@ -24,14 +25,14 @@
   tasks:
 
     - name: Ensure IOS facts are gathered
-      when: ansible_network_os == 'ios'
+      when: ansible_network_os == 'cisco.ios.ios'
       cisco.ios.ios_facts:
 
     - name: Ensure selected facts are displayed
       ansible.builtin.debug:
         msg: |
-          Hello World! 
+          Hello World!
 
-          This system is known as {{ inventory_hostname }} 
+          This system is known as {{ inventory_hostname }}
 
-          The system model is {{ hostvars[inventory_hostname]['ansible_facts']['net_model'] }}"
+          The system model is {{ hostvars[inventory_hostname]['ansible_facts']['net_model'] }}

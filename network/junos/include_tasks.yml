@@ -1,8 +1,10 @@
+---
 - name: Onboard new junos devices
   hosts: junos
   gather_facts: false
 
   tasks:
+
     - name: Ensure variables are included for junos
       when: ansible_network_os == 'junipernetworks.junos.junos'
       ansible.builtin.include_vars:

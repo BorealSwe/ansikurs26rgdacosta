@@ -1,3 +1,4 @@
+---
 - name: Configure DNS
   ansible.builtin.import_playbook: configure_dns.yml
 
@@ -12,4 +13,3 @@
 
 - name: Configure Backup
   ansible.builtin.import_playbook: configure_backup.yml
-

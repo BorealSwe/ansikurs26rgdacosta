@@ -1,7 +1,9 @@
-- name: Gather minimal facts
+---
+- name: Gather facts from network devices
   hosts:
     - eos
     - ios
+  gather_facts: true
 
 - name: Generate configuration files from templates
   hosts: workstation.lab.example.com

@@ -1,3 +1,4 @@
+---
 - name: Collect and Store Network Device Facts
   hosts: eos
   gather_facts: false
@@ -23,5 +24,3 @@
       ansible.builtin.copy:
         dest: "device_properties/{{ inventory_hostname }}.yml"
         content: "{{ device_facts | to_nice_yaml }}"
-
-

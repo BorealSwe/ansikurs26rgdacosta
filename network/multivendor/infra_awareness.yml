@@ -1,5 +1,6 @@
+---
 - name: Collect and Store Network Device Facts
-  hosts: 
+  hosts:
     - ios
     - junos
     - eos
@@ -44,19 +45,20 @@
         state: directory
 
     - name: Ensure facts are stored
-      loop:
-        - "{{ iosfacts }}"
-        - "{{ junosfacts }}"
-        - "{{ eosfacts }}"
+      vars:
+        _platform_facts:
+          cisco.ios.ios: "{{ iosfacts }}"
+          junipernetworks.junos.junos: "{{ junosfacts }}"
+          arista.eos.eos: "{{ eosfacts }}"
       ansible.builtin.copy:
         dest: "device_properties/{{ inventory_hostname }}.yml"
-        content: "{{ item | to_nice_yaml }}"
+        content: "{{ _platform_facts[ansible_network_os] | to_nice_yaml }}"
 
     - name: Build the report
       ansible.builtin.include_role:
         name: build_report_network
         apply:
-          delegate_to: workstation.lab.example.com 
+          delegate_to: workstation.lab.example.com
           run_once: true
 
     - name: Print URL

@@ -1,12 +1,13 @@
+---
 - name: Configure Cisco IOS interfaces
   hosts: ios
   gather_facts: false
 
   tasks:
 
-    - name: Ensure L3 interfaces are configured 
+    - name: Ensure L3 interfaces are configured
       loop: "{{ interfaces[inventory_hostname] }}"
-      notify: Ensure config is saved 
+      notify: Ensure config is saved
       when:
         - interfaces is defined
         - interfaces[inventory_hostname] is defined
@@ -23,4 +24,3 @@
     - name: Ensure config is saved
       cisco.ios.ios_config:
         save_when: always
-

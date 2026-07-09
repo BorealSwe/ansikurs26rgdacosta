@@ -1,20 +1,21 @@
+---
 - name: Configure NTP settings on IOS managed nodes
   hosts: ios
   gather_facts: false
 
   tasks:
 
-    - name: Ensure NTP is configured 
-      notify: Ensure config is saved saved 
+    - name: Ensure NTP is configured
+      notify: Ensure config is saved
       cisco.ios.ios_ntp_global:
         config:
-          servers:
-            - server: "{{ ntp_server_1 }}"
-            - server: "{{ ntp_server_2 }}"
+          peers:
+            - peer: "{{ ntp_server_1 }}"
+            - peer: "{{ ntp_server_2 }}"
         state: merged
 
   handlers:
 
-    - name: Ensure config is saved 
+    - name: Ensure config is saved
       cisco.ios.ios_config:
         save_when: always

@@ -1,12 +1,14 @@
+---
 - name: block, rescue, always demonstration
   hosts: ios
   order: sorted
   gather_facts: false
 
-  vars: 
+  vars:
     error_ok: false
 
   tasks:
+
     - name: Print message BEFORE BLOCK section of tasks
       ansible.builtin.debug:
         msg: This is a task that runs BEFORE the BLOCK section.
@@ -16,7 +18,7 @@
 
         - name: Print message about block
           ansible.builtin.debug:
-            msg: This section contains the main tasks for the play 
+            msg: This section contains the main tasks for the play
 
         - name: Display Configured VLANS
           register: vlan_result
@@ -26,7 +28,7 @@
             commands:
               - show vlans
 
-      rescue: 
+      rescue:
 
         - name: Print message about rescue block
           ansible.builtin.debug:
@@ -38,9 +40,9 @@
         - name: Display Configured VLANS (If Any)
           cisco.ios.ios_command:
             commands:
-              - show vlans          
+              - show vlans
 
-      always: 
+      always:
 
         - name: Print message about always block
           ansible.builtin.debug:

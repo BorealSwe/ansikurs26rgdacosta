@@ -1,8 +1,15 @@
+---
 - name: Gather and display facts report for IOS managed nodes
   hosts: ios
   gather_facts: false
 
   tasks:
+
+    - name: Ensure facts/ directory exists
+      run_once: true
+      ansible.builtin.file:
+        path: facts
+        state: directory
 
     - name: Ensure IOS facts are gathered
       cisco.ios.ios_facts:

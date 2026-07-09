@@ -1,4 +1,5 @@
-- name: Configure IOS XE Users 
+---
+- name: Configure IOS XE Users
   hosts: ios
   gather_facts: false
   become: true
@@ -22,7 +23,7 @@
 
     - name: Ensure user is managed
       when: my_users is defined
-      loop: "{{ lookup('dict', my_users) }}"
+      loop: "{{ my_users | dict2items }}"
       cisco.ios.ios_user:
         name: "{{ item['key'] }}"
         hashed_password:

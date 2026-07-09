@@ -2,7 +2,9 @@
 - name: Change configuration and demonstrate a resource module state
   hosts: eos
   gather_facts: false
+
   tasks:
+
     - name: Change configuration using the merged state
       arista.eos.eos_vlans:
         state: merged
@@ -15,6 +17,7 @@
             vlan_id: 300
           - name: vlan400
             vlan_id: 400
+
     - name: Show configuration after configuration change
       arista.eos.eos_command:
         commands:

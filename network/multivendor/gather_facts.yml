@@ -1,3 +1,4 @@
+---
 - name: Gather ios facts
   ansible.builtin.import_playbook: ios_facts.yml
 

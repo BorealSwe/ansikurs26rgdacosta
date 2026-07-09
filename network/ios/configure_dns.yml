@@ -1,13 +1,11 @@
+---
 - name: Configure DNS settings on IOS managed nodes
   hosts: ios
   gather_facts: false
 
   tasks:
 
-    - name: Ensure DNS is configured 
-      loop: "{{ my_search | product(my_dns) | list }}"
+    - name: Ensure DNS is configured
       cisco.ios.ios_system:
-        domain_search:
-          - "{{ item[0] }}"
-        name_servers:
-          - "{{ item[1] }}"
+        domain_search: "{{ my_search }}"
+        name_servers: "{{ my_dns }}"

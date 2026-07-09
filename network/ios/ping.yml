@@ -5,9 +5,9 @@
   gather_facts: false
 
   tasks:
-    
-    - name: Ensure ICMP connectivity to {{ inventory_hostname }} 
-      when: ansible_network_os == 'ios'
+
+    - name: Ensure ICMP connectivity to {{ inventory_hostname }}
+      when: ansible_network_os == 'cisco.ios.ios'
       cisco.ios.ios_ping:
         dest: "{{ inventory_hostname }}"
         count: 5

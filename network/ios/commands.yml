@@ -1,13 +1,12 @@
 ---
 - name: Gather and display facts for Cisco Network Devices
   hosts: ios
-  become: true
   gather_facts: false
 
   tasks:
 
     - name: Ensure IOS facts are gathered
-      when: ansible_network_os == 'ios'
+      when: ansible_network_os == 'cisco.ios.ios'
       cisco.ios.ios_facts:
 
     - name: Ensure specified commands are run
@@ -18,5 +17,5 @@
           - show ip int brief
 
     - name: Ensure output is displayed
-      ansible.builtin.debug: 
+      ansible.builtin.debug:
         var: ios_output

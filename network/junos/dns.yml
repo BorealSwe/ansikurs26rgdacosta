@@ -1,4 +1,5 @@
-- name: Configure DNS 
+---
+- name: Configure DNS
   hosts: junos
   gather_facts: false
 
@@ -13,7 +14,8 @@
 
     - name: Ensure DNS is configured
       junipernetworks.junos.junos_system:
-        name_servers: 172.25.250.220
+        name_servers:
+          - 172.25.250.220
 
     - name: Validate DNS configuration
       register: junos_dns

@@ -1,14 +1,15 @@
+---
 - name: Configure login banners
   hosts: ios
   gather_facts: false
-  
+
   tasks:
 
     - name: Ensure banner is configured on IOS devices
-      notify: Ensure changes are saved 
+      notify: Ensure changes are saved
       cisco.ios.ios_banner:
         banner: login
-        text: "{{ login_banner }}" 
+        text: "{{ login_banner }}"
         state: present
 
   handlers:

@@ -1,3 +1,4 @@
+---
 - name: Back up managed network node configurations
   hosts:
     - junos

@@ -1,3 +1,4 @@
+---
 - name: Configure login banners
   hosts: ios
   gather_facts: false

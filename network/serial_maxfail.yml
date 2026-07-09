@@ -1,3 +1,4 @@
+---
 - name: Gather common properties of our systems
   hosts:
     - switches:&eos
@@ -16,20 +17,20 @@
     - name: General task 1
       run_once: true
       ansible.builtin.debug:
-        msg: This is a general task definition for demonstration purporses
+        msg: This is a general task definition for demonstration purposes
 
     - name: General task 2
       ansible.builtin.debug:
-        msg: This is a general task definition for demonstration purporses
+        msg: This is a general task definition for demonstration purposes
 
     - name: General task 3
       ansible.builtin.debug:
-        msg: This is a general task definition for demonstration purporses
+        msg: This is a general task definition for demonstration purposes
 
     - name: General task 4
       ansible.builtin.debug:
-        msg: This is a general task definition for demonstration purporses
+        msg: This is a general task definition for demonstration purposes
 
     - name: General task 5
       ansible.builtin.debug:
-        msg: This is a general task definition for demonstration purporses
+        msg: This is a general task definition for demonstration purposes

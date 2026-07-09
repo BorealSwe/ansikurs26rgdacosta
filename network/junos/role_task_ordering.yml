@@ -1,6 +1,7 @@
+---
 - name: Configure junos devices
   hosts: junos
-  gather_facts: true
+  gather_facts: false
 
   pre_tasks:
 
@@ -36,10 +37,10 @@
       ansible.builtin.debug:
         msg: I am a pre_tasks handler
 
-    - name: tasks handler:
+    - name: tasks handler
       ansible.builtin.debug:
         msg: I am a tasks handler
-      
+
     - name: post_tasks handler
       ansible.builtin.debug:
         msg: I am a post_tasks handler

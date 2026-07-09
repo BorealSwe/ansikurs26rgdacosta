@@ -1,8 +1,9 @@
+---
 - name: Gather and display selected facts
-  hosts: 
+  hosts:
     - ios
-    - junos      
-  gather_facts: true
+    - junos
+  gather_facts: false
   become: false
 
   tasks:
@@ -19,6 +20,5 @@
     - name: Ensure conditional based on fact
       when: ansible_facts['net_version'] == "23.1R1.8"
       ansible.builtin.debug:
-        msg: | 
+        msg: |
           Fixing {{ inventory_hostname }} due to version {{ ansible_facts['net_version'] }} being associated with security vulnerabilities
-

@@ -1,10 +1,11 @@
+---
 - name: Gather and display variables
   hosts: ios
   order: sorted
   gather_facts: false
 
   tasks:
-    
+
     - name: Display variable types
       ansible.builtin.debug:
         var: interfaces | type_debug
@@ -16,7 +17,7 @@
     - name: Display variable value for single element
       when: inventory_hostname == 'iosxe1.lab.example.com'
       ansible.builtin.debug:
-        var: interfaces['iosxe1.lab.example.com'] 
+        var: interfaces['iosxe1.lab.example.com']
 
     - name: Display variable for single element (Data Type)
       when: item == inventory_hostname
@@ -28,7 +29,7 @@
       when: item == inventory_hostname
       loop: "{{ interfaces | list }}"
       ansible.builtin.debug:
-        var: interfaces[item] 
+        var: interfaces[item]
 
     - name: Accessing Values for Configuration from a List
       when: item == inventory_hostname
@@ -36,8 +37,8 @@
       ansible.builtin.debug:
         msg: |
           "Inventory host: {{ inventory_hostname }}
-          Interfaces available: {{ interfaces[item]| map(attribute='name') }}.
-          IP addresses: {{ interfaces[item]| map (attribute='ipv4') }}."
+          Interfaces available: {{ interfaces[item] | map(attribute='name') }}.
+          IP addresses: {{ interfaces[item] | map(attribute='ipv4') }}."
 
     - name: Accessing a specific Value for Configuration from a List
       loop: "{{ interfaces[inventory_hostname] }}"
