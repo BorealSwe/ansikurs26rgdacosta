@@ -1,0 +1,12 @@
+---
+- name: Ensure crypto policy is configured
+  hosts: "{{ my_host }}"
+  gather_facts: false
+  become: true
+
+  vars:
+
+    crypto_policies_policy: "{{ my_policy | default('DEFAULT') }}"
+
+  roles:
+    - redhat.rhel_system_roles.crypto_policies
