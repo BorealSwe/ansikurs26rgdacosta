@@ -1,0 +1,18 @@
+---
+- name: Demonstrate the use of the cron module
+  hosts: "{{ my_host | default('localhost') }}"
+  gather_facts: false
+  force_handlers: true
+  become: true
+
+  tasks:
+
+    - name: Ensure crontab for etc backup exists
+      ansible.builtin.cron:
+        name: Daily backup of etc
+        cron_file: backup_etc_daily
+        user: root
+        job: tar -cfz /root/etc-backup.tar.gz
+        minute: 0
+        hour: 23
+        weekday: "*"
