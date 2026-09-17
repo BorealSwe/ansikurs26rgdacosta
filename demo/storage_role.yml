@@ -1,7 +1,32 @@
-- name: Manage LVM
+- name: Storage demonstration 
   hosts: "{{ my_host | default('all') }}"
   become: true
 
+  vars:
+
+    storage_pools:
+      - name: databases
+        type: lvm
+        disks:
+          - sdc
+        volumes:
+          - name: satellite
+            size: 10g
+            mount_point: /var/lib/satellite
+            fs_type: xfs
+            state: present
+          - name: swap
+            size: 2g
+            fs_type: swap
+            state: present
+
+    storage_volumes:
+      - name: data
+        type: disk
+        disks:
+          - sdb
+        fs_type: xfs
+        mount_point: /mnt/data
+
   roles:
     - redhat.rhel_system_roles.storage
-
