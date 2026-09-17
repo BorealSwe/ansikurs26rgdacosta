@@ -6,4 +6,8 @@ collections:
 
   - name: community.mysql
 
+  - name: redhat.ai
+
   - name: ansible.eda
+
+  - name: redhat.amq_streams

@@ -9,7 +9,8 @@ collections:
   - name: community.general
   - name: community.libvirt
   - name: kubernetes.core
-  - name: community.okd
   - name: kubevirt.core
-  - name: fedora.linux_system_roles
-  - name: theforeman.foreman
+  - name: redhat.openshift
+  - name: redhat.openshift_virtualization
+  - name: redhat.rhel_system_roles
+  - name: redhat.satellite
