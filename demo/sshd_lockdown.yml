@@ -1,0 +1,107 @@
+---
+- name: Ensure that RHEL 9 or greater permits only non-root SSH access using public keys
+  hosts: ssh_servers
+  become: true
+  gather_facts: true
+  serial: 1
+  any_errors_fatal: true
+
+  vars:
+    sshd_policy_file: /etc/ssh/sshd_config.d/00-ansible-security.conf
+    sshd_required_settings:
+      - permitrootlogin no
+      - pubkeyauthentication yes
+      - passwordauthentication no
+      - kbdinteractiveauthentication no
+      - authenticationmethods publickey
+      - usepam yes
+
+  pre_tasks:
+    - name: Ensure that the managed host runs RHEL 9 or greater
+      ansible.builtin.assert:
+        that:
+          - ansible_facts['distribution'] == 'RedHat'
+          - ansible_facts['distribution_major_version'] | int >= 9
+        fail_msg: This playbook supports RHEL 9 or greater
+
+    - name: Ensure that the existing SSH configuration is valid
+      changed_when: false
+      check_mode: false
+      ansible.builtin.command: /usr/sbin/sshd -t
+
+  tasks:
+    - name: Ensure that the managed SSH drop-in requires public keys and denies root access
+      register: sshd_policy
+      ansible.builtin.copy:
+        dest: "{{ sshd_policy_file }}"
+        owner: root
+        group: root
+        mode: '0600'
+        backup: true
+        validate: /usr/sbin/sshd -t -f %s
+        content: |
+          PermitRootLogin no
+          PubkeyAuthentication yes
+          PasswordAuthentication no
+          KbdInteractiveAuthentication no
+          AuthenticationMethods publickey
+          UsePAM yes
+
+    - name: Ensure that the complete SSH configuration satisfies the authentication policy
+      when: not ansible_check_mode
+      block:
+        - name: Ensure that the complete SSH configuration is valid
+          changed_when: false
+          ansible.builtin.command: /usr/sbin/sshd -t
+
+        - name: Ensure that the effective global SSH settings are available for verification
+          register: sshd_effective
+          changed_when: false
+          ansible.builtin.command: /usr/sbin/sshd -T
+
+        - name: Ensure that all required authentication settings are effective
+          changed_when: sshd_policy is changed
+          notify: Ensure that sshd uses the validated authentication policy
+          ansible.builtin.assert:
+            that:
+              - sshd_required_settings | difference(sshd_effective.stdout_lines) | length == 0
+            fail_msg: >-
+              The following required settings are not effective:
+              {{ sshd_required_settings | difference(sshd_effective.stdout_lines) | join(', ') }}.
+              Check for conflicting earlier settings or a missing Include.
+            quiet: true
+
+      rescue:
+        - name: Ensure that the previous version of the managed SSH drop-in is restored
+          when:
+            - sshd_policy is changed
+            - sshd_policy.backup_file is defined
+          ansible.builtin.copy:
+            src: "{{ sshd_policy.backup_file }}"
+            dest: "{{ sshd_policy_file }}"
+            remote_src: true
+            owner: root
+            group: root
+            mode: '0600'
+
+        - name: Ensure that the managed SSH drop-in is absent if it did not previously exist
+          when:
+            - sshd_policy is changed
+            - sshd_policy.backup_file is not defined
+          ansible.builtin.file:
+            path: "{{ sshd_policy_file }}"
+            state: absent
+
+        - name: Ensure that the restored SSH configuration is valid
+          changed_when: false
+          ansible.builtin.command: /usr/sbin/sshd -t
+
+        - name: Ensure that a rejected authentication policy is reported as a failure
+          ansible.builtin.fail:
+            msg: Policy validation failed. Any file change was rolled back; sshd was not reloaded.
+
+  handlers:
+    - name: Ensure that sshd uses the validated authentication policy
+      ansible.builtin.service:
+        name: sshd
+        state: reloaded
