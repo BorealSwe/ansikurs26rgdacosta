@@ -1,50 +1,25 @@
 - name: Setup clevis 
-  hosts: servera
+  hosts: "{{ my_host | default('servera') }}"
   become: true
   gather_facts: false
 
   vars:
 
+    tangservers:
+      - serverb
+      - serverc
+      - serverd
+
     nbde_client_bindings:
-      - device: /dev/vdb
+      - device: "{{ securedevice }}"
         # This would be stored using Ansible Vault
-        encryption_password: secretMODE
-        servers:
-          - http://serverb.lab.example.com
-          - http://serverc.lab.example.com
-          - http://serverd.lab.example.com
+        encryption_password: "{{ encryption_password }}"
+        servers: "{{ tangservers | map('regex_replace', '^', 'http://') | list }}"
         threshold: 2
 
     securedevice: /dev/vdb
-    securevolume: securedata
-    securemount: /securedata
+    # This would be stored using Ansible Vault
+    encryption_password: secretMODE
 
   roles:
     - rhel-system-roles.nbde_client
-
-  tasks:
-
-    - name: Tasks block to setup tab files
-      notify: Reboot server
-      block:
-
-      - name: Ensure /etc/crypttab is configured
-        ansible.builtin.lineinfile:
-          line: "{{ securevolume }} {{ securedevice }} none _netdev"
-          path: /etc/crypttab
-          create: true
-
-      - name: Ensure /etc/fstab is configured
-        ansible.builtin.lineinfile:
-          line: "/dev/mapper/{{ securevolume }} {{ securemount }} ext4 _netdev 0 0"
-          path: /etc/fstab
-          create: true
-
-  handlers:
-
-    - name: Reboot server
-      ansible.builtin.reboot:
-        connect_timeout: 30
-
-
-

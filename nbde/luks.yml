@@ -1,0 +1,42 @@
+- name: Setup LUKS
+  hosts: "{{ my_host | default('servera') }}"
+  become: true
+  gather_facts: false
+
+  vars:
+
+    securedevice: /dev/vdb
+    securevolume: securedata
+    securemount: /securedata
+    # This would be stored using Ansible Vault
+    encryption_password: secretMODE
+
+    storage_volumes:
+      - name: "{{ securevolume }}"
+        type: disk
+        disks:
+          - "{{ securedevice }}"
+        encryption: true
+        encryption_password: "{{ encryption_password }}"
+        fs_type: ext4
+        mount_point: "{{ securemount }}"
+        mount_options: _netdev
+
+  roles:
+    - rhel-system-roles.storage
+
+  tasks:
+
+    - name: Ensure /etc/crypttab is configured for NBDE
+      notify: Reload systemd
+      ansible.builtin.lineinfile:
+        path: /etc/crypttab
+        regexp: '^(\S+\s+{{ securedevice | regex_escape }}\s+\S+)(?:\s+.*)?$'
+        line: '\1 _netdev'
+        backrefs: true
+
+  handlers:
+
+    - name: Reload systemd
+      ansible.builtin.systemd_service:
+        daemon_reload: true

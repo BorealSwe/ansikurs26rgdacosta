@@ -1,0 +1,8 @@
+- name: Setup tang servers
+  ansible.builtin.import_playbook: tang.yml
+
+- name: Setup LUKS
+  ansible.builtin.import_playbook: luks.yml
+
+- name: Setup clevis
+  ansible.builtin.import_playbook: clevis.yml
